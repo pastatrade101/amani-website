@@ -43,3 +43,18 @@ export const trackEventSchema = z.object({
 });
 
 export type TrackEventInput = z.infer<typeof trackEventSchema>;
+
+// Session attribution beacon — PII-free (UTM / referrer / device only).
+export const trackSessionSchema = z.object({
+  session_id: z.string().min(1).max(64),
+  utm_source: shortStr(200),
+  utm_medium: shortStr(200),
+  utm_campaign: shortStr(200),
+  utm_term: shortStr(200),
+  utm_content: shortStr(200),
+  referrer: shortStr(1024),
+  landing_path: shortStr(512),
+  device_type: z.enum(['mobile', 'tablet', 'desktop']).optional().nullable()
+});
+
+export type TrackSessionInput = z.infer<typeof trackSessionSchema>;

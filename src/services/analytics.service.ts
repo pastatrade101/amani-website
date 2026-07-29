@@ -1,6 +1,6 @@
 import { env } from '../config/env';
 import { supabase } from '../config/supabase';
-import type { TrackEventInput } from '../schemas/analytics.schema';
+import type { TrackEventInput, TrackSessionInput } from '../schemas/analytics.schema';
 
 // ----------------------------------------------------------------------------
 // Phase 1 analytics: first-party events (analytics_events) + lead/business data
@@ -63,6 +63,118 @@ export const recordEvent = async (input: TrackEventInput, ipHash: string | null)
     });
   } catch {
     // analytics must never break the request
+  }
+};
+
+/**
+ * Record/refresh a session for attribution. First-touch: the UTM/referrer/landing
+ * are written once (on first sight of the session_id) and never overwritten; later
+ * beacons only bump last_seen_at + page_views. Never throws.
+ */
+export const recordSession = async (input: TrackSessionInput, ipHash: string | null): Promise<void> => {
+  try {
+    const sessionId = (input.session_id || '').trim();
+    if (!sessionId) return;
+
+    const { data: existing } = await supabase
+      .from('analytics_sessions')
+      .select('id, page_views')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+
+    if (existing) {
+      const nextViews = (typeof existing.page_views === 'number' ? existing.page_views : 1) + 1;
+      await supabase
+        .from('analytics_sessions')
+        .update({ last_seen_at: new Date().toISOString(), page_views: nextViews })
+        .eq('id', existing.id);
+      return;
+    }
+
+    await supabase.from('analytics_sessions').insert({
+      session_id: sessionId,
+      utm_source: input.utm_source || null,
+      utm_medium: input.utm_medium || null,
+      utm_campaign: input.utm_campaign || null,
+      utm_term: input.utm_term || null,
+      utm_content: input.utm_content || null,
+      referrer: input.referrer || null,
+      landing_path: input.landing_path || null,
+      device_type: input.device_type || null,
+      ip_hash: ipHash
+    });
+  } catch {
+    // analytics must never break the request (unique races just no-op)
+  }
+};
+
+type SessionRow = {
+  session_id: string;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_term: string | null;
+  utm_content: string | null;
+  referrer: string | null;
+  landing_path: string | null;
+  device_type: string | null;
+  page_views: number | null;
+  first_seen_at: string;
+  last_seen_at: string;
+};
+
+/**
+ * Attribution report: recent sessions flagged with whether they became a lead
+ * (session_id present in booking_requests.lead_context.attribution), plus a
+ * source/campaign roll-up. Fail-silent — returns empty shapes on any error.
+ */
+export const getSessions = async (range: ResolvedRange) => {
+  try {
+    const { data: sessionData } = await supabase
+      .from('analytics_sessions')
+      .select('session_id, utm_source, utm_medium, utm_campaign, utm_term, utm_content, referrer, landing_path, device_type, page_views, first_seen_at, last_seen_at')
+      .gte('first_seen_at', range.fromIso)
+      .lte('first_seen_at', range.toIso)
+      .order('last_seen_at', { ascending: false })
+      .limit(500);
+
+    const sessions = (sessionData ?? []) as SessionRow[];
+
+    // Which of these sessions became a lead? Read recent leads once and index by session id.
+    const { data: leadData } = await supabase
+      .from('booking_requests')
+      .select('lead_context')
+      .gte('created_at', range.fromIso);
+
+    const convertedIds = new Set<string>();
+    for (const lead of leadData ?? []) {
+      const ctx = (lead as { lead_context?: unknown }).lead_context as
+        | { attribution?: { session_id?: unknown } }
+        | null
+        | undefined;
+      const sid = ctx?.attribution?.session_id;
+      if (typeof sid === 'string' && sid) convertedIds.add(sid);
+    }
+
+    const rows = sessions.map((s) => ({ ...s, converted: convertedIds.has(s.session_id) }));
+
+    // Source roll-up (sessions + conversions per utm_source).
+    const bySourceMap = new Map<string, { source: string; sessions: number; leads: number }>();
+    for (const r of rows) {
+      const key = r.utm_source || (r.referrer ? 'referral' : 'direct');
+      const entry = bySourceMap.get(key) ?? { source: key, sessions: 0, leads: 0 };
+      entry.sessions += 1;
+      if (r.converted) entry.leads += 1;
+      bySourceMap.set(key, entry);
+    }
+    const bySource = [...bySourceMap.values()].sort((a, b) => b.sessions - a.sessions);
+
+    return {
+      sessions: rows,
+      summary: { total: rows.length, converted: rows.filter((r) => r.converted).length, by_source: bySource }
+    };
+  } catch {
+    return { sessions: [], summary: { total: 0, converted: 0, by_source: [] as Array<{ source: string; sessions: number; leads: number }> } };
   }
 };
 

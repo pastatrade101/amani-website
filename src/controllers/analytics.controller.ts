@@ -5,7 +5,9 @@ import {
   getFunnel,
   getLeadAnalytics,
   getOverview,
+  getSessions,
   recordEvent,
+  recordSession,
   resolveRange
 } from '../services/analytics.service';
 import { env } from '../config/env';
@@ -31,6 +33,18 @@ const rangeFromQuery = (req: Request) =>
 export const trackEvent = asyncHandler(async (req, res) => {
   await recordEvent(req.body, hashIp(req));
   return sendSuccess(res, 'Event received.', { received: true }, 202);
+});
+
+// Session attribution beacon (public, PII-free). Always 202s — never errors the client.
+export const trackSession = asyncHandler(async (req, res) => {
+  await recordSession(req.body, hashIp(req));
+  return sendSuccess(res, 'Session received.', { received: true }, 202);
+});
+
+// Admin: attribution report (sessions + which became leads + source roll-up).
+export const getAnalyticsSessions = asyncHandler(async (req, res) => {
+  const data = await getSessions(rangeFromQuery(req));
+  return sendSuccess(res, 'Session attribution fetched.', data);
 });
 
 // ── admin reads ──────────────────────────────────────────────────────────────
