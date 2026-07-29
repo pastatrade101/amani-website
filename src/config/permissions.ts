@@ -110,7 +110,11 @@ export const permissions = [
   'redirects.create',
   'redirects.update',
   'redirects.delete',
-  'error_logs.view'
+  'error_logs.view',
+  'page_seo.view',
+  'page_seo.create',
+  'page_seo.update',
+  'page_seo.delete'
 ] as const;
 
 export type PermissionKey = (typeof permissions)[number];
@@ -183,7 +187,10 @@ const contentPermissions: PermissionKey[] = [
   'reviews.publish',
   'migration_calendar.view',
   'migration_calendar.create',
-  'migration_calendar.update'
+  'migration_calendar.update',
+  'page_seo.view',
+  'page_seo.create',
+  'page_seo.update'
 ];
 
 export const defaultRolePermissions: Record<AdminRole, PermissionKey[]> = {

@@ -49,6 +49,7 @@ import reviewsRoutes from './routes/reviews.routes';
 import migrationCalendarRoutes from './routes/migration-calendar.routes';
 import redirectsRoutes from './routes/redirects.routes';
 import errorLogsRoutes from './routes/error-logs.routes';
+import pageSeoRoutes from './routes/page-seo.routes';
 import { errorMiddleware } from './middleware/error.middleware';
 import { notFoundMiddleware } from './middleware/not-found.middleware';
 import { sendSuccess } from './utils/api-response';
@@ -135,6 +136,7 @@ app.use('/api/reviews', reviewsRoutes);
 app.use('/api/migration-calendar', migrationCalendarRoutes);
 app.use('/api/redirects', redirectsRoutes);
 app.use('/api/errors', errorLogsRoutes);
+app.use('/api/page-seo', pageSeoRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
