@@ -96,7 +96,21 @@ export const permissions = [
   'ai_conversations.view',
   'ai_conversations.handoff',
   'tour_matches.view',
-  'hubspot.sync'
+  'hubspot.sync',
+  'reviews.view',
+  'reviews.create',
+  'reviews.update',
+  'reviews.delete',
+  'reviews.publish',
+  'migration_calendar.view',
+  'migration_calendar.create',
+  'migration_calendar.update',
+  'migration_calendar.delete',
+  'redirects.view',
+  'redirects.create',
+  'redirects.update',
+  'redirects.delete',
+  'error_logs.view'
 ] as const;
 
 export type PermissionKey = (typeof permissions)[number];
@@ -162,7 +176,14 @@ const contentPermissions: PermissionKey[] = [
   'homepage.view',
   'homepage.update',
   'ai_conversations.view',
-  'tour_matches.view'
+  'tour_matches.view',
+  'reviews.view',
+  'reviews.create',
+  'reviews.update',
+  'reviews.publish',
+  'migration_calendar.view',
+  'migration_calendar.create',
+  'migration_calendar.update'
 ];
 
 export const defaultRolePermissions: Record<AdminRole, PermissionKey[]> = {
