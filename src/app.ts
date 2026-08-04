@@ -16,7 +16,6 @@ import bookingsRoutes from './routes/bookings.routes';
 import tripPortalRoutes from './routes/trip-portal.routes';
 import categoriesRoutes from './routes/categories.routes';
 import contactRoutes from './routes/contact.routes';
-import countriesRoutes from './routes/countries.routes';
 import lodgesRoutes from './routes/lodges.routes';
 import activitiesRoutes from './routes/activities.routes';
 import tripPointsRoutes from './routes/trip-points.routes';
@@ -39,10 +38,13 @@ import publicRoutes from './routes/public.routes';
 import rolesRoutes from './routes/roles.routes';
 import settingsRoutes from './routes/settings.routes';
 import testimonialsRoutes from './routes/testimonials.routes';
+import specialistsRoutes from './routes/specialists.routes';
 import tourInclusionsRoutes from './routes/tour-inclusions.routes';
 import tourExclusionsRoutes from './routes/tour-exclusions.routes';
 import tourImagesRoutes from './routes/tour-images.routes';
 import toursRoutes from './routes/tours.routes';
+import itineraryImportRoutes from './routes/itinerary-import.routes';
+import csvImportRoutes from './routes/csv-import.routes';
 import uploadRoutes from './routes/upload.routes';
 import usersRoutes from './routes/users.routes';
 import reviewsRoutes from './routes/reviews.routes';
@@ -74,10 +76,11 @@ app.use(
 );
 app.use(
   rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 300,
+    windowMs: env.RATE_LIMIT_WINDOW_MS,
+    limit: env.RATE_LIMIT_MAX,
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    skip: (req) => req.method === 'OPTIONS' || req.path === '/api/health'
   })
 );
 app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
@@ -94,6 +97,8 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiTravelAdvisorRoutes);
 app.use('/api/tours', toursRoutes);
+app.use('/api/itinerary-import', itineraryImportRoutes);
+app.use('/api/import', csvImportRoutes);
 app.use('/api/tour-inclusions', tourInclusionsRoutes);
 app.use('/api/tour-exclusions', tourExclusionsRoutes);
 app.use('/api/tour-images', tourImagesRoutes);
@@ -102,7 +107,6 @@ app.use('/api/available-dates', availableDatesRoutes);
 app.use('/api/pricing-options', pricingOptionsRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/destinations', destinationsRoutes);
-app.use('/api/countries', countriesRoutes);
 app.use('/api/lodges', lodgesRoutes);
 app.use('/api/activities', activitiesRoutes);
 app.use('/api/trip-points', tripPointsRoutes);
@@ -117,6 +121,7 @@ app.use('/api/blog-categories', blogCategoriesRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/testimonials', testimonialsRoutes);
+app.use('/api/specialists', specialistsRoutes);
 app.use('/api/faqs', faqsRoutes);
 app.use('/api/homepage', homepageRoutes);
 app.use('/api/hubspot', hubspotRoutes);
