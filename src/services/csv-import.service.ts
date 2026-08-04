@@ -91,7 +91,7 @@ export const ENTITIES: Record<string, Entity> = {
     ],
     template: {
       headers: ['name', 'slug', 'description', 'who_its_for', 'fitness', 'highlights', 'image_url', 'sort_order', 'status', 'meta_title', 'meta_description'],
-      example: ['Great Migration', 'great-migration', 'Follow one million wildebeest across the Serengeti and Ndutu.', 'Wildlife lovers and photographers chasing the herds.', 'Easy — game drives, no walking required.', 'Calving season|River crossings|Predator action', 'https://images.unsplash.com/photo-1534177616072-ef7dc120449d', '2', 'published', 'Great Migration Safari | Emnel Adventures', 'Witness the Great Migration on a private Tanzania safari.']
+      example: ['Great Migration', 'great-migration', 'Follow one million wildebeest across the Serengeti and Ndutu.', 'Wildlife lovers and photographers chasing the herds.', 'Easy — game drives, no walking required.', 'Calving season|River crossings|Predator action', 'https://images.unsplash.com/photo-1534177616072-ef7dc120449d', '2', 'published', 'Great Migration Safari | Goldfinch Adventures', 'Witness the Great Migration on a private Tanzania safari.']
     }
   },
   destinations: {
@@ -124,7 +124,7 @@ export const ENTITIES: Record<string, Entity> = {
     ],
     template: {
       headers: ['name', 'slug', 'country', 'region', 'short_description', 'description', 'image_url', 'main_image_url', 'banner_image_url', 'score_wildlife', 'score_luxury', 'score_family', 'score_photography', 'score_adventure', 'is_featured', 'status', 'meta_title', 'meta_description'],
-      example: ['Serengeti', 'serengeti', 'Tanzania', 'Northern Circuit', 'Endless plains, predator country and the Great Migration.', 'The Serengeti is the most celebrated safari landscape on earth.', 'https://images.unsplash.com/photo-1516426122078-c23e76319801', '', '', '10', '9', '8', '10', '9', 'true', 'published', 'Serengeti National Park | Emnel Adventures', 'Plan a private Serengeti safari with Emnel Adventures.']
+      example: ['Serengeti', 'serengeti', 'Tanzania', 'Northern Circuit', 'Endless plains, predator country and the Great Migration.', 'The Serengeti is the most celebrated safari landscape on earth.', 'https://images.unsplash.com/photo-1516426122078-c23e76319801', '', '', '10', '9', '8', '10', '9', 'true', 'published', 'Serengeti National Park | Goldfinch Adventures', 'Plan a private Serengeti safari with Goldfinch Adventures.']
     }
   },
   lodges: {
@@ -157,6 +157,33 @@ export const ENTITIES: Record<string, Entity> = {
     template: {
       headers: ['name', 'slug', 'destination', 'accommodation_level', 'lodge_type', 'description', 'why_we_recommend', 'best_for', 'hero_image_url', 'price_per_night_from', 'currency', 'romantic_rating', 'family_rating', 'website_url', 'is_featured', 'status'],
       example: ['Namiri Plains', 'namiri-plains', 'Serengeti', 'luxury', 'tented_camp', 'The best big-cat camp in the eastern Serengeti.', 'Unmatched cheetah and lion sightings; our top pick for photographers.', 'Photographers|Couples|Big cats', 'https://images.unsplash.com/photo-1523805009345-7448845a9e53', '1200', 'USD', '9', '7', 'https://example.com', 'true', 'published']
+    }
+  },
+  countries: {
+    table: 'countries',
+    label: 'Countries',
+    description: 'Country pages for combined circuits (Tanzania, Kenya).',
+    permission: 'countries.create',
+    keys: ['slug'],
+    slugFrom: 'name',
+    userFields: true,
+    fields: [
+      { name: 'name', required: true },
+      { name: 'slug' },
+      { name: 'hero_image_url' },
+      { name: 'intro_text' },
+      { name: 'best_months', type: 'list' },
+      { name: 'visa_info' },
+      { name: 'currency' },
+      { name: 'capital' },
+      { name: 'is_featured', type: 'bool' },
+      { name: 'status', type: 'status' },
+      { name: 'meta_title' },
+      { name: 'meta_description' }
+    ],
+    template: {
+      headers: ['name', 'slug', 'hero_image_url', 'intro_text', 'best_months', 'visa_info', 'currency', 'capital', 'is_featured', 'status', 'meta_title', 'meta_description'],
+      example: ['Tanzania', 'tanzania', 'https://images.unsplash.com/photo-1516426122078-c23e76319801', 'Home of the Serengeti, Ngorongoro, Kilimanjaro and Zanzibar.', 'Jun|Jul|Aug|Sep|Oct', 'Visa on arrival ~$50 USD for most nationalities.', 'TZS', 'Dodoma', 'true', 'published', 'Tanzania Safaris | Goldfinch Adventures', 'Private Tanzania safaris planned by local experts in Arusha.']
     }
   },
   'blog-categories': {
@@ -201,7 +228,7 @@ export const ENTITIES: Record<string, Entity> = {
     refs: [{ col: 'category', table: 'blog_categories', fk: 'category_id', create: { status: 'published' } }],
     template: {
       headers: ['title', 'slug', 'category', 'excerpt', 'content', 'author_name', 'featured_image_url', 'published_at', 'status', 'meta_title', 'meta_description'],
-      example: ['Best Time to Visit the Serengeti', 'best-time-serengeti', 'Planning Guides', 'A month-by-month guide to the Serengeti seasons.', 'The honest answer to when to visit the Serengeti is: there is no bad time...', 'Emnel Adventures', 'https://images.unsplash.com/photo-1516426122078-c23e76319801', '2026-01-15', 'published', 'Best Time to Visit the Serengeti | Emnel Adventures', 'A month-by-month guide to the Serengeti from a local guide team.']
+      example: ['Best Time to Visit the Serengeti', 'best-time-serengeti', 'Planning Guides', 'A month-by-month guide to the Serengeti seasons.', 'The honest answer to when to visit the Serengeti is: there is no bad time...', 'Goldfinch Adventures', 'https://images.unsplash.com/photo-1516426122078-c23e76319801', '2026-01-15', 'published', 'Best Time to Visit the Serengeti | Goldfinch Adventures', 'A month-by-month guide to the Serengeti from a local guide team.']
     }
   },
   faqs: {
@@ -306,7 +333,8 @@ export const RESET_TABLES = [
   'lodges',
   'tours',
   'tour_categories',
-  'destinations'
+  'destinations',
+  'countries'
 ] as const;
 
 export type ResetResult = { table: string; deleted: number; error?: string };

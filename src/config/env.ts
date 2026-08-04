@@ -23,7 +23,7 @@ const envSchema = z.object({
   FRONTEND_URL: z.string().default('http://localhost:5173'),
   SUPABASE_URL: z.string().url().optional().or(z.literal('')),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional().or(z.literal('')),
-  SUPABASE_STORAGE_BUCKET: z.string().default('emnel-media'),
+  SUPABASE_STORAGE_BUCKET: z.string().default('goldfinch-media'),
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters long').default('development-only-change-this-secret'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   ANTHROPIC_API_KEY: z.string().optional().or(z.literal('')),
@@ -33,7 +33,7 @@ const envSchema = z.object({
   // ── Email (transactional) — pluggable provider ────────────────────────────
   // Set EITHER Resend (recommended: just an API key) OR SMTP (your domain
   // mailbox). If neither is set, email sends are skipped (nothing breaks).
-  EMAIL_FROM: z.string().default('Emnel Adventures <onboarding@resend.dev>'),
+  EMAIL_FROM: z.string().default('Goldfinch Adventures <onboarding@resend.dev>'),
   RESEND_API_KEY: z.string().optional().or(z.literal('')),
   SMTP_HOST: z.string().optional().or(z.literal('')),
   SMTP_PORT: z.coerce.number().int().default(587),
@@ -62,7 +62,7 @@ const envSchema = z.object({
   // Analytics event retention: delete analytics_events older than N days (nightly).
   ANALYTICS_RETENTION_DAYS: z.coerce.number().int().default(180),
 
-  // ── Emnel AI Safari Advisor (v2) ──────────────────────────────────────
+  // ── Goldfinch AI Travel Advisor (v2) ──────────────────────────────────────
   AI_ENABLED: boolish(true),
   AI_DAILY_BUDGET_USD: z.coerce.number().default(5),
   AI_MONTHLY_BUDGET_USD: z.coerce.number().default(100),
@@ -112,7 +112,7 @@ if (parsed.data.NODE_ENV === 'production') {
 
 export const env = parsed.data;
 // Comma-separated list of allowed front-end origins for CORS. Trailing slashes are
-// stripped so e.g. "https://emneladventures.com/" matches the browser's origin.
+// stripped so e.g. "https://goldfinch.makutano.co.tz/" matches the browser's origin.
 export const allowedOrigins = env.FRONTEND_URL.split(',')
   .map((origin) => origin.trim().replace(/\/+$/, ''))
   .filter(Boolean);

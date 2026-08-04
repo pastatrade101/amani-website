@@ -12,7 +12,7 @@ export const getImportTemplate = asyncHandler(async (req, res) => {
   const entity = req.params.entity;
   if (!ENTITIES[entity]) throw new AppError(`Unknown import type "${entity}".`, 404);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', `attachment; filename="emnel-${entity}-template.csv"`);
+  res.setHeader('Content-Disposition', `attachment; filename="goldfinch-${entity}-template.csv"`);
   return res.send(buildTemplate(entity));
 });
 

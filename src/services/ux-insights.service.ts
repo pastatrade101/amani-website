@@ -81,8 +81,8 @@ const hasSignal = (c: ClarityInsights, ga4Sessions: number, businessEvents: numb
   (c.configured && (c.totals.sessions ?? 0) > 0) || ga4Sessions > 0 || businessEvents > 5 || leads > 0;
 
 const SYSTEM =
-  'You are a senior website analytics and conversion-rate-optimization analyst for Emnel Adventures, a ' +
-  'premium private Tanzania safari company. You are given REAL analytics metrics from multiple sources. ' +
+  'You are a senior website analytics and conversion-rate-optimization analyst for Goldfinch Adventures, a ' +
+  'premium East Africa travel-planning company. You are given REAL analytics metrics from multiple sources. ' +
   'Produce a concise executive website summary and prioritized, actionable recommendations for a small ' +
   'luxury-travel team. STRICT RULES: (1) Use ONLY the numbers provided — never invent metrics, pages, ' +
   'percentages or events. (2) If a number is null/absent, do not reference it. (3) Every recommendation ' +
