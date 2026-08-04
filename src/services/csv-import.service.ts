@@ -155,8 +155,8 @@ export const ENTITIES: Record<string, Entity> = {
     ],
     refs: [{ col: 'destination', table: 'destinations', fk: 'destination_id', create: { status: 'published' } }],
     template: {
-      headers: ['name', 'slug', 'destination', 'accommodation_level', 'lodge_type', 'description', 'why_we_recommend', 'best_for', 'hero_image_url', 'price_per_night_from', 'currency', 'romantic_rating', 'family_rating', 'website_url', 'is_featured', 'status'],
-      example: ['Namiri Plains', 'namiri-plains', 'Serengeti', 'luxury', 'tented_camp', 'The best big-cat camp in the eastern Serengeti.', 'Unmatched cheetah and lion sightings; our top pick for photographers.', 'Photographers|Couples|Big cats', 'https://images.unsplash.com/photo-1523805009345-7448845a9e53', '1200', 'USD', '9', '7', 'https://example.com', 'true', 'published']
+      headers: ['name', 'slug', 'destination', 'accommodation_level', 'lodge_type', 'description', 'why_we_recommend', 'best_for', 'hero_image_url', 'image_url', 'price_per_night_from', 'currency', 'romantic_rating', 'family_rating', 'website_url', 'is_featured', 'status'],
+      example: ['Namiri Plains', 'namiri-plains', 'Serengeti', 'luxury', 'tented_camp', 'The best big-cat camp in the eastern Serengeti.', 'Unmatched cheetah and lion sightings; our top pick for photographers.', 'Photographers|Couples|Big cats', 'https://images.unsplash.com/photo-1523805009345-7448845a9e53', '', '1200', 'USD', '9', '7', 'https://example.com', 'true', 'published']
     }
   },
   'blog-categories': {
