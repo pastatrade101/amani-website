@@ -15,6 +15,8 @@
     "backfill:thumbnails:prod": "node dist/scripts/backfill-thumbnails.js",
     "backfill:responsive": "tsx src/scripts/backfill-responsive.ts",
     "backfill:responsive:prod": "node dist/scripts/backfill-responsive.js",
+    "content:prune": "tsx src/scripts/prune-content.ts",
+    "content:prune:prod": "node dist/scripts/prune-content.js",
     "email:test": "tsx src/scripts/email-test.ts",
     "email:test:prod": "node dist/scripts/email-test.js"
   },
