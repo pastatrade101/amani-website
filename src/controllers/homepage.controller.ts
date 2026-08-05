@@ -4,6 +4,67 @@ import { AppError, sendSuccess } from '../utils/api-response';
 import { createRecord, softDeleteRecord, updateRecord } from '../utils/supabase-helpers';
 import { getQueryString } from '../utils/query';
 
+type HomepageSectionInput = {
+  section_key?: string;
+  title?: string | null;
+  subtitle?: string | null;
+  content?: string | null;
+  image_url?: string | null;
+  button_text?: string | null;
+  button_url?: string | null;
+  extra_data?: unknown;
+  is_active?: boolean;
+  sort_order?: number;
+};
+
+type PartnerLogo = {
+  image_url: string;
+  name?: string;
+  url?: string;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const cleanString = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+
+const normalizePartnerLogos = (extraData: unknown) => {
+  const extra = isRecord(extraData) ? { ...extraData } : {};
+  const rawLogos = Array.isArray(extra.logos) ? extra.logos : [];
+  const logos = rawLogos
+    .filter(isRecord)
+    .map((logo) => {
+      const imageUrl = cleanString(logo.image_url);
+      if (!imageUrl) return null;
+      const name = cleanString(logo.name);
+      const url = cleanString(logo.url);
+      return {
+        ...(name ? { name } : {}),
+        image_url: imageUrl,
+        ...(url ? { url } : {})
+      };
+    })
+    .filter((logo): logo is PartnerLogo => Boolean(logo));
+
+  return { ...extra, logos };
+};
+
+const normalizeHomepageSectionPayload = (section: HomepageSectionInput): HomepageSectionInput => {
+  const sectionKey = cleanString(section.section_key);
+  const extraData = section.extra_data;
+  const hasPartnerLogos = isRecord(extraData) && Array.isArray(extraData.logos);
+  const normalized: HomepageSectionInput = {
+    ...section,
+    ...(sectionKey ? { section_key: sectionKey } : {})
+  };
+
+  if (sectionKey === 'partners' || hasPartnerLogos) {
+    normalized.extra_data = normalizePartnerLogos(extraData);
+  }
+
+  return normalized;
+};
+
 export const getHomepage = asyncHandler(async (req, res) => {
   const includeInactive = getQueryString(req.query, 'all') === 'true';
 
@@ -21,20 +82,9 @@ export const getHomepage = asyncHandler(async (req, res) => {
 });
 
 export const updateHomepage = asyncHandler(async (req, res) => {
-  type HomepageSectionInput = {
-    section_key: string;
-    title?: string | null;
-    subtitle?: string | null;
-    content?: string | null;
-    image_url?: string | null;
-    button_text?: string | null;
-    button_url?: string | null;
-    extra_data?: unknown;
-    is_active?: boolean;
-    sort_order?: number;
-  };
-
-  const sections = Array.isArray(req.body.sections) ? (req.body.sections as HomepageSectionInput[]) : [];
+  const sections = Array.isArray(req.body.sections)
+    ? (req.body.sections as HomepageSectionInput[]).map(normalizeHomepageSectionPayload)
+    : [];
 
   if (sections.length === 0) {
     throw new AppError('At least one homepage section is required.', 422);
@@ -63,11 +113,11 @@ export const updateHomepage = asyncHandler(async (req, res) => {
 });
 
 export const createHomepageSection = asyncHandler(async (req, res) => {
-  return createRecord(req, res, 'homepage_sections', req.body);
+  return createRecord(req, res, 'homepage_sections', normalizeHomepageSectionPayload(req.body) as Record<string, unknown>);
 });
 
 export const updateHomepageSection = asyncHandler(async (req, res) => {
-  return updateRecord(req, res, 'homepage_sections', req.params.id, req.body);
+  return updateRecord(req, res, 'homepage_sections', req.params.id, normalizeHomepageSectionPayload(req.body) as Record<string, unknown>);
 });
 
 export const deleteHomepageSection = asyncHandler(async (req, res) => {
