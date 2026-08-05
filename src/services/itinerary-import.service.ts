@@ -61,6 +61,17 @@ const normalizeStatus = (value: string | undefined): 'draft' | 'published' | 'ar
   return v === 'published' || v === 'archived' ? v : 'draft';
 };
 
+/** A blank (or absent) cell means "leave whatever is already there" rather than
+ *  "clear it" — the same rule the generic entity importer follows. Without this,
+ *  re-running a file that omits images, pricing tiers, group sizes or a status
+ *  would silently wipe work done in the admin since the previous import. */
+const has = (value: string | undefined): boolean => String(value ?? '').trim() !== '';
+
+/** Assign `value` to `key` only when the CSV actually supplied `raw`. */
+const put = (target: Record<string, unknown>, key: string, raw: string | undefined, value: unknown): void => {
+  if (has(raw)) target[key] = value;
+};
+
 /** Parse the `days` cell: days separated by `||`, fields by `~` in the fixed
  *  order  title ~ accommodation ~ description ~ image_url. Day number = order. */
 const parseDays = (value: string | undefined) =>
@@ -186,20 +197,25 @@ const resolveDestination = async (input: string, country: string, warnings: stri
 };
 
 // ── replace a tour's child rows ─────────────────────────────────────────────
+// Each collection is replaced ONLY when its column carried a value. A blank
+// `price_options` cell leaves existing pricing tiers alone instead of deleting
+// them; the same goes for days, inclusions and exclusions. To empty a
+// collection deliberately, clear it in the admin.
 const replaceChildren = async (
   tourId: string,
+  supplied: { days: boolean; inclusions: boolean; exclusions: boolean; priceOptions: boolean },
   days: ReturnType<typeof parseDays>,
   inclusions: string[],
   exclusions: string[],
   priceOptions: ReturnType<typeof parsePriceOptions>,
   currency: string
 ) => {
-  await Promise.all([
-    supabase.from('itinerary_days').delete().eq('tour_id', tourId),
-    supabase.from('tour_inclusions').delete().eq('tour_id', tourId),
-    supabase.from('tour_exclusions').delete().eq('tour_id', tourId),
-    supabase.from('tour_price_options').delete().eq('tour_id', tourId)
-  ]);
+  const wipes = [];
+  if (supplied.days) wipes.push(supabase.from('itinerary_days').delete().eq('tour_id', tourId));
+  if (supplied.inclusions) wipes.push(supabase.from('tour_inclusions').delete().eq('tour_id', tourId));
+  if (supplied.exclusions) wipes.push(supabase.from('tour_exclusions').delete().eq('tour_id', tourId));
+  if (supplied.priceOptions) wipes.push(supabase.from('tour_price_options').delete().eq('tour_id', tourId));
+  await Promise.all(wipes);
 
   if (days.length) {
     const rows = days.map((d, idx) => ({
@@ -253,46 +269,62 @@ export const importItineraries = async (csvText: string, userId?: string): Promi
       }
       const warnings: string[] = [];
       const slug = slugify(r.slug || title);
-      const currency = (r.currency || 'USD').toUpperCase().slice(0, 3) || 'USD';
       const durationDays = toInt(r.duration_days, 1) || 1;
 
       const categoryId = r.category ? await resolveCategory(r.category, warnings) : null;
       const destinationId = r.destination ? await resolveDestination(r.destination, r.destination_country || 'Tanzania', warnings) : null;
 
+      const existing = await supabase.from('tours').select('id, currency').eq('slug', slug).is('deleted_at', null).maybeSingle();
+
+      // Price tiers need a currency even when the CSV omits the column; fall
+      // back to the currency already on the tour before defaulting to USD.
+      const currency = has(r.currency)
+        ? r.currency.toUpperCase().slice(0, 3)
+        : (existing.data?.currency as string | undefined) || 'USD';
+
+      // Only columns the CSV actually supplied are written. Anything left blank
+      // keeps its current value on an update, and falls back to the column
+      // default on an insert.
       const payload: Record<string, unknown> = {
         title,
         slug,
-        short_description: r.short_description || null,
-        full_description: r.full_description || null,
-        category_id: categoryId,
-        destination_id: destinationId,
-        experience_type: r.experience_type || null,
-        budget_tier: r.budget_tier || null,
-        persona_tags: splitList(r.persona_tags),
-        duration_days: durationDays,
-        duration_nights: toInt(r.duration_nights, Math.max(0, durationDays - 1)),
-        price_from: toNum(r.price_from, 0),
-        currency,
-        group_size_min: r.group_size_min ? toInt(r.group_size_min) : null,
-        group_size_max: r.group_size_max ? toInt(r.group_size_max) : null,
-        minimum_age: r.minimum_age ? toInt(r.minimum_age) : null,
-        difficulty_level: r.difficulty_level || null,
-        start_location: r.start_location || null,
-        end_location: r.end_location || null,
-        highlights: splitList(r.highlights),
-        main_image_url: r.main_image_url || null,
-        banner_image_url: r.banner_image_url || null,
-        status: normalizeStatus(r.status),
-        is_featured: toBool(r.is_featured),
-        is_popular: toBool(r.is_popular),
-        seo_title: r.seo_title || null,
-        meta_title: r.meta_title || null,
-        meta_description: r.meta_description || null,
         updated_by: userId ?? null,
         updated_at: new Date().toISOString()
       };
-
-      const existing = await supabase.from('tours').select('id').eq('slug', slug).is('deleted_at', null).maybeSingle();
+      put(payload, 'short_description', r.short_description, r.short_description);
+      put(payload, 'full_description', r.full_description, r.full_description);
+      put(payload, 'experience_type', r.experience_type, r.experience_type);
+      put(payload, 'budget_tier', r.budget_tier, r.budget_tier);
+      put(payload, 'persona_tags', r.persona_tags, splitList(r.persona_tags));
+      put(payload, 'duration_days', r.duration_days, durationDays);
+      put(payload, 'price_from', r.price_from, toNum(r.price_from, 0));
+      put(payload, 'group_size_min', r.group_size_min, toInt(r.group_size_min));
+      put(payload, 'group_size_max', r.group_size_max, toInt(r.group_size_max));
+      put(payload, 'minimum_age', r.minimum_age, toInt(r.minimum_age));
+      put(payload, 'difficulty_level', r.difficulty_level, r.difficulty_level);
+      put(payload, 'start_location', r.start_location, r.start_location);
+      put(payload, 'end_location', r.end_location, r.end_location);
+      put(payload, 'highlights', r.highlights, splitList(r.highlights));
+      put(payload, 'main_image_url', r.main_image_url, r.main_image_url);
+      put(payload, 'banner_image_url', r.banner_image_url, r.banner_image_url);
+      put(payload, 'status', r.status, normalizeStatus(r.status));
+      put(payload, 'is_featured', r.is_featured, toBool(r.is_featured));
+      put(payload, 'is_popular', r.is_popular, toBool(r.is_popular));
+      put(payload, 'seo_title', r.seo_title, r.seo_title);
+      put(payload, 'meta_title', r.meta_title, r.meta_title);
+      put(payload, 'meta_description', r.meta_description, r.meta_description);
+      if (has(r.currency)) payload.currency = currency;
+      // A resolved link only; an unresolvable name already raised a warning and
+      // must not blank out a link that is already correct in the CMS.
+      if (categoryId) payload.category_id = categoryId;
+      if (destinationId) payload.destination_id = destinationId;
+      // Nights stay consistent with days: derive them whenever days changed and
+      // the nights column was left blank.
+      if (has(r.duration_nights)) {
+        payload.duration_nights = toInt(r.duration_nights, Math.max(0, durationDays - 1));
+      } else if (has(r.duration_days)) {
+        payload.duration_nights = Math.max(0, durationDays - 1);
+      }
 
       let tourId: string;
       let action: 'created' | 'updated';
@@ -316,7 +348,22 @@ export const importItineraries = async (csvText: string, userId?: string): Promi
       const inclusions = splitList(r.inclusions);
       const exclusions = splitList(r.exclusions);
       const priceOptions = parsePriceOptions(r.price_options);
-      await replaceChildren(tourId, days, inclusions, exclusions, priceOptions, currency);
+      const supplied = {
+        days: has(r.days),
+        inclusions: has(r.inclusions),
+        exclusions: has(r.exclusions),
+        priceOptions: has(r.price_options)
+      };
+      await replaceChildren(tourId, supplied, days, inclusions, exclusions, priceOptions, currency);
+
+      // Tell the operator what was deliberately left alone, so a re-import that
+      // preserves images or pricing does not look like it silently skipped them.
+      if (action === 'updated') {
+        const kept = Object.entries(supplied)
+          .filter(([, wasSupplied]) => !wasSupplied)
+          .map(([name]) => (name === 'priceOptions' ? 'price options' : name));
+        if (kept.length) warnings.push(`Column blank — kept existing ${kept.join(', ')}.`);
+      }
 
       results.push({
         line,
