@@ -3,6 +3,7 @@ import multer from 'multer';
 import { deleteImage, uploadImage, uploadLottie, uploadVideo } from '../controllers/upload.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/permission.middleware';
+import { ALLOWED_IMAGE_MESSAGE, ALLOWED_IMAGE_MIME_TYPES } from '../services/upload.service';
 import { AppError } from '../utils/api-response';
 
 const router = Router();
@@ -13,9 +14,8 @@ const imageUpload = multer({
     fileSize: 5 * 1024 * 1024
   },
   fileFilter: (_req, file, callback) => {
-    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      callback(new AppError('Only jpg, jpeg, png, and webp images are allowed.', 400));
+    if (!(ALLOWED_IMAGE_MIME_TYPES as readonly string[]).includes(file.mimetype)) {
+      callback(new AppError(ALLOWED_IMAGE_MESSAGE, 400));
       return;
     }
 

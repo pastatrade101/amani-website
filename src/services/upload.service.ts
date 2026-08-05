@@ -74,6 +74,13 @@ export const extractImageMeta = async (buffer: Buffer): Promise<ImageMeta> => {
 
 let bucketReadyPromise: Promise<void> | null = null;
 
+// Single source of truth for what the media library accepts, so the multer
+// filter, the storage writer and the error message can never drift apart.
+// AVIF is decoded by sharp via libheif, so thumbnails, blurhash and the
+// responsive ladder all work from an AVIF original the same as any other image.
+export const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const;
+export const ALLOWED_IMAGE_MESSAGE = 'Only jpg, jpeg, png, webp, and avif images are allowed.';
+
 const extensionFromMime = (mimeType: string) => {
   const map: Record<string, string> = {
     'application/json': 'json',
@@ -82,6 +89,7 @@ const extensionFromMime = (mimeType: string) => {
     'image/png': 'png',
     'text/json': 'json',
     'image/webp': 'webp',
+    'image/avif': 'avif',
     'video/mp4': 'mp4',
     'video/webm': 'webm',
     'video/quicktime': 'mov'
@@ -160,7 +168,7 @@ const uploadToStorage = async (file: Express.Multer.File, folder: string, allowe
 };
 
 export const uploadImageToStorage = async (file: Express.Multer.File, folder = 'uploads') => {
-  const result = await uploadToStorage(file, folder, ['image/jpeg', 'image/png', 'image/webp'], 'Only jpg, jpeg, png, and webp images are allowed.');
+  const result = await uploadToStorage(file, folder, [...ALLOWED_IMAGE_MIME_TYPES], ALLOWED_IMAGE_MESSAGE);
 
   // Generate a small webp thumbnail. This is a pure optimization — if it fails
   // for any reason, the upload still succeeds and we fall back to the original.
