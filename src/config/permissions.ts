@@ -86,6 +86,8 @@ export const permissions = [
   'messages.archive',
   'settings.view',
   'settings.update',
+  'exchange_rates.view',
+  'exchange_rates.refresh',
   'admin_users.view',
   'admin_users.create',
   'admin_users.update',
@@ -206,7 +208,16 @@ export const defaultRolePermissions: Record<AdminRole, PermissionKey[]> = {
     'messages.update',
     'messages.archive'
   ],
-  finance_manager: ['dashboard.view', 'bookings.view', 'payments.view', 'payments.create', 'payments.update', 'payments.refund'],
+  finance_manager: [
+    'dashboard.view',
+    'bookings.view',
+    'payments.view',
+    'payments.create',
+    'payments.update',
+    'payments.refund',
+    'exchange_rates.view',
+    'exchange_rates.refresh'
+  ],
   editor: [
     'dashboard.view',
     'tours.view',
@@ -243,6 +254,7 @@ export const defaultRolePermissions: Record<AdminRole, PermissionKey[]> = {
     'homepage.view',
     'messages.view',
     'settings.view',
+    'exchange_rates.view',
     'ai_conversations.view',
     'tour_matches.view'
   ]

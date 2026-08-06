@@ -4,6 +4,7 @@ import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { cleanSearch, getQueryString } from '../utils/query';
 import { isForbiddenKey } from '../schemas/settings.schema';
+import { CURRENCY_SETTINGS_KEY, validateCurrencyConfigList } from '../config/currencies';
 
 // Keys managed by dedicated modules — not editable/deletable via generic settings.
 const RESERVED_KEYS = ['branding'];
@@ -35,6 +36,17 @@ const validateValueByType = (type: string | undefined, value: unknown) => {
       break;
     default:
       break; // text, textarea, phone, image, json, select — accept as-is
+  }
+};
+
+const validateSettingValue = (key: string, type: string | undefined, value: unknown) => {
+  validateValueByType(type, value);
+  if (key === CURRENCY_SETTINGS_KEY) {
+    try {
+      validateCurrencyConfigList(value);
+    } catch (error) {
+      throw new AppError(error instanceof Error ? error.message : 'Supported currencies are invalid.', 422);
+    }
   }
 };
 
@@ -101,7 +113,7 @@ export const createSetting = asyncHandler(async (req, res) => {
   const { data: existing } = await supabase.from('website_settings').select('id,deleted_at').eq('setting_key', key).maybeSingle();
   if (existing && !existing.deleted_at) throw new AppError('A setting with that key already exists.', 409);
 
-  validateValueByType(body.setting_type as string, body.setting_value);
+  validateSettingValue(key, body.setting_type as string, body.setting_value);
 
   const payload = { ...body, setting_value: body.setting_value ?? null, updated_by: req.user?.sub ?? null, deleted_at: null };
 
@@ -132,7 +144,7 @@ export const updateSetting = asyncHandler(async (req, res) => {
 
   const body = req.body as Record<string, unknown>;
   const effectiveType = (body.setting_type as string | undefined) ?? previous?.setting_type ?? 'text';
-  validateValueByType(effectiveType, body.setting_value);
+  validateSettingValue(key, effectiveType, body.setting_value);
 
   const payload = {
     setting_key: key,

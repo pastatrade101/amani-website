@@ -48,6 +48,21 @@ Validation happens in `backend/src/config/env.ts` (Zod). In `production` the app
 | `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile (AI abuse protection). When set, it's enforced |
 | `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN` | Reserved for WhatsApp notifications |
 
+### Exchange rates (Open Exchange Rates)
+
+All package prices remain stored in USD. The backend refreshes Open Exchange Rates into a local cache and the frontend reads only `/api/currencies`.
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `OPEN_EXCHANGE_RATES_APP_ID` | — | **Backend only**. Never expose in `PUBLIC_*` env or browser code |
+| `EXCHANGE_RATE_REFRESH_ENABLED` | `true` | Starts the in-process scheduler |
+| `EXCHANGE_RATE_REFRESH_CRON` | `0 6,18 * * *` | Minute/hour cron fields used by the scheduler |
+| `EXCHANGE_RATE_TIMEZONE` | `Africa/Dar_es_Salaam` | Timezone for schedule checks |
+| `EXCHANGE_RATE_CACHE_HOURS` | `12` | Snapshot expiry window |
+| `EXCHANGE_RATE_MARKUP_PERCENT` | `0` | Applied only to displayed conversions, not provider rates |
+
+The configured default runs at 06:00 and 18:00 Africa/Dar_es_Salaam, which is about 60 provider requests per month.
+
 ### Tuning / retention
 
 | Variable | Default | Notes |

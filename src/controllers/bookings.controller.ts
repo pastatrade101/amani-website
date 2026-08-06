@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase';
 import { safeAudit } from '../services/audit.service';
 import { generateBookingCode } from '../services/booking-code.service';
+import { currencyService } from '../services/currency.service';
 import { sendBookingNotification, syncBookingToHubSpot } from '../services/notification.service';
 import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
@@ -69,6 +70,12 @@ export const createBooking = asyncHandler(async (req, res) => {
   }
 
   const bookingCode = await generateBookingCode();
+  const selectedCurrencyInput = String(payload.selected_currency ?? payload.currency ?? 'USD').trim().toUpperCase();
+  const selectedCurrency = (await currencyService.isConfiguredSupported(selectedCurrencyInput)) ? selectedCurrencyInput : 'USD';
+  delete payload.selected_currency;
+
+  const leadContext = (payload.lead_context as Record<string, unknown> | null) ?? {};
+  if (!isAdmin) leadContext.selected_currency = selectedCurrency;
 
   const insertData = {
     ...payload,
@@ -76,7 +83,7 @@ export const createBooking = asyncHandler(async (req, res) => {
     status: 'pending',
     payment_status: 'unpaid',
     source,
-    lead_context: (payload.lead_context as Record<string, unknown> | null) ?? {}
+    lead_context: leadContext
   };
 
   const { data, error } = await supabase

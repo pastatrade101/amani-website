@@ -30,6 +30,18 @@ const envSchema = z.object({
   HUBSPOT_ACCESS_TOKEN: z.string().optional().or(z.literal('')),
   HUBSPOT_PORTAL_ID: z.string().optional().or(z.literal('')),
 
+  // ── Exchange rates (backend only) ─────────────────────────────────────────
+  // Open Exchange Rates App ID must never be exposed to the browser. Visitor
+  // requests read cached snapshots only; scheduled/admin refreshes use this key.
+  OPEN_EXCHANGE_RATES_APP_ID: z.string().optional().or(z.literal('')),
+  EXCHANGE_RATE_REFRESH_ENABLED: boolish(true),
+  EXCHANGE_RATE_REFRESH_CRON: z.string().default('0 6,18 * * *'),
+  EXCHANGE_RATE_TIMEZONE: z.string().default('Africa/Dar_es_Salaam'),
+  EXCHANGE_RATE_CACHE_HOURS: z.coerce.number().positive().default(12),
+  EXCHANGE_RATE_MARKUP_PERCENT: z.coerce.number().min(0).max(25).default(0),
+  EXCHANGE_RATE_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(8000),
+  EXCHANGE_RATE_LOCK_TTL_SECONDS: z.coerce.number().int().positive().default(900),
+
   // ── Email (transactional) — pluggable provider ────────────────────────────
   // Set EITHER Resend (recommended: just an API key) OR SMTP (your domain
   // mailbox). If neither is set, email sends are skipped (nothing breaks).
