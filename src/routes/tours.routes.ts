@@ -5,7 +5,7 @@ import { listTourPricingOptions } from '../controllers/pricing-options.controlle
 import { listTourInclusions } from '../controllers/tour-inclusions.controller';
 import { listTourExclusions } from '../controllers/tour-exclusions.controller';
 import { listTourImagesForTour } from '../controllers/tour-images.controller';
-import { createTour, deleteTour, getTour, listTours, updateTour } from '../controllers/tours.controller';
+import { bulkDeleteTours, createTour, deleteTour, getTour, listTours, updateTour } from '../controllers/tours.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/permission.middleware';
 import { validate } from '../middleware/validate.middleware';
@@ -20,6 +20,8 @@ router.get('/:tourId/pricing-options', authenticate, requirePermission('tours.vi
 router.get('/:tourId/inclusions', authenticate, requirePermission('tours.view'), listTourInclusions);
 router.get('/:tourId/exclusions', authenticate, requirePermission('tours.view'), listTourExclusions);
 router.get('/:tourId/images', authenticate, requirePermission('tours.view'), listTourImagesForTour);
+// Registered before '/:slug' so the literal path is not read as a slug.
+router.post('/bulk-delete', authenticate, requirePermission('tours.delete'), bulkDeleteTours);
 router.get('/:slug', getTour);
 router.post('/', authenticate, requirePermission('tours.create'), validate({ body: tourCreateSchema }), createTour);
 router.put('/:id', authenticate, requirePermission('tours.update'), validate({ body: tourUpdateSchema }), updateTour);

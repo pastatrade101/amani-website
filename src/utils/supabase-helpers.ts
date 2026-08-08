@@ -205,6 +205,32 @@ export const softDeleteRecord = async (res: Response, table: string, id: string,
   return sendSuccess(res, 'Record deleted successfully.');
 };
 
+export const bulkSoftDeleteRecords = async (res: Response, table: string, ids: string[], req?: Request) => {
+  // One statement instead of one request per row, but still one audit entry per
+  // record so the trail matches a single delete.
+  const { data: previous } = await supabase.from(table).select('*').in('id', ids).is('deleted_at', null);
+  const found = previous ?? [];
+
+  if (!found.length) return sendSuccess(res, 'Nothing to delete.', { deleted: 0, ids: [] });
+
+  const foundIds = found.map((row) => row.id as string);
+  const { error } = await supabase
+    .from(table)
+    .update({ deleted_at: new Date().toISOString() })
+    .in('id', foundIds);
+
+  if (error) throw new AppError(`Unable to delete ${table}.`, 500, [error]);
+
+  for (const row of found) {
+    await safeAudit({ action: 'delete', entityId: row.id as string, entityType: table, oldData: row, req });
+  }
+
+  return sendSuccess(res, `Deleted ${foundIds.length} record${foundIds.length === 1 ? '' : 's'}.`, {
+    deleted: foundIds.length,
+    ids: foundIds
+  });
+};
+
 export const deleteRecord = async (res: Response, table: string, id: string, req?: Request) => {
   const { data: previous } = await supabase.from(table).select('*').eq('id', id).maybeSingle();
   const { error } = await supabase.from(table).delete().eq('id', id);

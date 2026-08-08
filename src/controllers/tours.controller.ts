@@ -2,6 +2,7 @@ import { asyncHandler } from '../utils/async-handler';
 import { supabase } from '../config/supabase';
 import { AppError, sendSuccess } from '../utils/api-response';
 import {
+  bulkSoftDeleteRecords,
   createRecord,
   listRecords,
   softDeleteRecord,
@@ -56,4 +57,20 @@ export const updateTour = asyncHandler(async (req, res) => {
 
 export const deleteTour = asyncHandler(async (req, res) => {
   return softDeleteRecord(res, 'tours', req.params.id, req);
+});
+
+// Bulk delete for the admin list's select-all action. Capped so a runaway or
+// malicious request cannot soft-delete the whole catalogue in one call.
+const BULK_DELETE_LIMIT = 200;
+
+export const bulkDeleteTours = asyncHandler(async (req, res) => {
+  const ids = Array.isArray(req.body?.ids) ? (req.body.ids as unknown[]).map(String) : [];
+  const unique = [...new Set(ids.filter(Boolean))];
+
+  if (!unique.length) throw new AppError('Provide at least one tour id.', 400);
+  if (unique.length > BULK_DELETE_LIMIT) {
+    throw new AppError(`Cannot delete more than ${BULK_DELETE_LIMIT} tours at once.`, 400);
+  }
+
+  return bulkSoftDeleteRecords(res, 'tours', unique, req);
 });
