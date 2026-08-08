@@ -128,3 +128,16 @@ export const env = parsed.data;
 export const allowedOrigins = env.FRONTEND_URL.split(',')
   .map((origin) => origin.trim().replace(/\/+$/, ''))
   .filter(Boolean);
+
+/** Outside production, accept any localhost/127.0.0.1 port.
+ *
+ *  FRONTEND_URL pins a single port, but Vite silently moves to the next free one
+ *  (5173 -> 5174 -> …) whenever the configured port is taken. When that happened
+ *  every browser-side call failed CORS preflight, so the nav mega menus — which
+ *  fetch their links client-side — rendered as plain links with no dropdown.
+ *  Production still matches FRONTEND_URL exactly. */
+export const isOriginAllowed = (origin: string): boolean => {
+  if (allowedOrigins.includes(origin)) return true;
+  if (env.NODE_ENV === 'production') return false;
+  return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(origin);
+};

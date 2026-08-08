@@ -3,7 +3,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { allowedOrigins, env } from './config/env';
+import { env, isOriginAllowed } from './config/env';
 import authRoutes from './routes/auth.routes';
 import aiTravelAdvisorRoutes from './routes/ai-travel-advisor.routes';
 import brandingRoutes from './routes/branding.routes';
@@ -66,7 +66,7 @@ app.use(helmet());
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || isOriginAllowed(origin)) {
         callback(null, true);
         return;
       }
