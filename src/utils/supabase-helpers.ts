@@ -231,6 +231,35 @@ export const bulkSoftDeleteRecords = async (res: Response, table: string, ids: s
   });
 };
 
+export const bulkUpdateRecords = async (
+  res: Response,
+  table: string,
+  ids: string[],
+  patch: Record<string, unknown>,
+  req?: Request
+) => {
+  const { data: previous } = await supabase.from(table).select('*').in('id', ids).is('deleted_at', null);
+  const found = previous ?? [];
+  if (!found.length) return sendSuccess(res, 'Nothing to update.', { updated: 0, ids: [] });
+
+  const foundIds = found.map((row) => row.id as string);
+  const { error } = await supabase
+    .from(table)
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .in('id', foundIds);
+
+  if (error) throw new AppError(`Unable to update ${table}.`, 500, [error]);
+
+  for (const row of found) {
+    await safeAudit({ action: 'update', entityType: table, entityId: row.id as string, oldData: row, newData: { ...row, ...patch }, req });
+  }
+
+  return sendSuccess(res, `Updated ${foundIds.length} record${foundIds.length === 1 ? '' : 's'}.`, {
+    updated: foundIds.length,
+    ids: foundIds
+  });
+};
+
 export const deleteRecord = async (res: Response, table: string, id: string, req?: Request) => {
   const { data: previous } = await supabase.from(table).select('*').eq('id', id).maybeSingle();
   const { error } = await supabase.from(table).delete().eq('id', id);
