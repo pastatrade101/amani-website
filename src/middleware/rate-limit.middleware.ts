@@ -1,15 +1,36 @@
 import rateLimit from 'express-rate-limit';
 
-export const publicFormLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
+const tooMany = {
+  success: false,
+  message: 'Too many submissions. Please try again later.',
+  errors: []
+};
+
+/**
+ * Two layers rather than one, because a single hourly cap has to choose between
+ * stopping a bot and serving a shared IP.
+ *
+ * The burst limiter is the anti-bot one: nothing legitimate submits five
+ * enquiries in two minutes. The hourly limiter is the backstop, and is set high
+ * enough that an office, hotel or conference behind one NAT'd address can all
+ * enquire — which the previous five-an-hour cap made impossible. Double-taps
+ * are not this layer's job at all; the idempotency key handles those without
+ * spending any budget.
+ */
+export const publicFormBurstLimiter = rateLimit({
+  windowMs: 2 * 60 * 1000,
   limit: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Too many submissions. Please try again later.',
-    errors: []
-  }
+  message: tooMany
+});
+
+export const publicFormLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: tooMany
 });
 
 // Trip portal: throttle token exchange (slows brute force, though 256-bit

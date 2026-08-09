@@ -7,12 +7,18 @@ import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { cleanSearch, getPagination, getQueryString, paginationMeta } from '../utils/query';
 import { softDeleteRecord } from '../utils/supabase-helpers';
+import { ENQUIRY_FORM_TYPES } from '../schemas/bookings.schema';
 
 const listSelect = '*, tours(title,slug)';
 const detailSelect =
   '*, tours(id,title,slug,price_from,currency,main_image_url,duration_days,destinations!tours_destination_id_fkey(name,slug))';
 
-const PUBLIC_SOURCES = ['website_booking_form', 'plan_my_trip'];
+const PUBLIC_SOURCES = [
+  ...ENQUIRY_FORM_TYPES,
+  'website_booking_form',
+  'plan_my_trip',
+  'email_itinerary'
+] as string[];
 
 const nullifyEmpties = (input: Record<string, unknown>) => {
   const out: Record<string, unknown> = {};
@@ -41,10 +47,29 @@ export const createBooking = asyncHandler(async (req, res) => {
   if (!isAdmin && !PUBLIC_SOURCES.includes(source)) source = 'website_booking_form';
 
   // ── Anti-spam: duplicate guard ──────────────────────────────────────────────
-  // Protect against double-taps / refresh re-posts: if the same email already
-  // submitted for the same trip (or a general request) in the last 2 minutes,
-  // return that existing request instead of creating a duplicate row.
-  if (!isAdmin) {
+  // Preferred path: the form sends a stable idempotency_key, and the unique
+  // index on that column is what actually enforces uniqueness — including
+  // against two requests racing in parallel, which no read-then-write check can
+  // catch. The insert below turns the resulting 23505 into the existing row.
+  const idempotencyKey = String(payload.idempotency_key ?? '').trim();
+  if (!idempotencyKey) delete payload.idempotency_key;
+
+  if (!isAdmin && idempotencyKey) {
+    const { data: existing } = await supabase
+      .from('booking_requests')
+      .select(detailSelect)
+      .eq('idempotency_key', idempotencyKey)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (existing) return sendSuccess(res, 'Booking request already received.', existing, 201);
+  }
+
+  // Fallback for the older forms, which send no key. Scoped by source as well
+  // as tour: the contextual forms all leave tour_id null, so without that the
+  // homepage planner and a category enquiry from the same person collapse into
+  // each other and the visitor gets back somebody else's request.
+  if (!isAdmin && !idempotencyKey) {
     const email = String(payload.email ?? '').trim();
     if (email) {
       const sinceIso = new Date(Date.now() - 2 * 60 * 1000).toISOString();
@@ -52,6 +77,7 @@ export const createBooking = asyncHandler(async (req, res) => {
         .from('booking_requests')
         .select(detailSelect)
         .ilike('email', email)
+        .eq('source', source)
         .gte('created_at', sinceIso)
         .is('deleted_at', null);
       dupQuery = payload.tour_id
@@ -92,7 +118,22 @@ export const createBooking = asyncHandler(async (req, res) => {
     .select(detailSelect)
     .single();
 
-  if (error) throw new AppError('Unable to submit booking request.', 500, [error]);
+  if (error) {
+    // 23505 = unique violation on idempotency_key: two submissions raced, and
+    // this one lost. The winner is the real record, so hand that back rather
+    // than showing the visitor an error for a request that did go through.
+    if (error.code === '23505' && idempotencyKey) {
+      const { data: winner } = await supabase
+        .from('booking_requests')
+        .select(detailSelect)
+        .eq('idempotency_key', idempotencyKey)
+        .maybeSingle();
+
+      if (winner) return sendSuccess(res, 'Booking request already received.', winner, 201);
+    }
+
+    throw new AppError('Unable to submit booking request.', 500, [error]);
+  }
 
   // Fire-and-forget side effects — must never block or fail booking creation.
   void sendBookingNotification(data as Record<string, unknown>);

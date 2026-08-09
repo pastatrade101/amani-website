@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { env } from '../config/env';
 import { countSessionMessagesToday } from '../services/ai-cost-control.service';
+import { verifyTurnstile } from '../services/turnstile.service';
 import { sendError } from '../utils/api-response';
 
 // ----------------------------------------------------------------------------
@@ -33,21 +34,6 @@ const readCookie = (header: string | undefined, name: string): string | undefine
 
 const hashIp = (ip: string | undefined): string => createHash('sha256').update(`${ip ?? 'unknown'}:${env.JWT_SECRET}`).digest('hex').slice(0, 32);
 
-const verifyTurnstile = async (token: string | undefined, ip: string | undefined): Promise<boolean> => {
-  if (!env.TURNSTILE_SECRET_KEY) return false; // not configured → treated as unverified, but not blocked
-  if (!token) return false;
-  try {
-    const form = new URLSearchParams();
-    form.append('secret', env.TURNSTILE_SECRET_KEY);
-    form.append('response', token);
-    if (ip) form.append('remoteip', ip);
-    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: form });
-    const data = (await res.json().catch(() => null)) as { success?: boolean } | null;
-    return Boolean(data?.success);
-  } catch {
-    return false;
-  }
-};
 
 /**
  * Establish/verify the AI session token, hash the IP, and run the Turnstile

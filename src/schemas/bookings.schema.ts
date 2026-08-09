@@ -13,9 +13,23 @@ export const BOOKING_STATUSES = [
 
 export const PAYMENT_STATUSES = ['unpaid', 'partially_paid', 'paid', 'refunded', 'failed'] as const;
 
+/**
+ * The three contextual enquiry forms. These are stored in `source`, which is a
+ * free-text column — no migration was needed to introduce them, and the older
+ * values below keep working so nothing already in the table is orphaned.
+ */
+export const ENQUIRY_FORM_TYPES = ['homepage_trip_planner', 'category_enquiry', 'tour_enquiry'] as const;
+
+export type EnquiryFormType = (typeof ENQUIRY_FORM_TYPES)[number];
+
 export const BOOKING_SOURCES = [
+  ...ENQUIRY_FORM_TYPES,
+  // Retained: existing rows and the older forms still submit these.
   'website_booking_form',
   'plan_my_trip',
+  // The tour-page email capture has always sent this and has always been
+  // rejected by the enum, so every one of those submissions 400'd.
+  'email_itinerary',
   'ai_handoff',
   'whatsapp',
   'admin_created',
@@ -31,7 +45,17 @@ const optionalDate = z
   .optional()
   .nullable();
 
-// Flexible lead details captured by Plan My Trip / AI handoff.
+/**
+ * Flexible lead details captured by the enquiry forms, Plan My Trip and the AI
+ * handoff. Deliberately permissive: three older forms already write their own
+ * (drifted) key shapes, and tightening this would reject submissions that work
+ * today. The contextual forms write the documented shape below; everything else
+ * is passed through untouched.
+ *
+ *   { v, form_type, page: {url,title,referrer}, utm: {...},
+ *     category: {id,name,slug}, tour: {id,title,slug,price_from,currency,duration_days},
+ *     language, consent: {marketing}, answers: {...} }
+ */
 const leadContextSchema = z.record(z.unknown()).optional().nullable();
 
 export const bookingCreateSchema = z.object({
@@ -51,6 +75,13 @@ export const bookingCreateSchema = z.object({
   source: sourceEnum.default('website_booking_form'),
   ai_conversation_id: uuidOrEmpty,
   lead_context: leadContextSchema,
+  // Client-generated, stable for the lifetime of one filled-in form. The unique
+  // index on this column is what actually stops double submissions; without it
+  // the controller can only fall back to a time-window guess.
+  idempotency_key: z.string().min(8).max(128).optional().nullable(),
+  // Turnstile token, only ever required once a submitter looks like a script
+  // (see form-guard.middleware). Read before validation and dropped here.
+  captcha_token: z.string().max(4096).optional().nullable(),
   // Honeypot — must stay empty for humans. Kept in the schema (zod strips unknown
   // keys) so the controller can inspect it, then it is dropped before insert.
   hp_company: z.string().max(120).optional().nullable()

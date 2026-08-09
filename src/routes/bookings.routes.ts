@@ -12,7 +12,8 @@ import {
 } from '../controllers/bookings.controller';
 import { authenticate, optionalAuthenticate } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/permission.middleware';
-import { publicFormLimiter } from '../middleware/rate-limit.middleware';
+import { formGuard } from '../middleware/form-guard.middleware';
+import { publicFormBurstLimiter, publicFormLimiter } from '../middleware/rate-limit.middleware';
 import { validate } from '../middleware/validate.middleware';
 import {
   bookingAssignSchema,
@@ -26,7 +27,7 @@ const router = Router();
 
 // Public booking submission (website booking form + plan my trip). Rate limited.
 // optionalAuthenticate lets admin-created bookings be audited without blocking the public.
-router.post('/', optionalAuthenticate, publicFormLimiter, validate({ body: bookingCreateSchema }), createBooking);
+router.post('/', optionalAuthenticate, publicFormBurstLimiter, publicFormLimiter, formGuard, validate({ body: bookingCreateSchema }), createBooking);
 
 router.get('/', authenticate, requirePermission('bookings.view'), listBookings);
 router.get('/code/:bookingCode', authenticate, requirePermission('bookings.view'), getBookingByCode);

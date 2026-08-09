@@ -67,6 +67,22 @@ export const sendEmail = async (mail: Mail): Promise<boolean> => {
   }
 };
 
+/**
+ * Escapes a value for interpolation into email HTML.
+ *
+ * Everything a visitor types — name, message, special requests — ends up in the
+ * staff notification. Without this, an enquiry can inject markup and links into
+ * an email that arrives from our own domain, which is exactly the kind of mail
+ * a colleague trusts.
+ */
+export const escapeHtml = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 // A minimal, on-brand HTML shell so transactional emails look consistent.
 export const emailLayout = (heading: string, bodyHtml: string, cta?: { label: string; url: string }): string => `
   <div style="margin:0;background:#f4f6f4;padding:24px;font-family:Inter,Arial,sans-serif;color:#18211f">
