@@ -464,7 +464,8 @@ export const RICH_TEXT_COLUMNS: Record<string, readonly string[]> = {
   travel_styles: ['description'],
   comparisons: ['intro', 'verdict'],
   // The admin route is /admin/categories, but the table is tour_categories.
-  tour_categories: ['description']
+  // highlights is text[], edited as individual bullets like tours.highlights.
+  tour_categories: ['description', 'highlights']
 };
 
 /**
