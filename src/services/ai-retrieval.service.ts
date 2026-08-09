@@ -1,5 +1,6 @@
 import { env } from '../config/env';
 import { supabase } from '../config/supabase';
+import { toPlainText } from '../utils/rich-text';
 
 // ----------------------------------------------------------------------------
 // Semantic layer (§10): pluggable embeddings + pgvector search + answer cache.
@@ -160,7 +161,7 @@ export const embedCmsContent = async (): Promise<{ embedded: number; skipped: nu
 
   const { data: tours } = await supabase
     .from('tours')
-    .select('id,title,short_description,persona_tags,budget_tier,destinations(name,country),tour_categories(name)')
+    .select('id,title,short_description,persona_tags,budget_tier,destinations!tours_destination_id_fkey(name,country),tour_categories(name)')
     .eq('status', 'published')
     .is('deleted_at', null)
     .limit(500);
@@ -179,13 +180,20 @@ export const embedCmsContent = async (): Promise<{ embedded: number; skipped: nu
     bump(await upsertEmbedding('tour', String(t.id), content));
   }
 
+  // Long-form columns hold rich text now, so they are flattened before being
+  // embedded — markup would otherwise skew the vectors and eat the 4000-char
+  // budget with tag noise. The stored content is also reused verbatim as an
+  // answer, which is a second reason it must be prose.
   for (const d of (destinations ?? []) as Array<Record<string, unknown>>) {
-    const content = [d.name, d.country, d.short_description, d.description].filter(Boolean).join(' — ').slice(0, 4000);
+    const content = [d.name, d.country, d.short_description, toPlainText(d.description)]
+      .filter(Boolean)
+      .join(' — ')
+      .slice(0, 4000);
     bump(await upsertEmbedding('destination', String(d.id), content));
   }
 
   for (const f of (faqs ?? []) as Array<Record<string, unknown>>) {
-    const content = [f.question, f.answer].filter(Boolean).join(' — ').slice(0, 4000);
+    const content = [f.question, toPlainText(f.answer)].filter(Boolean).join(' — ').slice(0, 4000);
     bump(await upsertEmbedding('faq', String(f.id), content));
   }
 

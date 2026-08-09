@@ -68,7 +68,7 @@ export const searchTours = async (intent: ToursIntent, ctx: AdvisorContext): Pro
   const { data, error } = await supabase
     .from('tours')
     .select(
-      'id,title,slug,short_description,persona_tags,duration_days,budget_tier,price_from,currency,is_featured,is_popular,seats_remaining,destinations(name,slug,country),tour_categories(name,slug)'
+      'id,title,slug,short_description,persona_tags,duration_days,budget_tier,price_from,currency,is_featured,is_popular,seats_remaining,destinations!tours_destination_id_fkey(name,slug,country),tour_categories(name,slug)'
     )
     .eq('status', 'published')
     .eq('is_available', true)

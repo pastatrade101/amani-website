@@ -9,6 +9,7 @@ import { classifyMessage } from './ai-router.service';
 import { executeTool, getSettings, searchTours, type AdvisorContext, type PageContext, type Recommendation } from './ai-tools.service';
 import { lookupAnswerCache, searchFaqSemantic, storeAnswerCache } from './ai-retrieval.service';
 import { logUsage, type AiUsage, type RequestStatus } from './ai-usage.service';
+import { toPlainText } from '../utils/rich-text';
 import { syncToHubSpot } from './hubspot.service';
 
 // ----------------------------------------------------------------------------
@@ -280,11 +281,14 @@ export const runAdvisorTurn = async (input: AdvisorTurnInput): Promise<AdvisorTu
     // cms_faq_no_ai — try a semantic FAQ match first (§10), else generic.
     const faqMatch = await searchFaqSemantic(input.message);
     if (faqMatch) {
-      let answer = faqMatch.content;
+      // Embeddings written before this feature landed may still hold markup.
+      let answer = toPlainText(faqMatch.content);
       try {
         const { data: faqRow } = await supabase.from('faqs').select('answer').eq('id', faqMatch.sourceId).maybeSingle();
         const a = (faqRow as { answer?: string } | null)?.answer;
-        if (a) answer = a;
+        // FAQ answers are rich text now. The chat bubble escapes whatever it is
+        // given, so markup would reach the visitor as literal "<p>" tags.
+        if (a) answer = toPlainText(a);
       } catch {
         // fall back to the embedded content
       }

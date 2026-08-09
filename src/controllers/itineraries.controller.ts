@@ -3,8 +3,9 @@ import { safeAudit } from '../services/audit.service';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { asyncHandler } from '../utils/async-handler';
 import { cleanSearch, getPagination, getQueryString, paginationMeta } from '../utils/query';
+import { sanitizeRichFields } from '../utils/rich-text';
 
-const select = '*, tours(id,title,slug,duration_days,duration_nights,status,destinations(name,slug,country))';
+const select = '*, tours(id,title,slug,duration_days,duration_nights,status,destinations!tours_destination_id_fkey(name,slug,country))';
 
 const duplicateDayExists = async (tourId: string, dayNumber: number, excludeId?: string) => {
   let query = supabase
@@ -77,11 +78,15 @@ export const getItinerary = asyncHandler(async (req, res) => {
 });
 
 export const createItinerary = asyncHandler(async (req, res) => {
-  const payload = req.body as Record<string, unknown> & { day_number: number; tour_id: string };
+  const body = req.body as Record<string, unknown> & { day_number: number; tour_id: string };
 
-  if (await duplicateDayExists(payload.tour_id, payload.day_number)) {
+  if (await duplicateDayExists(body.tour_id, body.day_number)) {
     throw new AppError('This tour already has an itinerary day with that day number.', 409);
   }
+
+  // Itinerary days have their own controller rather than the shared
+  // createRecord helper, so the rich-text gate has to be applied by hand here.
+  const payload = sanitizeRichFields('itinerary_days', body);
 
   const { data, error } = await supabase
     .from('itinerary_days')
@@ -106,13 +111,15 @@ export const updateItinerary = asyncHandler(async (req, res) => {
   if (previousError) throw new AppError('Unable to fetch itinerary day.', 500, [previousError]);
   if (!previous) throw new AppError('Itinerary day not found.', 404);
 
-  const payload = req.body as Record<string, unknown>;
-  const tourId = String(payload.tour_id ?? previous.tour_id);
-  const dayNumber = Number(payload.day_number ?? previous.day_number);
+  const body = req.body as Record<string, unknown>;
+  const tourId = String(body.tour_id ?? previous.tour_id);
+  const dayNumber = Number(body.day_number ?? previous.day_number);
 
   if (await duplicateDayExists(tourId, dayNumber, req.params.id)) {
     throw new AppError('This tour already has an itinerary day with that day number.', 409);
   }
+
+  const payload = sanitizeRichFields('itinerary_days', body);
 
   const { data, error } = await supabase
     .from('itinerary_days')

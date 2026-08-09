@@ -10,6 +10,7 @@ import { supabase } from '../config/supabase';
 import { rolePermissions, type PermissionKey } from '../config/permissions';
 import { parseCsv } from './itinerary-import.service';
 import { importItineraries, type ImportResult } from './itinerary-import.service';
+import { sanitizeRichFields } from '../utils/rich-text';
 
 // ── shared value helpers ────────────────────────────────────────────────────
 const slugify = (v: string): string =>
@@ -398,14 +399,18 @@ export const importEntity = async (entityKey: string, csvText: string, userId?: 
 
       const title = String(payload.title ?? payload.name ?? payload.question ?? payload.client_name ?? '');
       let action: 'created' | 'updated';
+      // Imports bypass the shared createRecord/updateRecord helpers, so the
+      // rich-text gate is applied here — a spreadsheet cell is just as capable
+      // of carrying markup as the editor is.
+      const clean = sanitizeRichFields(cfg.table, payload);
       if (existing.data) {
-        const update: Record<string, unknown> = { ...payload, updated_at: new Date().toISOString() };
+        const update: Record<string, unknown> = { ...clean, updated_at: new Date().toISOString() };
         if (cfg.userFields && userId) update.updated_by = userId;
         const { error } = await supabase.from(cfg.table).update(update).eq('id', existing.data.id);
         if (error) throw new Error(error.message);
         action = 'updated';
       } else {
-        const insert: Record<string, unknown> = { ...payload };
+        const insert: Record<string, unknown> = { ...clean };
         if (cfg.userFields && userId) {
           insert.created_by = userId;
           insert.updated_by = userId;

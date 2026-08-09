@@ -14,7 +14,7 @@ const arrayValue = (value: unknown) => (Array.isArray(value) ? value.map(String)
 export const matchToursForLead = async (context: LeadContext) => {
   const { data, error } = await supabase
     .from('tours')
-    .select('id,title,slug,short_description,persona_tags,duration_days,budget_tier,price_from,currency,is_available,seats_remaining,destinations(name,slug,country)')
+    .select('id,title,slug,short_description,persona_tags,duration_days,budget_tier,price_from,currency,is_available,seats_remaining,destinations!tours_destination_id_fkey(name,slug,country)')
     .eq('is_available', true)
     .is('deleted_at', null)
     .limit(12);

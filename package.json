@@ -18,9 +18,11 @@
     "backfill:responsive": "tsx src/scripts/backfill-responsive.ts",
     "backfill:responsive:prod": "node dist/scripts/backfill-responsive.js",
     "content:prune": "tsx src/scripts/prune-content.ts",
+    "content:split-tour-lists": "tsx src/scripts/split-tour-list-items.ts",
     "content:destination-guides": "tsx src/scripts/import-destination-guides.ts",
     "content:destination-guides:prod": "node dist/scripts/import-destination-guides.js",
     "content:prune:prod": "node dist/scripts/prune-content.js",
+    "content:split-tour-lists:prod": "node dist/scripts/split-tour-list-items.js",
     "email:test": "tsx src/scripts/email-test.ts",
     "email:test:prod": "node dist/scripts/email-test.js"
   },

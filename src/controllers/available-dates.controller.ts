@@ -4,7 +4,7 @@ import { AppError, sendSuccess } from '../utils/api-response';
 import { asyncHandler } from '../utils/async-handler';
 import { getPagination, getQueryString, paginationMeta } from '../utils/query';
 
-const select = '*, tours(id,title,slug,duration_days,duration_nights,price_from,currency,status,destinations(name,slug,country))';
+const select = '*, tours(id,title,slug,duration_days,duration_nights,price_from,currency,status,destinations!tours_destination_id_fkey(name,slug,country))';
 
 const normalizePayload = (payload: Record<string, unknown>) => {
   const normalized = { ...payload };

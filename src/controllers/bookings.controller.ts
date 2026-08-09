@@ -10,7 +10,7 @@ import { softDeleteRecord } from '../utils/supabase-helpers';
 
 const listSelect = '*, tours(title,slug)';
 const detailSelect =
-  '*, tours(id,title,slug,price_from,currency,main_image_url,duration_days,destinations(name,slug))';
+  '*, tours(id,title,slug,price_from,currency,main_image_url,duration_days,destinations!tours_destination_id_fkey(name,slug))';
 
 const PUBLIC_SOURCES = ['website_booking_form', 'plan_my_trip'];
 

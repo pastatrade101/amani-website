@@ -4,6 +4,7 @@ import { safeAudit } from '../services/audit.service';
 import { createUniqueSlug } from '../services/slug.service';
 import { AppError, sendSuccess } from './api-response';
 import { cleanSearch, getPagination, getQueryString, paginationMeta } from './query';
+import { sanitizeRichFields } from './rich-text';
 
 type ListOptions = {
   table: string;
@@ -30,7 +31,7 @@ const THUMBNAIL_COLUMNS: Record<string, string[]> = {
 
 // Attach `<column>_thumbnail` to rows in place when a media_library thumbnail
 // exists for that image URL. Non-fatal: any failure just leaves the originals.
-const attachThumbnails = async (table: string, rows: Array<Record<string, unknown>>) => {
+export const attachThumbnails = async (table: string, rows: Array<Record<string, unknown>>) => {
   const columns = THUMBNAIL_COLUMNS[table];
   if (!columns?.length || !rows.length) return;
 
@@ -144,7 +145,9 @@ export const createRecord = async (
   body: Record<string, unknown>,
   options: { slugSource?: string; userFields?: boolean } = {}
 ) => {
-  const payload = { ...body };
+  // Every create in the CMS funnels through here, so this is the one place
+  // rich-text columns have to be sanitized on the way in.
+  const payload = sanitizeRichFields(table, body);
 
   if (options.slugSource) {
     const source = String(payload.slug || payload[options.slugSource]);
@@ -172,7 +175,7 @@ export const updateRecord = async (
   body: Record<string, unknown>,
   options: { slugSource?: string; userFields?: boolean } = {}
 ) => {
-  const payload = { ...body };
+  const payload = sanitizeRichFields(table, body);
 
   if (options.slugSource && payload.slug) {
     payload.slug = await createUniqueSlug(table, String(payload.slug), id);

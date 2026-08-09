@@ -7,6 +7,7 @@
 // new slugs are INSERTED. Category and destination are resolved by slug or name
 // and created on the fly if they don't exist yet.
 import { supabase } from '../config/supabase';
+import { sanitizeRichFields } from '../utils/rich-text';
 
 export type ImportRowResult = {
   line: number;
@@ -55,6 +56,25 @@ const splitList = (value: string | undefined, sep = '|'): string[] =>
     .split(sep)
     .map((s) => s.trim())
     .filter(Boolean);
+
+export const splitTourItemList = (value: string | undefined, label: string, warnings?: string[]): string[] => {
+  const raw = String(value ?? '').trim();
+  if (!raw) return [];
+
+  if (raw.includes('|')) return splitList(raw);
+
+  const semicolonItems = raw
+    .split(';')
+    .map((s) => s.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+
+  if (semicolonItems.length > 1) {
+    warnings?.push(`${label} used semicolons; split into ${semicolonItems.length} items. Use | in CSV files to avoid ambiguity.`);
+    return semicolonItems;
+  }
+
+  return splitList(raw);
+};
 
 const normalizeStatus = (value: string | undefined): 'draft' | 'published' | 'archived' => {
   const v = String(value ?? '').trim().toLowerCase();
@@ -218,14 +238,18 @@ const replaceChildren = async (
   await Promise.all(wipes);
 
   if (days.length) {
-    const rows = days.map((d, idx) => ({
-      tour_id: tourId,
-      day_number: idx + 1,
-      title: d.title,
-      description: d.description || null,
-      accommodation: d.accommodation || null,
-      image_url: d.image_url || null
-    }));
+    // A CSV cell can carry markup just as an editor can, and this importer
+    // writes straight to the table rather than through createRecord.
+    const rows = days.map((d, idx) =>
+      sanitizeRichFields('itinerary_days', {
+        tour_id: tourId,
+        day_number: idx + 1,
+        title: d.title,
+        description: d.description || null,
+        accommodation: d.accommodation || null,
+        image_url: d.image_url || null
+      })
+    );
     const { error } = await supabase.from('itinerary_days').insert(rows);
     if (error) throw new Error(`itinerary days: ${error.message}`);
   }
@@ -330,13 +354,13 @@ export const importItineraries = async (csvText: string, userId?: string): Promi
       let action: 'created' | 'updated';
       if (existing.data) {
         tourId = existing.data.id;
-        const { error } = await supabase.from('tours').update(payload).eq('id', tourId);
+        const { error } = await supabase.from('tours').update(sanitizeRichFields('tours', payload)).eq('id', tourId);
         if (error) throw new Error(error.message);
         action = 'updated';
       } else {
         const { data, error } = await supabase
           .from('tours')
-          .insert({ ...payload, created_by: userId ?? null })
+          .insert({ ...sanitizeRichFields('tours', payload), created_by: userId ?? null })
           .select('id')
           .single();
         if (error) throw new Error(error.message);
@@ -345,8 +369,8 @@ export const importItineraries = async (csvText: string, userId?: string): Promi
       }
 
       const days = parseDays(r.days);
-      const inclusions = splitList(r.inclusions);
-      const exclusions = splitList(r.exclusions);
+      const inclusions = splitTourItemList(r.inclusions, 'inclusions', warnings);
+      const exclusions = splitTourItemList(r.exclusions, 'exclusions', warnings);
       const priceOptions = parsePriceOptions(r.price_options);
       const supplied = {
         days: has(r.days),
