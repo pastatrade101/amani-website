@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 import { supabase } from '../config/supabase';
 import { AppError } from '../utils/api-response';
+import { attachThumbnails } from '../utils/supabase-helpers';
 import { emailLayout, sendEmail } from './email.service';
 
 // How long a generated magic link stays valid (covers the whole pre-trip
@@ -155,7 +156,7 @@ export const getTripView = async (bookingId: string) => {
   const { data: booking, error } = await supabase
     .from('booking_requests')
     .select(
-      'booking_code, full_name, email, phone, country, travel_date, number_of_adults, number_of_children, total_people, special_requests, message, estimated_amount, currency, status, payment_status, tour_id, tours(title, slug, main_image_url, duration_days)'
+      'booking_code, full_name, email, phone, country, travel_date, number_of_adults, number_of_children, total_people, special_requests, message, estimated_amount, currency, status, payment_status, tour_id, tours(title, slug, main_image_url, banner_image_url, duration_days)'
     )
     .eq('id', bookingId)
     .is('deleted_at', null)
@@ -164,6 +165,8 @@ export const getTripView = async (bookingId: string) => {
   if (!booking) return null;
 
   const b = booking as Record<string, unknown>;
+  const tour = b.tours && typeof b.tours === 'object' ? (b.tours as Record<string, unknown>) : null;
+  if (tour) await attachThumbnails('tours', [tour]);
 
   const { data: paymentRows } = await supabase
     .from('booking_payments')

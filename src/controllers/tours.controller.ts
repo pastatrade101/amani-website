@@ -50,6 +50,25 @@ const normalizeDestinationIds = (value: unknown): string[] =>
     ? [...new Set(value.map(String).map((id) => id.trim()).filter(Boolean))]
     : [];
 
+const attachTourDetailImages = async (record: Record<string, unknown>) => {
+  await attachThumbnails('tours', [record]);
+
+  const tourImages = Array.isArray(record.tour_images)
+    ? (record.tour_images as Array<Record<string, unknown>>)
+    : [];
+  await attachThumbnails('tour_images', tourImages);
+
+  const itineraryDays = Array.isArray(record.itinerary_days)
+    ? (record.itinerary_days as Array<Record<string, unknown>>)
+    : [];
+  await attachThumbnails('itinerary_days', itineraryDays);
+
+  const linkedLodges = itineraryDays
+    .map((day) => day.lodge)
+    .filter((lodge): lodge is Record<string, unknown> => Boolean(lodge) && typeof lodge === 'object');
+  await attachThumbnails('lodges', linkedLodges);
+};
+
 const prepareTourPayload = (body: Record<string, unknown>) => {
   const rawPayload = { ...body };
   const hasDestinationIds = Object.prototype.hasOwnProperty.call(rawPayload, 'destination_ids');
@@ -125,7 +144,7 @@ const fetchTourById = async (id: string) => {
   if (!data) throw new AppError('Record not found.', 404);
 
   const record = data as unknown as Record<string, unknown>;
-  await attachThumbnails('tours', [record]);
+  await attachTourDetailImages(record);
   return record;
 };
 
@@ -219,7 +238,7 @@ export const getTour = asyncHandler(async (req, res) => {
   if (!data) throw new AppError('Record not found.', 404);
 
   const record = data as unknown as Record<string, unknown>;
-  await attachThumbnails('tours', [record]);
+  await attachTourDetailImages(record);
 
   return sendSuccess(res, 'Record fetched successfully.', record);
 });

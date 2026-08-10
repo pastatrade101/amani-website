@@ -3,6 +3,7 @@ import { safeAudit } from '../services/audit.service';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { asyncHandler } from '../utils/async-handler';
 import { getPagination, getQueryString, paginationMeta } from '../utils/query';
+import { attachThumbnails } from '../utils/supabase-helpers';
 
 const select = '*, tours(id,title,slug,status)';
 
@@ -21,8 +22,11 @@ export const listTourImages = asyncHandler(async (req, res) => {
   const { data, error, count } = await query.range(from, to);
   if (error) throw new AppError('Unable to fetch tour images.', 500, [error]);
 
+  const items = (data ?? []) as Array<Record<string, unknown>>;
+  await attachThumbnails('tour_images', items);
+
   return sendSuccess(res, 'Tour images fetched successfully.', {
-    items: data ?? [],
+    items,
     pagination: paginationMeta(page, limit, count ?? 0)
   });
 });
@@ -37,7 +41,10 @@ export const listTourImagesForTour = asyncHandler(async (req, res) => {
 
   if (error) throw new AppError('Unable to fetch tour images.', 500, [error]);
 
-  return sendSuccess(res, 'Tour images fetched successfully.', data ?? []);
+  const items = (data ?? []) as Array<Record<string, unknown>>;
+  await attachThumbnails('tour_images', items);
+
+  return sendSuccess(res, 'Tour images fetched successfully.', items);
 });
 
 export const getTourImage = asyncHandler(async (req, res) => {
@@ -50,7 +57,10 @@ export const getTourImage = asyncHandler(async (req, res) => {
   if (error) throw new AppError('Unable to fetch tour image.', 500, [error]);
   if (!data) throw new AppError('Tour image not found.', 404);
 
-  return sendSuccess(res, 'Tour image fetched successfully.', data);
+  const record = data as Record<string, unknown>;
+  await attachThumbnails('tour_images', [record]);
+
+  return sendSuccess(res, 'Tour image fetched successfully.', record);
 });
 
 export const createTourImage = asyncHandler(async (req, res) => {

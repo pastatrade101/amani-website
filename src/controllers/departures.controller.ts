@@ -2,6 +2,7 @@ import { supabase } from '../config/supabase';
 import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { cleanSearch, getQueryString } from '../utils/query';
+import { attachThumbnails } from '../utils/supabase-helpers';
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -10,7 +11,7 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 // stay optional embeds so departures without them still appear.
 const select =
   'id, tour_id, start_date, end_date, available_slots, price, price_override, currency, status, notes, ' +
-  'tours!inner ( id, title, slug, status, is_available, deleted_at, duration_days, main_image_url, price_from, currency, ' +
+  'tours!inner ( id, title, slug, status, is_available, deleted_at, duration_days, main_image_url, banner_image_url, price_from, currency, ' +
   'destinations ( name, slug ), tour_categories ( name, slug ) )';
 
 const resolveId = async (table: 'destinations' | 'tour_categories', value: string) => {
@@ -80,6 +81,9 @@ export const listPublicDepartures = asyncHandler(async (req, res) => {
   if (error) throw new AppError('Unable to fetch departures.', 500, [error]);
 
   const rows = (data ?? []) as unknown as Record<string, unknown>[];
+  const tours = rows.map((record) => relation(record.tours));
+  await attachThumbnails('tours', tours);
+
   const departures = rows.map((record) => {
     const tour = relation(record.tours);
     const dest = relation(tour.destinations);
@@ -102,7 +106,10 @@ export const listPublicDepartures = asyncHandler(async (req, res) => {
       currency: record.currency ?? tour.currency ?? 'USD',
       status: record.status,
       notes: record.notes ?? null,
-      main_image_url: tour.main_image_url ?? null
+      main_image_url: tour.main_image_url ?? null,
+      main_image_url_variants: tour.main_image_url_variants ?? null,
+      banner_image_url: tour.banner_image_url ?? null,
+      banner_image_url_variants: tour.banner_image_url_variants ?? null
     };
   });
 

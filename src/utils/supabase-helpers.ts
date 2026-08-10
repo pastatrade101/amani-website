@@ -26,7 +26,17 @@ const THUMBNAIL_COLUMNS: Record<string, string[]> = {
   tours: ['main_image_url'],
   destinations: ['main_image_url', 'image_url', 'banner_image_url'],
   lodges: ['image_url', 'hero_image_url'],
-  blog_posts: ['featured_image_url']
+  blog_posts: ['featured_image_url'],
+  tour_categories: ['image_url', 'icon_url'],
+  gallery_images: ['image_url'],
+  tour_images: ['image_url'],
+  itinerary_days: ['image_url'],
+  activities: ['image_url', 'hero_image_url'],
+  trip_points: ['image_url', 'hero_image_url'],
+  travel_styles: ['image_url', 'hero_image_url'],
+  serengeti_migration_calendar: ['image_url'],
+  testimonials: ['client_image_url'],
+  reviews: ['author_photo_url']
 };
 
 // Attach `<column>_thumbnail` to rows in place when a media_library thumbnail
@@ -46,21 +56,53 @@ export const attachThumbnails = async (table: string, rows: Array<Record<string,
 
   const { data } = await supabase
     .from('media_library')
-    .select('file_url, thumbnail_url')
-    .in('file_url', [...urls])
-    .not('thumbnail_url', 'is', null);
+    .select('file_url, file_path, thumbnail_url, variant_widths, has_avif')
+    .in('file_url', [...urls]);
 
   if (!data?.length) return;
 
-  const map = new Map<string, string>();
-  for (const item of data as Array<{ file_url: string; thumbnail_url: string }>) {
-    map.set(item.file_url, item.thumbnail_url);
-  }
+  type MediaRow = {
+    file_url: string;
+    file_path: string | null;
+    thumbnail_url: string | null;
+    variant_widths: number[] | null;
+    has_avif: boolean | null;
+  };
+
+  const map = new Map<string, MediaRow>();
+  for (const item of data as MediaRow[]) map.set(item.file_url, item);
 
   for (const row of rows) {
     for (const column of columns) {
       const value = row[column];
-      if (typeof value === 'string' && map.has(value)) row[`${column}_thumbnail`] = map.get(value);
+      if (typeof value !== 'string' || !map.has(value)) continue;
+      const media = map.get(value)!;
+
+      if (media.thumbnail_url) row[`${column}_thumbnail`] = media.thumbnail_url;
+
+      // The responsive ladder, so the frontend can build a srcset instead of
+      // serving the original. It only ever lists widths that were actually
+      // written, which is what makes it safe to put in a srcset — a candidate
+      // that 404s breaks the image rather than falling back.
+      //
+      // Worth the payload: a 1,171 KB original has a 60 KB AVIF at 1280px and
+      // a 22 KB one at 640px. (Storage currently answers `no-cache` for both
+      // originals and variants despite the cacheControl set at upload, so
+      // repeat visits still re-download — that is a separate fix.)
+      if (media.variant_widths?.length) {
+        // Derived from the image's own URL rather than rebuilt from a bucket
+        // name: uploads live in more than one bucket, so assuming a single one
+        // silently produces URLs that 404.
+        const stem = (value.split('/').pop() ?? '').replace(/\.[^.]+$/, '');
+        const folder = value.replace(/\/[^/]+$/, '');
+        if (stem) {
+          row[`${column}_variants`] = {
+            base: `${folder}/responsive/${stem}`,
+            widths: media.variant_widths,
+            avif: media.has_avif === true
+          };
+        }
+      }
     }
   }
 };
