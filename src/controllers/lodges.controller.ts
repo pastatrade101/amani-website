@@ -1,10 +1,11 @@
+import { supabase } from '../config/supabase';
+import { amenitiesForLodge, imagesForLodge, toursFeaturingLodge } from './lodge-media.controller';
 import { asyncHandler } from '../utils/async-handler';
-import { AppError } from '../utils/api-response';
+import { AppError, sendSuccess } from '../utils/api-response';
 import {
   bulkSoftDeleteRecords,
   bulkUpdateRecords,
   createRecord,
-  getRecordBySlug,
   listRecords,
   softDeleteRecord,
   updateRecord
@@ -23,8 +24,38 @@ export const listLodges = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * One property, with everything the public page renders.
+ *
+ * Gallery, amenities and the tours that actually stay here are attached in a
+ * single response so the page makes one call, and each is fail-soft so the
+ * page still renders before the accommodation migration has been applied.
+ */
 export const getLodge = asyncHandler(async (req, res) => {
-  return getRecordBySlug(res, 'lodges', req.params.slug, select);
+  const { data, error } = await supabase
+    .from('lodges')
+    .select(select)
+    .eq('slug', req.params.slug)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error) throw new AppError('Unable to fetch the property.', 500, [error]);
+  if (!data) throw new AppError('Record not found.', 404);
+
+  const lodge = data as Record<string, unknown>;
+  const id = String(lodge.id);
+  const [images, amenities, featuredIn] = await Promise.all([
+    imagesForLodge(id),
+    amenitiesForLodge(id),
+    toursFeaturingLodge(id)
+  ]);
+
+  return sendSuccess(res, 'Record fetched successfully.', {
+    ...lodge,
+    images,
+    amenities,
+    featured_in_tours: featuredIn
+  });
 });
 
 export const createLodge = asyncHandler(async (req, res) => {

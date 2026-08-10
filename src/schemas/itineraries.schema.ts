@@ -9,6 +9,9 @@ export const itineraryCreateSchema = z.object({
   title: z.string().min(2),
   description: optionalText,
   accommodation: optionalText,
+  // Optional link to a real property. The free-text field above stays the
+  // fallback for anything not yet in the CMS.
+  accommodation_id: z.union([z.string().uuid(), z.literal('')]).optional().nullable(),
   meals: optionalText,
   activities: optionalText,
   image_url: optionalUrl
