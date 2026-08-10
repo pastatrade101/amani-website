@@ -12,38 +12,51 @@ import { cleanSearch, getPagination, getQueryString, paginationMeta } from '../u
 import { sanitizeRichFields } from '../utils/rich-text';
 
 const primaryDestinationEmbed = 'destinations!tours_destination_id_fkey(name,slug,country)';
-const legacySelect = `*, ${primaryDestinationEmbed}, tour_categories(name,slug)`;
+const specialistEmbed = 'specialist:specialists!tours_specialist_id_fkey(id,name,role,photo_url,blurb,whatsapp_number,tripadvisor_url,status,is_featured,sort_order)';
+const legacySelect = `*, ${primaryDestinationEmbed}, tour_categories(name,slug), ${specialistEmbed}`;
+const fallbackSelect = `*, ${primaryDestinationEmbed}, tour_categories(name,slug)`;
 const destinationEmbed = 'tour_destinations(destination_id,sort_order,is_primary,destinations!tour_destinations_destination_id_fkey(id,name,slug,country))';
 const select = `${legacySelect}, ${destinationEmbed}`;
 // Lean projection for listings: everything the cards use, minus the detail-only
 // heavy fields (full_description, sample_itinerary). getTour still uses the full
 // select + embeds below.
 const legacyListSelect =
+  `id, title, slug, short_description, destination_id, specialist_id, category_id, experience_type, persona_tags, duration_days, duration_nights, budget_tier, price_from, currency, main_image_url, banner_image_url, highlights, difficulty_level, group_size, group_size_min, group_size_max, minimum_age, start_location, end_location, is_available, seats_remaining, status, is_featured, is_popular, seo_title, meta_title, meta_description, og_image_url, ${primaryDestinationEmbed}, tour_categories(name,slug), ${specialistEmbed}`;
+const fallbackListSelect =
   `id, title, slug, short_description, destination_id, category_id, experience_type, persona_tags, duration_days, duration_nights, budget_tier, price_from, currency, main_image_url, banner_image_url, highlights, difficulty_level, group_size, group_size_min, group_size_max, minimum_age, start_location, end_location, is_available, seats_remaining, status, is_featured, is_popular, seo_title, meta_title, meta_description, og_image_url, ${primaryDestinationEmbed}, tour_categories(name,slug)`;
 const listSelect = `${legacyListSelect}, ${destinationEmbed}`;
-// Detail view also embeds the day-by-day itinerary, what's included/excluded,
-// the pricing options and the tour gallery images.
-const legacyDetailSelect = `${legacySelect}, itinerary_days(day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:accommodation_id(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations(name))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)`;
-const detailSelect = `${select}, itinerary_days(day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:accommodation_id(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations(name))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)`;
+// Detail view also embeds the assigned trip specialist, day-by-day itinerary,
+// what's included/excluded, pricing options and the tour gallery images.
+const detailExtras = 'itinerary_days(day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:accommodation_id(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations(name))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
+const detailSelect = `${select}, ${detailExtras}`;
+const fallbackDetailSelect = `${fallbackSelect}, ${detailExtras}`;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const isTourDestinationsRelationError = (error: unknown) => {
-  const text = [
+const relationErrorText = (error: unknown) =>
+  [
     typeof error === 'string' ? error : '',
     error instanceof Error ? error.message : '',
     JSON.stringify(error ?? '')
   ]
     .join(' ')
     .toLowerCase();
+
+const isOptionalTourRelationError = (error: unknown) => {
+  const text = relationErrorText(error);
   return (
     text.includes('tour_destinations') ||
+    text.includes('specialist_id') ||
+    text.includes('specialists') ||
     text.includes('schema cache') ||
     text.includes('relationship') ||
     text.includes('pgrst200') ||
     text.includes('pgrst205') ||
-    text.includes('42p01')
+    text.includes('42p01') ||
+    text.includes('42703')
   );
 };
+
+const isTourDestinationsRelationError = isOptionalTourRelationError;
 
 const normalizeDestinationIds = (value: unknown): string[] =>
   Array.isArray(value)
@@ -67,6 +80,11 @@ const attachTourDetailImages = async (record: Record<string, unknown>) => {
     .map((day) => day.lodge)
     .filter((lodge): lodge is Record<string, unknown> => Boolean(lodge) && typeof lodge === 'object');
   await attachThumbnails('lodges', linkedLodges);
+
+  const specialist = record.specialist;
+  if (specialist && typeof specialist === 'object') {
+    await attachThumbnails('specialists', [specialist as Record<string, unknown>]);
+  }
 };
 
 const prepareTourPayload = (body: Record<string, unknown>) => {
@@ -76,6 +94,7 @@ const prepareTourPayload = (body: Record<string, unknown>) => {
 
   delete rawPayload.destination_ids;
   delete rawPayload.tour_destinations;
+  delete rawPayload.specialist;
 
   const explicitPrimary =
     typeof rawPayload.destination_id === 'string' && rawPayload.destination_id.trim()
@@ -136,8 +155,8 @@ const fetchTourById = async (id: string) => {
       .maybeSingle();
 
   let { data, error } = await loadTour(detailSelect);
-  if (error && isTourDestinationsRelationError(error)) {
-    ({ data, error } = await loadTour(legacyDetailSelect));
+  if (error && isOptionalTourRelationError(error)) {
+    ({ data, error } = await loadTour(fallbackDetailSelect));
   }
 
   if (error) throw new AppError('Unable to fetch tours.', 500, [error]);
@@ -204,13 +223,17 @@ export const listTours = asyncHandler(async (req, res) => {
   };
 
   let { data, error, count } = await buildListQuery(listSelect);
-  if (error && isTourDestinationsRelationError(error)) {
-    ({ data, error, count } = await buildListQuery(legacyListSelect));
+  if (error && isOptionalTourRelationError(error)) {
+    ({ data, error, count } = await buildListQuery(fallbackListSelect));
   }
   if (error) throw new AppError('Unable to fetch tours.', 500, [error]);
 
   const items = (data ?? []) as unknown as Array<Record<string, unknown>>;
   await attachThumbnails('tours', items);
+  const specialists = items
+    .map((item) => item.specialist)
+    .filter((specialist): specialist is Record<string, unknown> => Boolean(specialist) && typeof specialist === 'object');
+  await attachThumbnails('specialists', specialists);
 
   return sendSuccess(res, 'Records fetched successfully.', {
     items,
@@ -230,8 +253,8 @@ export const getTour = asyncHandler(async (req, res) => {
       .maybeSingle();
 
   let { data, error } = await loadTour(detailSelect);
-  if (error && isTourDestinationsRelationError(error)) {
-    ({ data, error } = await loadTour(legacyDetailSelect));
+  if (error && isOptionalTourRelationError(error)) {
+    ({ data, error } = await loadTour(fallbackDetailSelect));
   }
 
   if (error) throw new AppError('Unable to fetch tours.', 500, [error]);

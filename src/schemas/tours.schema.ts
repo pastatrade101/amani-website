@@ -12,6 +12,7 @@ export const tourCreateSchema = z.object({
   destination_id: optionalUuid,
   destination_ids: z.array(z.string().uuid()).optional(),
   category_id: optionalUuid,
+  specialist_id: optionalUuid,
   experience_type: z.string().max(120).optional().nullable(),
   persona_tags: z.array(z.string().max(80)).default([]),
   budget_tier: z.string().max(80).optional().nullable(),
