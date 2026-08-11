@@ -24,6 +24,8 @@ export const tourCreateSchema = z.object({
   banner_image_url: optionalUrl,
   sample_itinerary: z.union([z.array(z.record(z.unknown())), z.string()]).optional().nullable(),
   highlights: z.array(z.string()).default([]),
+  customization_intro: z.string().max(1000).optional().nullable(),
+  customization_options: z.array(z.string().min(1).max(200)).default([]),
   difficulty_level: z.string().optional().nullable(),
   group_size: z.string().optional().nullable(),
   group_size_min: z.coerce.number().int().min(0).optional().nullable(),
