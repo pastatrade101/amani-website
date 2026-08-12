@@ -8,6 +8,7 @@ export const uploadImage = asyncHandler(async (req, res) => {
 
   const folder = typeof req.body.folder === 'string' ? req.body.folder : 'uploads';
   const result = await uploadImageToStorage(req.file, folder);
+  const { processedBuffer, ...publicResult } = result;
 
   const { data: media, error: mediaError } = await supabase.from('media_library').insert({
     alt_text: req.body.alt_text ?? null,
@@ -36,10 +37,9 @@ export const uploadImage = asyncHandler(async (req, res) => {
 
   // Generate the responsive AVIF/WebP ladder in the background — the upload
   // responds immediately with the original + thumbnail so it stays fast.
-  const buffer = req.file.buffer;
-  void generateResponsiveVariants(media.id, buffer, folder, result.path).catch(() => undefined);
+  void generateResponsiveVariants(media.id, processedBuffer, folder, result.path).catch(() => undefined);
 
-  return sendSuccess(res, 'Image uploaded successfully.', { ...result, media }, 201);
+  return sendSuccess(res, 'Image uploaded successfully.', { ...publicResult, media }, 201);
 });
 
 export const uploadVideo = asyncHandler(async (req, res) => {

@@ -4,6 +4,7 @@ import { encode as encodeBlurhash } from 'blurhash';
 import { env } from '../config/env';
 import { supabase } from '../config/supabase';
 import { AppError } from '../utils/api-response';
+import { deleteR2Object, putR2Object, r2Enabled } from './r2.service';
 
 // Width of the web-optimized thumbnail we store alongside each uploaded image.
 // Big enough for crisp card/grid use on retina, tiny in bytes as webp.
@@ -99,6 +100,7 @@ const extensionFromMime = (mimeType: string) => {
 };
 
 export const ensureStorageBucket = async () => {
+  if (r2Enabled) return;
   if (!bucketReadyPromise) {
     bucketReadyPromise = (async () => {
       const { error: getError } = await supabase.storage.getBucket(env.SUPABASE_STORAGE_BUCKET);
@@ -127,6 +129,7 @@ export const ensureStorageBucket = async () => {
 
 // Upload a raw buffer to storage and return its public URL.
 const putObject = async (path: string, buffer: Buffer, contentType: string) => {
+  if (r2Enabled) return putR2Object(path, buffer, contentType);
   const { error } = await supabase.storage.from(env.SUPABASE_STORAGE_BUCKET).upload(path, buffer, {
     contentType,
     cacheControl: '3600',
@@ -142,12 +145,28 @@ const putObject = async (path: string, buffer: Buffer, contentType: string) => {
 // Variant objects are content-addressed (uuid + width + format) and never change,
 // so they get an immutable 1-year cache and upsert (safe to re-run backfills).
 const putVariant = async (path: string, buffer: Buffer, contentType: string) => {
+  if (r2Enabled) {
+    await putR2Object(path, buffer, contentType);
+    return;
+  }
   const { error } = await supabase.storage.from(env.SUPABASE_STORAGE_BUCKET).upload(path, buffer, {
     contentType,
     cacheControl: '31536000',
     upsert: true
   });
   if (error) throw new AppError(`Unable to upload variant: ${error.message}`, 500, [error]);
+};
+
+/** Replace an existing managed object without changing its key or DB URL. */
+export const overwriteManagedObject = async (path: string, buffer: Buffer, contentType: string): Promise<string> => {
+  if (r2Enabled) return putR2Object(path, buffer, contentType);
+  const { error } = await supabase.storage.from(env.SUPABASE_STORAGE_BUCKET).upload(path, buffer, {
+    contentType,
+    cacheControl: '31536000',
+    upsert: true
+  });
+  if (error) throw new AppError(`Unable to replace managed media: ${error.message}`, 500, [error]);
+  return supabase.storage.from(env.SUPABASE_STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;
 };
 
 const uploadToStorage = async (file: Express.Multer.File, folder: string, allowedMimeTypes: string[], errorMessage: string) => {
@@ -168,14 +187,35 @@ const uploadToStorage = async (file: Express.Multer.File, folder: string, allowe
 };
 
 export const uploadImageToStorage = async (file: Express.Multer.File, folder = 'uploads') => {
-  const result = await uploadToStorage(file, folder, [...ALLOWED_IMAGE_MIME_TYPES], ALLOWED_IMAGE_MESSAGE);
+  // Down-cap oversized originals before storage. The object key remains stable;
+  // only its payload is optimized. PNG/AVIF/WebP transparency is preserved.
+  let sourceBuffer = file.buffer;
+  let sourceMime = file.mimetype;
+  try {
+    const metadata = await sharp(file.buffer).metadata();
+    if ((metadata.width ?? 0) > env.MEDIA_MAX_ORIGINAL_WIDTH) {
+      const pipeline = sharp(file.buffer).rotate().resize({ width: env.MEDIA_MAX_ORIGINAL_WIDTH, withoutEnlargement: true });
+      if (file.mimetype === 'image/png') sourceBuffer = await pipeline.png({ compressionLevel: 9 }).toBuffer();
+      else if (file.mimetype === 'image/webp') sourceBuffer = await pipeline.webp({ quality: env.MEDIA_ORIGINAL_QUALITY }).toBuffer();
+      else if (file.mimetype === 'image/avif') sourceBuffer = await pipeline.avif({ quality: Math.max(50, env.MEDIA_ORIGINAL_QUALITY - 20) }).toBuffer();
+      else {
+        sourceBuffer = await pipeline.jpeg({ quality: env.MEDIA_ORIGINAL_QUALITY, mozjpeg: true }).toBuffer();
+        sourceMime = 'image/jpeg';
+      }
+    }
+  } catch {
+    sourceBuffer = file.buffer;
+  }
+
+  const optimizedFile = { ...file, buffer: sourceBuffer, size: sourceBuffer.length, mimetype: sourceMime } as Express.Multer.File;
+  const result = await uploadToStorage(optimizedFile, folder, [...ALLOWED_IMAGE_MIME_TYPES], ALLOWED_IMAGE_MESSAGE);
 
   // Generate a small webp thumbnail. This is a pure optimization — if it fails
   // for any reason, the upload still succeeds and we fall back to the original.
   let thumbnailPath: string | undefined;
   let thumbnailUrl: string | undefined;
   try {
-    const thumbnailBuffer = await sharp(file.buffer)
+    const thumbnailBuffer = await sharp(sourceBuffer)
       .rotate() // honour EXIF orientation
       .resize({ width: THUMBNAIL_WIDTH, withoutEnlargement: true })
       .webp({ quality: 72 })
@@ -187,9 +227,9 @@ export const uploadImageToStorage = async (file: Express.Multer.File, folder = '
     thumbnailUrl = undefined;
   }
 
-  const meta = await extractImageMeta(file.buffer).catch(() => ({} as ImageMeta));
+  const meta = await extractImageMeta(sourceBuffer).catch(() => ({} as ImageMeta));
 
-  return { ...result, thumbnailPath, thumbnailUrl, ...meta };
+  return { ...result, thumbnailPath, thumbnailUrl, ...meta, processedBuffer: sourceBuffer };
 };
 
 // Generate the full responsive ladder (AVIF + WebP) for an image and record which
@@ -277,6 +317,10 @@ export const uploadLottieToStorage = async (file: Express.Multer.File, folder = 
 };
 
 export const deleteImageFromStorage = async (path: string) => {
+  if (r2Enabled) {
+    await deleteR2Object(path);
+    return;
+  }
   const { error } = await supabase.storage.from(env.SUPABASE_STORAGE_BUCKET).remove([path]);
   if (error) throw new AppError('Unable to delete image.', 500, [error]);
 };

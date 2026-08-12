@@ -24,6 +24,17 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url().optional().or(z.literal('')),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional().or(z.literal('')),
   SUPABASE_STORAGE_BUCKET: z.string().default('goldfinch-media'),
+  // Cloudflare R2 is S3-compatible. It is enabled only when the toggle and all
+  // credentials are present, so removing R2_ENABLED immediately restores the
+  // existing Supabase Storage write path.
+  R2_ENABLED: boolish(false),
+  R2_ACCOUNT_ID: z.string().optional().or(z.literal('')),
+  R2_ACCESS_KEY_ID: z.string().optional().or(z.literal('')),
+  R2_SECRET_ACCESS_KEY: z.string().optional().or(z.literal('')),
+  R2_BUCKET_NAME: z.string().optional().or(z.literal('')),
+  R2_PUBLIC_URL: z.string().url().optional().or(z.literal('')),
+  MEDIA_MAX_ORIGINAL_WIDTH: z.coerce.number().int().positive().default(2400),
+  MEDIA_ORIGINAL_QUALITY: z.coerce.number().int().min(50).max(95).default(82),
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters long').default('development-only-change-this-secret'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   ANTHROPIC_API_KEY: z.string().optional().or(z.literal('')),

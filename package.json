@@ -17,6 +17,10 @@
     "backfill:thumbnails:prod": "node dist/scripts/backfill-thumbnails.js",
     "backfill:responsive": "tsx src/scripts/backfill-responsive.ts",
     "backfill:responsive:prod": "node dist/scripts/backfill-responsive.js",
+    "media:migrate-r2": "tsx src/scripts/migrate-to-r2.ts",
+    "media:migrate-r2:prod": "node dist/scripts/migrate-to-r2.js",
+    "media:downcap": "tsx src/scripts/downcap-originals.ts",
+    "media:downcap:prod": "node dist/scripts/downcap-originals.js",
     "content:prune": "tsx src/scripts/prune-content.ts",
     "content:destination-guides": "tsx src/scripts/import-destination-guides.ts",
     "content:destination-guides:prod": "node dist/scripts/import-destination-guides.js",
@@ -25,6 +29,7 @@
     "email:test:prod": "node dist/scripts/email-test.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1108.0",
     "@google-analytics/data": "^6.1.0",
     "@supabase/supabase-js": "^2.45.4",
     "bcryptjs": "^2.4.3",
