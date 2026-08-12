@@ -31,7 +31,9 @@ export const validate = (schemas: ValidationTarget) => {
     }
 
     if (errors.length > 0) {
-      return next(new AppError('Validation failed.', 422, errors));
+      const first = errors[0] as { path?: Array<string | number>; message?: string };
+      const field = first.path?.length ? first.path.join('.') : 'request';
+      return next(new AppError(`${field}: ${first.message || 'Invalid value.'}`, 422, errors));
     }
 
     return next();

@@ -9,7 +9,7 @@ import { authenticate } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/permission.middleware';
 import { validate } from '../middleware/validate.middleware';
 import { lodgeCreateSchema, lodgeUpdateSchema } from '../schemas/lodges.schema';
-import { getLodgeMedia, listAmenities, replaceLodgeAmenities, replaceLodgeImages } from '../controllers/lodge-media.controller';
+import { getLodgeGallery, getLodgeMedia, listAmenities, replaceLodgeAmenities, replaceLodgeImages } from '../controllers/lodge-media.controller';
 import { lodgeAmenitiesReplaceSchema, lodgeImagesReplaceSchema } from '../schemas/lodge-media.schema';
 import { lodgeDetailsReplaceSchema } from '../schemas/lodge-details.schema';
 import { getLodgeDetails, listAccommodationMeta, replaceLodgeDetails } from '../controllers/lodge-details.controller';
@@ -23,6 +23,7 @@ router.post('/bulk-status', authenticate, requirePermission('lodges.update'), bu
 // Literal paths before '/:slug' so they are not read as slugs.
 router.get('/meta/amenities', authenticate, requirePermission('lodges.view'), listAmenities);
 router.get('/meta/accommodation', authenticate, requirePermission('lodges.view'), listAccommodationMeta);
+router.get('/:id/gallery', getLodgeGallery);
 router.get('/:id/media', authenticate, requirePermission('lodges.view'), getLodgeMedia);
 router.get('/:id/details', authenticate, requirePermission('lodges.view'), getLodgeDetails);
 router.put('/:id/details', authenticate, requirePermission('lodges.update'), validate({body:lodgeDetailsReplaceSchema}), replaceLodgeDetails);

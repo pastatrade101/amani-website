@@ -1,5 +1,6 @@
 import { z } from 'zod';
-const nullableNumber=z.coerce.number().nonnegative().optional().nullable();
+const emptyToNull=(value:unknown)=>value===''||value===undefined?null:value;
+const nullableNumber=z.preprocess(emptyToNull,z.coerce.number().nonnegative().nullable()).optional();
 const uuidList=z.array(z.string().uuid()).max(250).default([]);
 const image=z.object({image_url:z.string().min(1).max(2048),alt_text:z.string().max(300).optional().nullable(),caption:z.string().max(500).optional().nullable()});
 export const lodgeDetailsReplaceSchema=z.object({

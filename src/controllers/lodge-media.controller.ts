@@ -28,13 +28,22 @@ export const imagesForLodge = async (lodgeId: string): Promise<Row[]> =>
   softly(async () => {
     const { data, error } = await supabase
       .from('lodge_images')
-      .select('id,image_url,alt_text,caption,category,is_featured,sort_order,is_cover')
+      // Keep the public gallery compatible with the original gallery table.
+      // category/is_featured were added later and must not make the whole
+      // gallery disappear when that optional migration has not run yet.
+      .select('id,image_url,alt_text,caption,sort_order,is_cover')
       .eq('lodge_id', lodgeId)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true });
     if (error) return [];
     return (data ?? []) as Row[];
   }, []);
+
+/** Public gallery-only response used by itinerary pages. */
+export const getLodgeGallery = asyncHandler(async (req, res) => {
+  const images = await imagesForLodge(req.params.id);
+  return sendSuccess(res, 'Property gallery fetched successfully.', { images });
+});
 
 /** Amenities attached to one property, in display order. */
 export const amenitiesForLodge = async (lodgeId: string): Promise<Row[]> =>
@@ -131,8 +140,6 @@ export const replaceLodgeImages = asyncHandler(async (req, res) => {
     image_url: String(image.image_url),
     alt_text: image.alt_text ? String(image.alt_text) : null,
     caption: image.caption ? String(image.caption) : null,
-    category: image.category ? String(image.category) : 'EXTERIOR',
-    is_featured: image.is_featured === true,
     sort_order: index,
     is_cover: index === coverAt && incoming.length > 0
   }));
