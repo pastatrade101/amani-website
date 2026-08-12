@@ -8,7 +8,7 @@ import { sanitizeRichFields } from '../utils/rich-text';
 // The linked property rides along so the admin list and the day editor can
 // show it without a second call. Null for days still using free text.
 const select =
-  '*, tours(id,title,slug,duration_days,duration_nights,status,destinations!tours_destination_id_fkey(name,slug,country)), lodge:accommodation_id(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations(name))';
+  '*, tours(id,title,slug,duration_days,duration_nights,status,destinations!tours_destination_id_fkey(name,slug,country)), lodge:lodges!itinerary_days_accommodation_id_fkey(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations!lodges_destination_id_fkey(name))';
 
 const duplicateDayExists = async (tourId: string, dayNumber: number, excludeId?: string) => {
   let query = supabase

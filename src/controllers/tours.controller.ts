@@ -25,11 +25,19 @@ const legacyListSelect =
 const fallbackListSelect =
   `id, title, slug, short_description, destination_id, category_id, experience_type, persona_tags, duration_days, duration_nights, budget_tier, price_from, currency, main_image_url, banner_image_url, highlights, difficulty_level, group_size, group_size_min, group_size_max, minimum_age, start_location, end_location, is_available, seats_remaining, status, is_featured, is_popular, seo_title, meta_title, meta_description, og_image_url, ${primaryDestinationEmbed}, tour_categories(name,slug)`;
 const listSelect = `${legacyListSelect}, ${destinationEmbed}`;
+// Compact relationship-free projection for admin lookup controls. Itinerary,
+// pricing and departures editors only need a tour identity and duration; they
+// should not fail because an optional destination/specialist embed is stale.
+const summaryListSelect =
+  'id, title, slug, destination_id, duration_days, duration_nights, status, created_at';
 // Detail view also embeds the assigned trip specialist, day-by-day itinerary,
 // what's included/excluded, pricing options and the tour gallery images.
-const detailExtras = 'itinerary_days(day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:accommodation_id(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations(name))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
+const detailExtras = 'itinerary_days(day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:lodges!itinerary_days_accommodation_id_fkey(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations!lodges_destination_id_fkey(name))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_pricing_seasons(id,season_type,season_name,start_date,end_date,currency,pricing_basis,status,sort_order,group_prices:tour_group_prices(id,minimum_travelers,maximum_travelers,room_count,price,price_status,sort_order)), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
+const detailExtrasWithoutSeasons = 'itinerary_days(day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:lodges!itinerary_days_accommodation_id_fkey(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations!lodges_destination_id_fkey(name))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
+const detailExtrasWithoutLodgeEmbed = 'itinerary_days(day_number,title,description,accommodation,accommodation_id,meals,activities,image_url), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
 const detailSelect = `${select}, ${detailExtras}`;
-const fallbackDetailSelect = `${fallbackSelect}, ${detailExtras}`;
+const fallbackDetailSelect = `${fallbackSelect}, ${detailExtrasWithoutLodgeEmbed}`;
+const detailSelectWithoutSeasons = `${select}, ${detailExtrasWithoutSeasons}`;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const relationErrorText = (error: unknown) =>
@@ -47,6 +55,11 @@ const isOptionalTourRelationError = (error: unknown) => {
     text.includes('tour_destinations') ||
     text.includes('specialist_id') ||
     text.includes('specialists') ||
+    text.includes('itinerary_days') ||
+    text.includes('accommodation_id') ||
+    text.includes('lodges') ||
+    text.includes('tour_pricing_seasons') ||
+    text.includes('tour_group_prices') ||
     text.includes('schema cache') ||
     text.includes('relationship') ||
     text.includes('pgrst200') ||
@@ -57,6 +70,10 @@ const isOptionalTourRelationError = (error: unknown) => {
 };
 
 const isTourDestinationsRelationError = isOptionalTourRelationError;
+const isSeasonPricingRelationError = (error: unknown) => {
+  const text = relationErrorText(error);
+  return text.includes('tour_pricing_seasons') || text.includes('tour_group_prices');
+};
 
 const normalizeDestinationIds = (value: unknown): string[] =>
   Array.isArray(value)
@@ -155,6 +172,9 @@ const fetchTourById = async (id: string) => {
       .maybeSingle();
 
   let { data, error } = await loadTour(detailSelect);
+  if (error && isSeasonPricingRelationError(error)) {
+    ({ data, error } = await loadTour(detailSelectWithoutSeasons));
+  }
   if (error && isOptionalTourRelationError(error)) {
     ({ data, error } = await loadTour(fallbackDetailSelect));
   }
@@ -172,6 +192,7 @@ export const listTours = asyncHandler(async (req, res) => {
   const search = cleanSearch(getQueryString(req.query, 'search'));
   const status = getQueryString(req.query, 'status');
   const destinationId = getQueryString(req.query, 'destination_id');
+  const summaryOnly = getQueryString(req.query, 'view') === 'summary';
 
   let joinedTourIds: string[] | null = null;
   let destinationJoinUnavailable = false;
@@ -222,7 +243,7 @@ export const listTours = asyncHandler(async (req, res) => {
     return query.range(from, to);
   };
 
-  let { data, error, count } = await buildListQuery(listSelect);
+  let { data, error, count } = await buildListQuery(summaryOnly ? summaryListSelect : listSelect);
   if (error && isOptionalTourRelationError(error)) {
     ({ data, error, count } = await buildListQuery(fallbackListSelect));
   }
@@ -253,6 +274,9 @@ export const getTour = asyncHandler(async (req, res) => {
       .maybeSingle();
 
   let { data, error } = await loadTour(detailSelect);
+  if (error && isSeasonPricingRelationError(error)) {
+    ({ data, error } = await loadTour(detailSelectWithoutSeasons));
+  }
   if (error && isOptionalTourRelationError(error)) {
     ({ data, error } = await loadTour(fallbackDetailSelect));
   }

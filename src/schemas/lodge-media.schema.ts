@@ -14,6 +14,8 @@ export const lodgeImagesReplaceSchema = z.object({
         image_url: z.string().min(1).max(2048),
         alt_text: z.string().max(300).optional().nullable(),
         caption: z.string().max(500).optional().nullable(),
+        category: z.enum(['HERO','EXTERIOR','ROOM','INTERIOR','BATHROOM','DINING','POOL','SPA','LANDSCAPE','WILDLIFE','EXPERIENCE','FOOD','AERIAL','BEACH','COMMON_AREA','OTHER']).optional(),
+        is_featured: z.boolean().optional(),
         is_cover: z.boolean().optional()
       })
     )

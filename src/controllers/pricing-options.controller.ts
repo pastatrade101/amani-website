@@ -159,3 +159,59 @@ export const deletePricingOption = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 'Pricing option deleted successfully.');
 });
+
+const seasonSelect = '*, group_prices:tour_group_prices(*)';
+
+export const listTourPricingSeasons = asyncHandler(async (req, res) => {
+  const { data, error } = await supabase.from('tour_pricing_seasons').select(seasonSelect).eq('tour_id', req.params.tourId).order('sort_order').order('minimum_travelers', { referencedTable: 'tour_group_prices' });
+  if (error) throw new AppError('Unable to fetch pricing seasons. Run the season pricing migration first.', 500, [error]);
+  return sendSuccess(res, 'Pricing seasons fetched successfully.', data ?? []);
+});
+
+export const saveTourPricingSeasons = asyncHandler(async (req, res) => {
+  const tourId = String(req.body.tour_id);
+  const seasons = req.body.seasons as Array<Record<string, any>>;
+  const savedIds: string[] = [];
+
+  for (const [index, season] of seasons.entries()) {
+    const seasonPayload = {
+      ...(season.id ? { id: season.id } : {}), tour_id: tourId, season_type: season.season_type,
+      season_name: season.season_name, start_date: season.start_date || null, end_date: season.end_date || null,
+      currency: season.currency, pricing_basis: season.pricing_basis, status: season.status, sort_order: season.sort_order ?? index * 10
+    };
+    const { data: saved, error } = await supabase.from('tour_pricing_seasons').upsert(seasonPayload).select('id').single();
+    if (error) throw new AppError('Unable to save pricing season.', 500, [error]);
+    savedIds.push(saved.id);
+
+    const { error: clearError } = await supabase.from('tour_group_prices').delete().eq('season_id', saved.id);
+    if (clearError) throw new AppError('Unable to update season group prices.', 500, [clearError]);
+    const rows = (season.group_prices ?? []).map((price: Record<string, any>, priceIndex: number) => ({
+      season_id: saved.id, minimum_travelers: price.minimum_travelers, maximum_travelers: price.maximum_travelers ?? null,
+      room_count: price.room_count, price: price.price_status === 'FIXED_PRICE' ? price.price : null,
+      price_status: price.price_status, sort_order: price.sort_order ?? priceIndex * 10
+    }));
+    if (rows.length) {
+      const { error: pricesError } = await supabase.from('tour_group_prices').insert(rows);
+      if (pricesError) throw new AppError('Unable to save season group prices.', 500, [pricesError]);
+    }
+  }
+
+  let staleQuery = supabase.from('tour_pricing_seasons').delete().eq('tour_id', tourId);
+  if (savedIds.length) staleQuery = staleQuery.not('id', 'in', `(${savedIds.join(',')})`);
+  const { error: staleError } = await staleQuery;
+  if (staleError) throw new AppError('Pricing saved, but removed seasons could not be cleared.', 500, [staleError]);
+
+  const { data, error } = await supabase.from('tour_pricing_seasons').select(seasonSelect).eq('tour_id', tourId).order('sort_order');
+  if (error) throw new AppError('Pricing saved, but could not be reloaded.', 500, [error]);
+  const fixedPerPersonRates = (data ?? []).flatMap((season: Record<string, any>) =>
+    season.status === 'ACTIVE' && season.pricing_basis === 'PER_PERSON'
+      ? (season.group_prices ?? []).filter((price: Record<string, any>) => price.price_status === 'FIXED_PRICE' && price.price != null).map((price: Record<string, any>) => Number(price.price))
+      : []
+  ).filter((price: number) => Number.isFinite(price));
+  if (fixedPerPersonRates.length) {
+    const { error: tourPriceError } = await supabase.from('tours').update({ price_from: Math.min(...fixedPerPersonRates) }).eq('id', tourId);
+    if (tourPriceError) throw new AppError('Season pricing saved, but the tour starting price could not be synchronized.', 500, [tourPriceError]);
+  }
+  await safeAudit({ action: 'update', entityId: tourId, entityType: 'tour_pricing_seasons', newData: data, req });
+  return sendSuccess(res, 'Season pricing saved successfully.', data ?? []);
+});

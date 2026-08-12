@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase';
 import { amenitiesForLodge, imagesForLodge, toursFeaturingLodge } from './lodge-media.controller';
+import { publicDetailsForLodge } from './lodge-details.controller';
 import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
 import {
@@ -11,7 +12,10 @@ import {
   updateRecord
 } from '../utils/supabase-helpers';
 
-const select = '*, destinations(name,slug)';
+// Explicit FK hint is required now that lodge_destinations provides a second
+// relationship path between these tables. Without it PostgREST returns an
+// ambiguous-relationship error and every lodge list request fails.
+const select = '*, destinations!lodges_destination_id_fkey(name,slug)';
 
 export const listLodges = asyncHandler(async (req, res) => {
   return listRecords(req, res, {
@@ -20,7 +24,7 @@ export const listLodges = asyncHandler(async (req, res) => {
     searchColumns: ['name', 'description', 'why_we_recommend'],
     statusColumn: 'status',
     defaultStatus: 'published',
-    filters: ['destination_id', 'accommodation_level', 'lodge_type', 'is_featured']
+    filters: ['destination_id', 'accommodation_level', 'lodge_type', 'is_featured', 'show_property_publicly']
   });
 });
 
@@ -41,20 +45,23 @@ export const getLodge = asyncHandler(async (req, res) => {
 
   if (error) throw new AppError('Unable to fetch the property.', 500, [error]);
   if (!data) throw new AppError('Record not found.', 404);
+  if ((data as Record<string, unknown>).show_property_publicly === false) throw new AppError('Record not found.', 404);
 
   const lodge = data as Record<string, unknown>;
   const id = String(lodge.id);
-  const [images, amenities, featuredIn] = await Promise.all([
+  const [images, amenities, featuredIn, details] = await Promise.all([
     imagesForLodge(id),
     amenitiesForLodge(id),
-    toursFeaturingLodge(id)
+    toursFeaturingLodge(id),
+    publicDetailsForLodge(id)
   ]);
 
   return sendSuccess(res, 'Record fetched successfully.', {
     ...lodge,
     images,
     amenities,
-    featured_in_tours: featuredIn
+    featured_in_tours: featuredIn,
+    ...details
   });
 });
 
@@ -74,7 +81,7 @@ export const deleteLodge = asyncHandler(async (req, res) => {
 // whole table, and the status value is checked against the publish_status enum
 // rather than trusted from the client.
 const BULK_LIMIT = 200;
-const STATUSES = ['draft', 'published', 'archived'] as const;
+const STATUSES = ['draft', 'published', 'hidden', 'archived'] as const;
 
 const idsFrom = (body: unknown): string[] => {
   const raw = Array.isArray((body as { ids?: unknown[] })?.ids) ? (body as { ids: unknown[] }).ids : [];

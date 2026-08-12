@@ -28,7 +28,7 @@ export const imagesForLodge = async (lodgeId: string): Promise<Row[]> =>
   softly(async () => {
     const { data, error } = await supabase
       .from('lodge_images')
-      .select('id,image_url,alt_text,caption,sort_order,is_cover')
+      .select('id,image_url,alt_text,caption,category,is_featured,sort_order,is_cover')
       .eq('lodge_id', lodgeId)
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true });
@@ -59,15 +59,15 @@ export const amenitiesForLodge = async (lodgeId: string): Promise<Row[]> =>
  */
 export const toursFeaturingLodge = async (lodgeId: string): Promise<Row[]> =>
   softly(async () => {
-    const { data, error } = await supabase
-      .from('itinerary_days')
-      .select('tour_id, tours!inner(id,title,slug,status,deleted_at,duration_days,price_from,currency,main_image_url)')
-      .eq('accommodation_id', lodgeId);
-    if (error) return [];
+    const [days, attached] = await Promise.all([
+      supabase.from('itinerary_days').select('tour_id, tours!inner(id,title,slug,status,deleted_at,duration_days,price_from,currency,main_image_url)').eq('accommodation_id', lodgeId),
+      supabase.from('lodge_tours').select('tour_id, tours!inner(id,title,slug,status,deleted_at,duration_days,price_from,currency,main_image_url)').eq('lodge_id', lodgeId)
+    ]);
+    if (days.error && attached.error) return [];
 
     const seen = new Set<string>();
     const tours: Row[] = [];
-    for (const row of (data ?? []) as Row[]) {
+    for (const row of ([...(days.data ?? []), ...(attached.data ?? [])]) as Row[]) {
       const tour = row.tours as Row | null;
       if (!tour || tour.deleted_at || tour.status !== 'published') continue;
       const id = String(tour.id);
@@ -131,6 +131,8 @@ export const replaceLodgeImages = asyncHandler(async (req, res) => {
     image_url: String(image.image_url),
     alt_text: image.alt_text ? String(image.alt_text) : null,
     caption: image.caption ? String(image.caption) : null,
+    category: image.category ? String(image.category) : 'EXTERIOR',
+    is_featured: image.is_featured === true,
     sort_order: index,
     is_cover: index === coverAt && incoming.length > 0
   }));
