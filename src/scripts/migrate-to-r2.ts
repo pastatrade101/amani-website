@@ -22,6 +22,14 @@ type MediaRow = {
   has_avif: boolean | null;
 };
 
+const r2Origin = env.R2_PUBLIC_URL?.replace(/\/+$/, '') || '';
+
+/** Storage bucket encoded in the canonical Supabase public URL. */
+const bucketFor = (url: string | null): string => {
+  const match = url?.match('/storage/v1/object/public/([^/]+)/');
+  return match?.[1] || env.SUPABASE_STORAGE_BUCKET;
+};
+
 const contentTypeFor = (key: string, fallback?: string | null): string => {
   if (key.endsWith('.avif')) return 'image/avif';
   if (key.endsWith('.webp')) return 'image/webp';
@@ -44,8 +52,8 @@ const responsiveKeys = (row: MediaRow): string[] => {
   ]);
 };
 
-const download = async (key: string): Promise<Buffer | null> => {
-  const { data, error } = await supabase.storage.from(env.SUPABASE_STORAGE_BUCKET).download(key);
+const download = async (bucket: string, key: string): Promise<Buffer | null> => {
+  const { data, error } = await supabase.storage.from(bucket).download(key);
   if (error) {
     if (error.message.toLowerCase().includes('not found')) return null;
     throw error;
@@ -53,7 +61,7 @@ const download = async (key: string): Promise<Buffer | null> => {
   return data ? Buffer.from(await data.arrayBuffer()) : null;
 };
 
-const recoverOriginal = async (row: MediaRow): Promise<Buffer | null> => {
+const recoverOriginal = async (row: MediaRow, bucket: string): Promise<Buffer | null> => {
   if (!row.file_path) return null;
   const fileName = row.file_path.split('/').pop() ?? '';
   const stem = fileName.replace(/\.[^.]+$/, '');
@@ -67,7 +75,7 @@ const recoverOriginal = async (row: MediaRow): Promise<Buffer | null> => {
 
   const sources: Array<Buffer | null> = [];
   for (let at = 0; at < candidates.length; at += 4) {
-    sources.push(...await Promise.all(candidates.slice(at, at + 4).map((candidate) => download(candidate))));
+    sources.push(...await Promise.all(candidates.slice(at, at + 4).map((candidate) => download(bucket, candidate))));
   }
   for (const source of sources) {
     if (!source) continue;
@@ -92,6 +100,7 @@ const main = async () => {
   let copied = 0;
   let failed = 0;
   let orphaned = 0;
+  let alreadyMigrated = 0;
 
   for (;;) {
     const { data, error } = await supabase
@@ -104,8 +113,13 @@ const main = async () => {
 
     for (const row of rows) {
       if (!row.file_path) continue;
+      if (r2Origin && row.file_url?.startsWith(`${r2Origin}/`)) {
+        alreadyMigrated += 1;
+        continue;
+      }
+      const sourceBucket = bucketFor(row.file_url);
       try {
-        const original = await download(row.file_path) ?? await recoverOriginal(row);
+        const original = await download(sourceBucket, row.file_path) ?? await recoverOriginal(row, sourceBucket);
         if (!original) {
           orphaned += 1;
           console.warn(`orphaned ${row.file_path} (no original, thumbnail, or responsive source)`);
@@ -116,7 +130,7 @@ const main = async () => {
         copied += 1;
 
         if (row.thumbnail_path) {
-          let thumbnail = await download(row.thumbnail_path);
+          let thumbnail = await download(sourceBucket, row.thumbnail_path);
           if (!thumbnail && row.mime_type?.startsWith('image/')) {
             thumbnail = await sharp(original).rotate().resize({ width: 600, withoutEnlargement: true }).webp({ quality: 72 }).toBuffer();
           }
@@ -127,7 +141,7 @@ const main = async () => {
         }
 
         for (const key of responsiveKeys(row)) {
-          let derivative = await download(key);
+          let derivative = await download(sourceBucket, key);
           if (!derivative && row.mime_type?.startsWith('image/')) {
             const width = Number(key.match(/\/(\d+)\.(?:webp|avif)$/)?.[1]);
             if (width) {
@@ -153,7 +167,7 @@ const main = async () => {
     from += pageSize;
   }
 
-  console.log(`R2 migration complete: ${copied} objects copied, ${orphaned} orphaned rows skipped, ${failed} failed.`);
+  console.log(`R2 migration complete: ${copied} objects copied, ${alreadyMigrated} already on R2, ${orphaned} orphaned rows skipped, ${failed} failed.`);
   if (failed) process.exitCode = 1;
 };
 
