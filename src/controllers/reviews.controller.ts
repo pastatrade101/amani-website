@@ -7,6 +7,7 @@ import { createRecord, getRecordById, listRecords, softDeleteRecord, updateRecor
 export const listReviews = asyncHandler(async (req, res) => {
   return listRecords(req, res, {
     table: 'reviews',
+    select: '*, tours(id,title,slug,main_image_url,banner_image_url)',
     searchColumns: ['author_name', 'message', 'tour_title'],
     statusColumn: 'status',
     defaultStatus: 'approved',
@@ -17,7 +18,12 @@ export const listReviews = asyncHandler(async (req, res) => {
 });
 
 export const getReview = asyncHandler(async (req, res) => {
-  return getRecordById(res, 'reviews', req.params.id);
+  return getRecordById(
+    res,
+    'reviews',
+    req.params.id,
+    '*, tours(id,title,slug,main_image_url,banner_image_url)'
+  );
 });
 
 export const createReview = asyncHandler(async (req, res) => {

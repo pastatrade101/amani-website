@@ -26,7 +26,8 @@
     "content:destination-guides:prod": "node dist/scripts/import-destination-guides.js",
     "content:prune:prod": "node dist/scripts/prune-content.js",
     "email:test": "tsx src/scripts/email-test.ts",
-    "email:test:prod": "node dist/scripts/email-test.js"
+    "email:test:prod": "node dist/scripts/email-test.js",
+    "content:lodge-galleries": "tsx src/scripts/import-lodge-galleries.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1108.0",
