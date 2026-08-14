@@ -39,6 +39,39 @@ export const imagesForLodge = async (lodgeId: string): Promise<Row[]> =>
     return (data ?? []) as Row[];
   }, []);
 
+/**
+ * Attach each property's gallery cover as `cover_image_url`.
+ *
+ * Most properties imported from the photo set have no image_url or
+ * hero_image_url — their photography lives entirely in lodge_images — so a
+ * card reading only the legacy fields renders an empty tile. This gives the
+ * listing something real to fall back to.
+ */
+export const attachCovers = async (rows: Array<Record<string, unknown>>): Promise<void> => {
+  const ids = rows.map((row) => String(row.id)).filter(Boolean);
+  if (!ids.length) return;
+
+  await softly(async () => {
+    const { data, error } = await supabase
+      .from('lodge_images')
+      .select('lodge_id,image_url,is_cover,sort_order')
+      .in('lodge_id', ids)
+      .order('is_cover', { ascending: false })
+      .order('sort_order', { ascending: true });
+    if (error) return;
+
+    // First row per lodge wins: covers sort first, then lowest sort_order.
+    const cover = new Map<string, string>();
+    for (const row of (data ?? []) as Array<{ lodge_id: string; image_url: string }>) {
+      if (!cover.has(row.lodge_id)) cover.set(row.lodge_id, row.image_url);
+    }
+    for (const row of rows) {
+      const url = cover.get(String(row.id));
+      if (url) row.cover_image_url = url;
+    }
+  }, undefined);
+};
+
 /** Public gallery-only response used by itinerary pages. */
 export const getLodgeGallery = asyncHandler(async (req, res) => {
   const images = await imagesForLodge(req.params.id);

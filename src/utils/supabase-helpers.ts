@@ -16,6 +16,8 @@ type ListOptions = {
   orderBy?: string;
   ascending?: boolean;
   filters?: string[];
+  /** Runs after the rows are fetched, before they are sent. */
+  afterFetch?: (items: Array<Record<string, unknown>>) => Promise<void>;
 };
 
 // Image columns (per table) whose URLs may have a web-optimized thumbnail in
@@ -141,6 +143,7 @@ export const listRecords = async (req: Request, res: Response, options: ListOpti
 
   const items = (data ?? []) as unknown as Array<Record<string, unknown>>;
   await attachThumbnails(options.table, items);
+  if (options.afterFetch) await options.afterFetch(items);
 
   return sendSuccess(res, 'Records fetched successfully.', {
     items,

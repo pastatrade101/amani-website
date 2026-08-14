@@ -1,5 +1,5 @@
 import { supabase } from '../config/supabase';
-import { amenitiesForLodge, imagesForLodge, toursFeaturingLodge } from './lodge-media.controller';
+import { amenitiesForLodge, attachCovers, imagesForLodge, toursFeaturingLodge } from './lodge-media.controller';
 import { publicDetailsForLodge } from './lodge-details.controller';
 import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
@@ -24,7 +24,10 @@ export const listLodges = asyncHandler(async (req, res) => {
     searchColumns: ['name', 'description', 'why_we_recommend'],
     statusColumn: 'status',
     defaultStatus: 'published',
-    filters: ['destination_id', 'accommodation_level', 'lodge_type', 'is_featured', 'show_property_publicly']
+    filters: ['destination_id', 'accommodation_level', 'lodge_type', 'is_featured', 'show_property_publicly'],
+    // Most properties keep their photography only in lodge_images and have no
+    // image_url at all, so cards need the gallery cover to fall back to.
+    afterFetch: attachCovers
   });
 });
 
