@@ -246,7 +246,12 @@ export const sendQuotation = asyncHandler(async (req, res) => {
   if (!quotation) throw new AppError('Quotation not found.', 404);
 
   const phone = (req.body?.phone as string | undefined) ?? (quotation.customer_phone as string | undefined);
-  if (!phone) throw new AppError('No WhatsApp number for this quotation.', 422);
+  const email = (req.body?.email as string | undefined) ?? (quotation.customer_email as string | undefined);
+  // Either channel is enough. Requiring a WhatsApp number would make the email
+  // channel unreachable for a traveller who only ever gave us an address.
+  if (!phone && !email) {
+    throw new AppError('This quotation has no WhatsApp number and no email address to send to.', 422);
+  }
 
   // Refuse to put a dead price in front of someone. The traveller's page would
   // show it as expired the moment they opened it, which is a worse way to find
@@ -274,7 +279,7 @@ export const sendQuotation = asyncHandler(async (req, res) => {
     entityType: 'quotations',
     entityId: String(quotation.id),
     phone,
-    email: String(req.body?.email ?? quotation.customer_email ?? ''),
+    email,
     // WhatsApp carries the least it can: what it is, what it costs, and the
     // link. The detail belongs in the email, which is where someone reads
     // carefully and where it stays findable months later.
