@@ -17,6 +17,7 @@ import currenciesRoutes from './routes/currencies.routes';
 import tripPortalRoutes from './routes/trip-portal.routes';
 import categoriesRoutes from './routes/categories.routes';
 import translationsRoutes from './routes/translations.routes';
+import whatsappRoutes from './routes/whatsapp.routes';
 import contactRoutes from './routes/contact.routes';
 import lodgesRoutes from './routes/lodges.routes';
 import activitiesRoutes from './routes/activities.routes';
@@ -86,8 +87,27 @@ app.use(
     skip: (req) => req.method === 'OPTIONS' || req.path === '/api/health'
   })
 );
+// Meta sends the webhook verify token as a query parameter, and morgan logs
+// the full URL — which wrote a live credential into the access log on every
+// subscription handshake. Redacted before the logger ever sees it.
+morgan.token('url', (req) => {
+  const url = (req as { originalUrl?: string; url?: string }).originalUrl ?? (req as { url?: string }).url ?? '';
+  return url.replace(/([?&]hub\.verify_token=)[^&]*/i, '$1[redacted]');
+});
 app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-app.use(express.json({ limit: '1mb' }));
+// The WhatsApp webhook signature is an HMAC over the EXACT bytes Meta sent, so
+// the raw buffer is kept for that path only — parsing and re-serialising JSON
+// changes key order and whitespace and would invalidate every signature.
+app.use(
+  express.json({
+    limit: '1mb',
+    verify: (req, _res, buf) => {
+      if (typeof req.url === 'string' && req.url.includes('/whatsapp/webhook')) {
+        (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
+      }
+    }
+  })
+);
 app.use(express.urlencoded({ extended: true }));
 
 app.get('/api/health', (_req, res) => {
@@ -111,6 +131,8 @@ app.use('/api/pricing-options', pricingOptionsRoutes);
 app.use('/api/categories', categoriesRoutes);
 // Languages + per-entity content translations (multilingual CMS foundation).
 app.use('/api/translations', translationsRoutes);
+// WhatsApp Business Cloud API: Meta webhook + admin send/inbox.
+app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/destinations', destinationsRoutes);
 app.use('/api/lodges', lodgesRoutes);
 app.use('/api/activities', activitiesRoutes);
