@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase';
+import { localeOf, localizeRecords } from '../utils/translations';
 import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { createRecord, softDeleteRecord, updateRecord } from '../utils/supabase-helpers';
@@ -78,7 +79,13 @@ export const getHomepage = asyncHandler(async (req, res) => {
 
   const { data, error } = await query;
   if (error) throw new AppError('Unable to fetch homepage content.', 500, [error]);
-  return sendSuccess(res, 'Homepage content fetched successfully.', data ?? []);
+
+  // The homepage is the highest-traffic page on the site; without this a
+  // visitor on /de/ met an entirely English homepage. One batched merge.
+  const sections = (data ?? []) as Array<Record<string, unknown>>;
+  await localizeRecords('homepage_sections', sections, localeOf(req.query.locale));
+
+  return sendSuccess(res, 'Homepage content fetched successfully.', sections);
 });
 
 export const updateHomepage = asyncHandler(async (req, res) => {

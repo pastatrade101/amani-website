@@ -53,6 +53,31 @@ export const TRANSLATABLE_ENTITIES: Record<string, TranslatableField[]> = {
     { key: 'short_description', label: 'Short description', kind: 'textarea' },
     { key: 'description', label: 'Description', kind: 'rich', required: true },
     { key: 'why_we_recommend', label: 'Why we recommend it', kind: 'rich' }
+  ],
+  // Homepage copy is the highest-traffic text on the site; without it a
+  // visitor on /de/ met an entirely English homepage. Only the flat headline
+  // fields are covered — the nested lists inside extra_data need a richer
+  // field kind than the registry has today.
+  homepage_sections: [
+    { key: 'title', label: 'Heading', kind: 'text', required: true },
+    { key: 'subtitle', label: 'Sub-heading', kind: 'textarea' }
+  ],
+  faqs: [
+    { key: 'question', label: 'Question', kind: 'text', required: true },
+    { key: 'answer', label: 'Answer', kind: 'rich', required: true }
+  ],
+  blog_posts: [
+    { key: 'title', label: 'Title', kind: 'text', required: true },
+    { key: 'excerpt', label: 'Excerpt', kind: 'textarea' },
+    { key: 'content', label: 'Content', kind: 'rich', required: true },
+    { key: 'meta_title', label: 'SEO title', kind: 'text' },
+    { key: 'meta_description', label: 'SEO description', kind: 'textarea' }
+  ],
+  activities: [
+    { key: 'name', label: 'Name', kind: 'text', required: true },
+    { key: 'description', label: 'Description', kind: 'rich', required: true },
+    { key: 'meta_title', label: 'SEO title', kind: 'text' },
+    { key: 'meta_description', label: 'SEO description', kind: 'textarea' }
   ]
 };
 
@@ -61,7 +86,11 @@ export const ENTITY_PERMISSIONS: Record<string, string> = {
   tour_categories: 'categories.update',
   tours: 'tours.update',
   destinations: 'destinations.update',
-  lodges: 'lodges.update'
+  lodges: 'lodges.update',
+  homepage_sections: 'homepage.update',
+  faqs: 'faqs.update',
+  blog_posts: 'blog.update',
+  activities: 'activities.update'
 };
 
 export type TranslationFields = Record<string, string | string[]>;

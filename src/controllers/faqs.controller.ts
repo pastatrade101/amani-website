@@ -1,5 +1,6 @@
 import { asyncHandler } from '../utils/async-handler';
 import { createRecord, getRecordById, listRecords, softDeleteRecord, updateRecord } from '../utils/supabase-helpers';
+import { localeOf, localizeRecords } from '../utils/translations';
 
 const select = '*, destinations(name,slug)';
 
@@ -12,7 +13,8 @@ export const listFaqs = asyncHandler(async (req, res) => {
     defaultStatus: 'published',
     filters: ['category', 'destination_id'],
     orderBy: 'sort_order',
-    ascending: true
+    ascending: true,
+    afterFetch: (items) => localizeRecords('faqs', items, localeOf(req.query.locale))
   });
 });
 
