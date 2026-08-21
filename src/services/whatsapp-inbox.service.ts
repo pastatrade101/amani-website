@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { supabase } from '../config/supabase';
 import { toWaId } from './whatsapp-client.service';
 
@@ -216,6 +217,65 @@ export const recordConversationMessage = async (
     .select('id')
     .single();
   return data?.id ? String(data.id) : null;
+};
+
+export type UntransportedMessage = {
+  contactId: string;
+  conversationId: string;
+  aiMessageId: string | null;
+  /** 'failed' = Meta refused it. 'skipped' = we refused it before calling Meta. */
+  status: 'failed' | 'skipped';
+  messageType: 'text' | 'template';
+  templateName?: string | null;
+  errorMessage?: string | null;
+  errorCode?: string | null;
+  skippedReason?: string | null;
+  payload?: Record<string, unknown>;
+};
+
+/**
+ * The transport row for a message that never reached the traveller.
+ *
+ * Previously these left nothing at all — no row, no reason — so an agent whose
+ * send was refused saw an error once and the thread showed no trace of the
+ * attempt. The row is the evidence that something was tried and why it did not
+ * land; it must never be mistaken for one that did.
+ *
+ * wa_message_id is NOT NULL UNIQUE, because that column is what makes webhook
+ * processing idempotent, so a message Meta never issued an id for needs a local
+ * stand-in. The `local:` prefix cannot collide with a wamid and cannot be
+ * matched by any status callback, but it is still only an id: `status` is the
+ * only thing that says whether Meta ever had the message.
+ *
+ * Best-effort by design — losing the record of a failure must not become a
+ * second failure on top of the one being recorded.
+ */
+export const recordUntransported = async (message: UntransportedMessage): Promise<void> => {
+  const now = new Date().toISOString();
+  const { error } = await supabase.from('whatsapp_messages').insert({
+    wa_message_id: `local:${randomUUID()}`,
+    contact_id: message.contactId,
+    conversation_id: message.conversationId,
+    ai_message_id: message.aiMessageId,
+    direction: 'outbound',
+    message_type: message.messageType,
+    status: message.status,
+    template_name: message.templateName ?? null,
+    error_code: message.errorCode ?? null,
+    error_message: message.errorMessage ?? null,
+    skipped_reason: message.skippedReason ?? null,
+    // sent_at stays null on purpose: nothing was sent.
+    failed_at: message.status === 'failed' ? now : null,
+    payload: message.payload ?? {}
+  });
+
+  if (error) {
+    // Shape only — never the traveller's message or number.
+    console.error('[whatsapp] could not record an untransported message', {
+      status: message.status,
+      error: (error as { message?: string }).message ?? 'unknown'
+    });
+  }
 };
 
 /** Look up a contact for an outbound send. */

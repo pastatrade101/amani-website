@@ -102,9 +102,34 @@ const graphPost = async (path: string, body: unknown): Promise<Record<string, un
   throw lastError ?? new AppError('WhatsApp request failed.', 502);
 };
 
-const extractMessageId = (raw: Record<string, unknown>): string => {
+/**
+ * Meta answering 2xx is not the same as Meta taking the message.
+ *
+ * Without a wamid there is nothing for a status callback to ever match, so the
+ * message could never move past 'accepted' however it actually ended up. That
+ * is a failed send, and it is refused here rather than stored as one that went.
+ */
+const requireMessageId = (raw: Record<string, unknown>): string => {
   const messages = raw.messages as Array<{ id?: string }> | undefined;
-  return messages?.[0]?.id ?? '';
+  const id = messages?.[0]?.id;
+  if (!id) throw new AppError('WhatsApp accepted the request but returned no message id.', 502);
+  return id;
+};
+
+/**
+ * The safe, storable half of a send failure.
+ *
+ * graphPost has already reduced Meta's response to its own error text and
+ * numeric code; the bearer token and the request body — which carries the
+ * traveller's number — never leave this file, so what comes back here can be
+ * written to a row and shown to an agent as it stands.
+ */
+export const describeSendFailure = (error: unknown): { message: string; code: string | null } => {
+  if (error instanceof AppError) {
+    const detail = (error.errors[0] ?? {}) as { code?: number | string };
+    return { message: error.message, code: detail.code == null ? null : String(detail.code) };
+  }
+  return { message: error instanceof Error ? error.message : 'WhatsApp send failed.', code: null };
 };
 
 /**
@@ -121,7 +146,7 @@ export const sendTextMessage = async (to: string, body: string): Promise<SendRes
     type: 'text',
     text: { preview_url: true, body }
   });
-  return { waMessageId: extractMessageId(raw), raw };
+  return { waMessageId: requireMessageId(raw), raw };
 };
 
 /**
@@ -150,7 +175,7 @@ export const sendTemplateMessage = async (
       ...(components ? { components } : {})
     }
   });
-  return { waMessageId: extractMessageId(raw), raw };
+  return { waMessageId: requireMessageId(raw), raw };
 };
 
 /** Mark an inbound message read, so the traveller sees the blue ticks. */

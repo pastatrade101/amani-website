@@ -1,12 +1,18 @@
 import { supabase } from '../config/supabase';
 import {
   canSendSessionMessage,
+  describeSendFailure,
   isWhatsAppConfigured,
   sendTemplateMessage,
   sendTextMessage,
   toWaId
 } from './whatsapp-client.service';
-import { recordConversationMessage, resolveConversation, upsertContact } from './whatsapp-inbox.service';
+import {
+  recordConversationMessage,
+  recordUntransported,
+  resolveConversation,
+  upsertContact
+} from './whatsapp-inbox.service';
 import { emailLayout, escapeHtml, isEmailConfigured, sendEmail } from './email.service';
 import { recipientFor } from './notification.service';
 
@@ -209,8 +215,15 @@ const parameterMismatch = (variables: unknown, parameters: string[]): string | n
  * only an approved template — and if no template is mapped yet, the event is
  * recorded as skipped with the reason rather than attempted and failed. That
  * keeps the platform on the right side of Meta's rules by construction.
+ *
+ * Every refusal made once a contact is known leaves a row in the thread. A
+ * traveller's thread going quiet with no explanation is what an agent cannot
+ * act on; "we did not send this, and here is why" is what they can.
  */
 const deliverWhatsApp = async (event: NotificationEvent): Promise<Outcome> => {
+  // Deliberately no row: an unconfigured server is an environment problem, not
+  // something that happened to this traveller, and writing it to every thread
+  // would bury the refusals that are.
   if (!isWhatsAppConfigured()) return { status: 'skipped', detail: 'WhatsApp is not configured.' };
   if (!event.phone) return { status: 'skipped', detail: 'No WhatsApp number for this recipient.' };
 
@@ -218,34 +231,79 @@ const deliverWhatsApp = async (event: NotificationEvent): Promise<Outcome> => {
   if (!waId) return { status: 'skipped', detail: 'Unusable phone number.' };
 
   const contact = await upsertContact(waId);
-  if (contact.blocked) return { status: 'skipped', detail: 'Contact is blocked.' };
-  if (!contact.whatsapp_opt_in) return { status: 'skipped', detail: 'No WhatsApp opt-in on record.' };
+
+  /**
+   * From here there is a contact, so there is a thread to write to. Recording
+   * is best-effort: the outcome the caller sees must not change because the
+   * note about it could not be stored.
+   */
+  const record = async (
+    status: 'failed' | 'skipped',
+    detail: string,
+    attempted: { messageType: 'text' | 'template'; templateName?: string | null; errorCode?: string | null }
+  ): Promise<Outcome> => {
+    try {
+      const conversationId = await resolveConversation(contact);
+      const aiMessageId = await recordConversationMessage(conversationId, 'assistant', event.message, {
+        notification_event: event.type,
+        // What the thread must not imply is that the traveller saw this.
+        delivery_status: status,
+        delivery_detail: detail
+      });
+      await recordUntransported({
+        contactId: contact.id,
+        conversationId,
+        aiMessageId,
+        status,
+        messageType: attempted.messageType,
+        templateName: attempted.templateName ?? null,
+        errorCode: attempted.errorCode ?? null,
+        errorMessage: status === 'failed' ? detail : null,
+        skippedReason: status === 'skipped' ? detail : null,
+        payload: { notification_event: event.type }
+      });
+    } catch (error) {
+      console.error('[notifications] could not record an undelivered WhatsApp message', {
+        type: event.type,
+        status,
+        error: error instanceof Error ? error.message : 'unknown'
+      });
+    }
+    return { status, detail };
+  };
+
+  const skipped = (detail: string, messageType: 'text' | 'template' = 'text') =>
+    record('skipped', detail, { messageType });
+
+  if (contact.blocked) return skipped('Contact is blocked.');
+  if (!contact.whatsapp_opt_in) return skipped('No WhatsApp opt-in on record.');
   if (event.marketing) {
     const { data } = await supabase.from('whatsapp_contacts').select('marketing_opt_in').eq('id', contact.id).maybeSingle();
-    if (!data?.marketing_opt_in) return { status: 'skipped', detail: 'No marketing opt-in on record.' };
+    if (!data?.marketing_opt_in) return skipped('No marketing opt-in on record.');
   }
 
   const inWindow = canSendSessionMessage(contact.last_inbound_at);
   const template = event.templateKey ? await templateFor(event.templateKey) : null;
 
-  try {
-    let waMessageId = '';
-    let usedTemplate: string | null = null;
+  // Both set before the call rather than after, so the catch can tell what was
+  // attempted and whether Meta ever took it.
+  let usedTemplate: string | null = null;
+  let waMessageId = '';
 
+  try {
     if (inWindow) {
       ({ waMessageId } = await sendTextMessage(waId, event.message));
     } else if (template) {
       const parameters = event.templateParameters ?? [];
       const mismatch = parameterMismatch(template.variables, parameters);
-      if (mismatch) return { status: 'skipped', detail: mismatch };
+      if (mismatch) return await skipped(mismatch, 'template');
 
-      ({ waMessageId } = await sendTemplateMessage(waId, template.meta_template_name, template.language, parameters));
       usedTemplate = template.meta_template_name;
+      ({ waMessageId } = await sendTemplateMessage(waId, template.meta_template_name, template.language, parameters));
     } else {
-      return {
-        status: 'skipped',
-        detail: 'Outside the 24-hour window and no approved WhatsApp template is configured for this event.'
-      };
+      return await skipped(
+        'Outside the 24-hour window and no approved WhatsApp template is configured for this event.'
+      );
     }
 
     // Mirror it into the conversation so the inbox shows what the traveller
@@ -263,6 +321,7 @@ const deliverWhatsApp = async (event: NotificationEvent): Promise<Outcome> => {
       ai_message_id: aiMessageId,
       direction: 'outbound',
       message_type: usedTemplate ? 'template' : 'text',
+      // Meta holds the request; only a webhook may say a phone holds the message.
       status: 'accepted',
       template_name: usedTemplate,
       sent_at: new Date().toISOString(),
@@ -271,7 +330,23 @@ const deliverWhatsApp = async (event: NotificationEvent): Promise<Outcome> => {
 
     return { status: 'sent' };
   } catch (error) {
-    return { status: 'failed', detail: error instanceof Error ? error.message : 'Send failed.' };
+    // A wamid already in hand means Meta took the message and it was the
+    // bookkeeping underneath that failed. Calling that a failed send would be
+    // the same untruth in the other direction, and would re-send on retry.
+    if (waMessageId) {
+      console.error('[notifications] WhatsApp accepted but the record could not be written', {
+        type: event.type,
+        error: error instanceof Error ? error.message : 'unknown'
+      });
+      return { status: 'sent', detail: 'Sent, but the conversation record could not be written.' };
+    }
+
+    const failure = describeSendFailure(error);
+    return await record('failed', failure.message, {
+      messageType: usedTemplate ? 'template' : 'text',
+      templateName: usedTemplate,
+      errorCode: failure.code
+    });
   }
 };
 

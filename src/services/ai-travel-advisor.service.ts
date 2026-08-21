@@ -94,21 +94,27 @@ const saveMessage = async (conversationId: string, role: 'assistant' | 'user', c
   }
 };
 
+type HistoryRow = { role: string; content: string; metadata?: { delivery_status?: string } | null };
+
 const loadHistory = async (conversationId: string, currentMessage: string): Promise<AnthropicMessage[]> => {
-  let ordered: Array<{ role: string; content: string }> = [];
+  let ordered: HistoryRow[] = [];
   try {
     const { data } = await supabase
       .from('ai_messages')
-      .select('role,content')
+      .select('role,content,metadata')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: false })
       .limit(8);
-    ordered = ((data ?? []) as Array<{ role: string; content: string }>).reverse();
+    ordered = ((data ?? []) as HistoryRow[]).reverse();
   } catch {
     ordered = [];
   }
   const messages: AnthropicMessage[] = ordered
     .filter((m) => m.role === 'user' || m.role === 'assistant')
+    // A WhatsApp notification that failed or was skipped still leaves a turn in
+    // the thread, for the agent to see. The assistant must not read it back as
+    // something the traveller was told.
+    .filter((m) => !['failed', 'skipped'].includes(String(m.metadata?.delivery_status ?? '')))
     .map((m) => ({ role: m.role as AnthropicRole, content: String(m.content) }));
   if (!messages.length || messages[messages.length - 1].content !== currentMessage) {
     messages.push({ role: 'user', content: currentMessage });

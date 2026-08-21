@@ -6,6 +6,7 @@ import { supabase } from '../config/supabase';
 import { safeAudit } from '../services/audit.service';
 import {
   canSendSessionMessage,
+  describeSendFailure,
   isWhatsAppConfigured,
   markMessageRead,
   sendTemplateMessage,
@@ -13,9 +14,11 @@ import {
   toWaId,
   whatsappConfig
 } from '../services/whatsapp-client.service';
+import type { SendResult } from '../services/whatsapp-client.service';
 import {
   contactByPhone,
   recordConversationMessage,
+  recordUntransported,
   resolveConversation,
   upsertContact
 } from '../services/whatsapp-inbox.service';
@@ -227,8 +230,21 @@ const STATUS_TIMESTAMPS: Record<string, string> = {
   failed: 'failed_at'
 };
 
-/** Status callbacks only ever move a message forward, never backwards. */
-const STATUS_RANK: Record<string, number> = { accepted: 0, sent: 1, delivered: 2, read: 3, failed: 4 };
+/**
+ * Status callbacks only ever move a message forward, never backwards.
+ *
+ * 'pending' sits below 'accepted' because it describes a row written before
+ * Meta was known to have the request. 'skipped' has no rank and needs none: a
+ * skipped row carries a local id, so no callback can ever find it.
+ */
+const STATUS_RANK: Record<string, number> = {
+  pending: 0,
+  accepted: 1,
+  sent: 2,
+  delivered: 3,
+  read: 4,
+  failed: 5
+};
 
 const handleStatuses = async (value: WhatsAppValue) => {
   for (const status of value.statuses ?? []) {
@@ -324,9 +340,13 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
   const useTemplate = Boolean(templateName);
   if (!useTemplate && !canSendSessionMessage(contact.last_inbound_at)) {
+    // The sentence is for the agent; the code is for the composer, which has to
+    // recognise this one refusal and offer the template picker rather than
+    // showing the send as having merely gone wrong.
     throw new AppError(
       'This contact is outside the 24-hour customer-service window. Send an approved template instead.',
-      409
+      409,
+      [{ code: 'APPROVED_TEMPLATE_REQUIRED' }]
     );
   }
 
@@ -359,15 +379,49 @@ export const sendMessage = asyncHandler(async (req, res) => {
     return sendSuccess(res, 'Already sent.', { duplicate: true });
   }
 
-  const result = template
-    ? await sendTemplateMessage(waId, template.meta_template_name, template.language, parameters)
-    : await sendTextMessage(waId, body as string);
-
   const conversationId = await resolveConversation(contact);
   // Store what the traveller will actually read, not the template's name. The
   // thread is the record of the conversation, and "[template: booking_update]"
   // tells the next agent nothing about what was said.
   const content = template ? renderTemplate(template, parameters) : (body as string);
+  const messageType = template ? 'template' : 'text';
+
+  // The thread is resolved before the send so a refusal has somewhere to land.
+  // A send that throws used to leave nothing at all behind, so the agent who
+  // made it saw one error and the thread showed no trace of the attempt.
+  let result: SendResult;
+  try {
+    result = template
+      ? await sendTemplateMessage(waId, template.meta_template_name, template.language, parameters)
+      : await sendTextMessage(waId, body as string);
+  } catch (error) {
+    const failure = describeSendFailure(error);
+    try {
+      const failedMessageId = await recordConversationMessage(conversationId, 'agent', content, {
+        // No wa_message_id: Meta never issued one, and inventing one here would
+        // make an attempt look like a send.
+        delivery_status: 'failed',
+        sent_by: req.user?.sub ?? null
+      });
+      await recordUntransported({
+        contactId: contact.id,
+        conversationId,
+        aiMessageId: failedMessageId,
+        status: 'failed',
+        messageType,
+        templateName: template?.meta_template_name ?? null,
+        errorMessage: failure.message,
+        errorCode: failure.code
+      });
+    } catch (recordError) {
+      console.error('[whatsapp] could not record a failed send', {
+        error: recordError instanceof Error ? recordError.message : 'unknown'
+      });
+    }
+    // The agent still gets Meta's own reason, unchanged.
+    throw error;
+  }
+
   const aiMessageId = await recordConversationMessage(conversationId, 'agent', content, {
     wa_message_id: result.waMessageId,
     sent_by: req.user?.sub ?? null
@@ -379,7 +433,9 @@ export const sendMessage = asyncHandler(async (req, res) => {
     conversation_id: conversationId,
     ai_message_id: aiMessageId,
     direction: 'outbound',
-    message_type: template ? 'template' : 'text',
+    message_type: messageType,
+    // Meta's own word for "I have your request" — not delivery. Only a webhook
+    // may ever move this to delivered or read.
     status: 'accepted',
     template_name: template?.meta_template_name ?? null,
     sent_at: new Date().toISOString(),
@@ -519,7 +575,13 @@ export const getConversation = asyncHandler(async (req, res) => {
 
   const [{ data: messages }, { data: deliveries }, { data: notes }, { data: contact }] = await Promise.all([
     supabase.from('ai_messages').select('*').eq('conversation_id', id).order('created_at', { ascending: true }),
-    supabase.from('whatsapp_messages').select('ai_message_id, status, error_message, direction').eq('conversation_id', id),
+    // status carries the whole truth about transport, so wa_message_id is
+    // deliberately not returned: a refused message holds a local stand-in id
+    // that must never be read as evidence Meta accepted anything.
+    supabase
+      .from('whatsapp_messages')
+      .select('ai_message_id, status, error_code, error_message, skipped_reason, direction')
+      .eq('conversation_id', id),
     supabase.from('conversation_notes').select('*').eq('conversation_id', id).order('created_at', { ascending: false }),
     conversation.whatsapp_contact_id
       ? supabase.from('whatsapp_contacts').select('*').eq('id', conversation.whatsapp_contact_id).maybeSingle()
