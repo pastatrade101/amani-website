@@ -335,7 +335,14 @@ const deliver = async (event: NotificationEvent, channel: Channel): Promise<Outc
 export const emitNotification = async (event: NotificationEvent): Promise<EmitResult> => {
   const channels: Partial<Record<Channel, Outcome>> = {};
 
-  for (const channel of CHANNEL_POLICY[event.type] ?? ['whatsapp']) {
+  // A channel that cannot deliver is dropped rather than attempted, so turning
+  // email off leaves no trail of "skipped: disabled" rows and the reported
+  // reason is whatever the remaining channel actually said.
+  const policy = (CHANNEL_POLICY[event.type] ?? ['whatsapp']).filter((channel) =>
+    channel === 'whatsapp' ? true : isEmailConfigured()
+  );
+
+  for (const channel of policy) {
     try {
       const id = await claim(event, channel);
       if (!id) {

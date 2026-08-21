@@ -57,6 +57,9 @@ const envSchema = z.object({
   // Set EITHER Resend (recommended: just an API key) OR SMTP (your domain
   // mailbox). If neither is set, email sends are skipped (nothing breaks).
   EMAIL_FROM: z.string().default('Goldfinch Adventures <onboarding@resend.dev>'),
+  // Set to false to stop sending email without removing the credentials, so
+  // turning it back on is a restart rather than a secrets change.
+  EMAIL_ENABLED: z.string().optional().or(z.literal('')),
   RESEND_API_KEY: z.string().optional().or(z.literal('')),
   SMTP_HOST: z.string().optional().or(z.literal('')),
   SMTP_PORT: z.coerce.number().int().default(587),

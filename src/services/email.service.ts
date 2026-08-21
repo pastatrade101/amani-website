@@ -10,7 +10,19 @@ import { env } from '../config/env';
 
 export type Mail = { to: string; subject: string; html: string; text?: string; replyTo?: string };
 
-export const isEmailConfigured = (): boolean => Boolean(env.RESEND_API_KEY || env.SMTP_HOST);
+/**
+ * Whether email may be sent at all.
+ *
+ * Two different reasons it might not be — no transport is configured, or
+ * delivery has been switched off deliberately — and callers care about neither
+ * distinction, only the answer. Every path to sending goes through here, so
+ * EMAIL_ENABLED=false silences the outbox and the booking notifications alike.
+ */
+const emailSwitchedOff = (): boolean =>
+  ['false', '0', 'off', 'no'].includes(String(env.EMAIL_ENABLED ?? '').trim().toLowerCase());
+
+export const isEmailConfigured = (): boolean =>
+  !emailSwitchedOff() && Boolean(env.RESEND_API_KEY || env.SMTP_HOST);
 
 const sendViaResend = async (mail: Mail): Promise<void> => {
   const res = await fetch('https://api.resend.com/emails', {
@@ -51,6 +63,11 @@ const sendViaSmtp = async (mail: Mail): Promise<void> => {
 
 export const sendEmail = async (mail: Mail): Promise<boolean> => {
   try {
+    // Checked here rather than at each caller, so nothing can route around it.
+    if (emailSwitchedOff()) {
+      console.warn(`[email] delivery disabled — skipped: "${mail.subject}"`);
+      return false;
+    }
     if (env.RESEND_API_KEY) {
       await sendViaResend(mail);
       return true;
