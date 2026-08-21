@@ -34,7 +34,9 @@ export const TRANSLATABLE_ENTITIES: Record<string, TranslatableField[]> = {
   tours: [
     { key: 'title', label: 'Title', kind: 'text', required: true },
     { key: 'short_description', label: 'Short description', kind: 'textarea', required: true },
-    { key: 'description', label: 'Description', kind: 'rich', required: true },
+    // Keys are real column names — the resolver merges translated values onto
+    // the record by key, so `full_description` must not be shortened here.
+    { key: 'full_description', label: 'Description', kind: 'rich', required: true },
     { key: 'highlights', label: 'Highlights', kind: 'rich_list' },
     { key: 'seo_title', label: 'SEO title', kind: 'text' },
     { key: 'meta_description', label: 'SEO description', kind: 'textarea' }
