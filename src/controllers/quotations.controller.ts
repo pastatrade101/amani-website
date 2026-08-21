@@ -264,6 +264,16 @@ export const sendQuotation = asyncHandler(async (req, res) => {
 
   const url = quoteUrl(String(quotation.public_token));
 
+  // A quotation is only its link. Sending one that resolves to a developer's
+  // machine puts an unopenable URL in front of a traveller, which is worse than
+  // not sending — and it is silent, because the send itself succeeds.
+  if (!/^https?:\/\//i.test(url) || /\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)([:/]|$)/i.test(url)) {
+    throw new AppError(
+      'This server has no public site address configured, so the quotation link would not open for the traveller. Set PUBLIC_SITE_URL and try again.',
+      500
+    );
+  }
+
   // Idempotent by default, so a double click cannot message the traveller
   // twice. An explicit resend — they lost the link, or it went to an old
   // number — gets a fresh key, still bucketed by the minute so the double
