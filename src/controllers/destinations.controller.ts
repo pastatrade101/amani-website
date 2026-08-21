@@ -6,6 +6,7 @@ import {
   softDeleteRecord,
   updateRecord
 } from '../utils/supabase-helpers';
+import { localeOf, localizeRecords } from '../utils/translations';
 
 // Lean projection for listings: exclude the large `guide` jsonb (and other
 // detail-only fields) so a list of destinations isn't ~50KB/row. The full guide
@@ -19,17 +20,20 @@ export const listDestinations = asyncHandler(async (req, res) => {
   // making every other listing pay for the payload.
   const includeGuide = String(req.query.include ?? '').split(',').includes('guide');
 
+  const locale = localeOf(req.query.locale);
+
   return listRecords(req, res, {
     table: 'destinations',
     select: includeGuide ? `${LIST_SELECT}, guide` : LIST_SELECT,
     searchColumns: ['name', 'country', 'region', 'location', 'short_description', 'description'],
     statusColumn: 'status',
-    defaultStatus: 'published'
+    defaultStatus: 'published',
+    afterFetch: locale ? (items) => localizeRecords('destinations', items, locale) : undefined
   });
 });
 
 export const getDestination = asyncHandler(async (req, res) => {
-  return getRecordBySlug(res, 'destinations', req.params.slug);
+  return getRecordBySlug(res, 'destinations', req.params.slug, '*', { locale: localeOf(req.query.locale) });
 });
 
 export const createDestination = asyncHandler(async (req, res) => {

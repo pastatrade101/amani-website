@@ -69,6 +69,10 @@ export type TranslationFields = Record<string, string | string[]>;
 export const isTranslatableEntity = (entityType: string): boolean =>
   Object.hasOwn(TRANSLATABLE_ENTITIES, entityType);
 
+/** Reads ?locale= from a query value, accepting `de` or `de-DE`. */
+export const localeOf = (value: unknown): string | undefined =>
+  typeof value === 'string' && /^[a-z]{2}(-[A-Za-z]{2})?$/.test(value) ? value.toLowerCase().slice(0, 2) : undefined;
+
 /** Current source-language values for an entity, from its own columns. */
 export const sourceFieldsFor = (entityType: string, record: Record<string, unknown>): TranslationFields => {
   const out: TranslationFields = {};
@@ -155,6 +159,48 @@ export const getDefaultLanguage = async (): Promise<string> => {
  * construction: a field with no translated value keeps the default-language
  * text already on the record.
  */
+/**
+ * Attach `available_locales` — the default language plus every locale with a
+ * PUBLISHED translation — so the frontend can emit hreflang only for pages
+ * that genuinely exist in that language, as the spec requires. One query for
+ * the whole batch.
+ */
+export const attachAvailableLocales = async (
+  entityType: string,
+  records: Array<Record<string, unknown>>
+): Promise<void> => {
+  if (!records.length || !isTranslatableEntity(entityType)) return;
+
+  const [defaultLanguage, { data: rows }] = await Promise.all([
+    getDefaultLanguage(),
+    supabase
+      .from('content_translations')
+      .select('entity_id, language_code')
+      .eq('entity_type', entityType)
+      .eq('translation_status', 'published')
+      .in('entity_id', records.map((record) => record.id).filter(Boolean))
+  ]);
+
+  // Only languages an admin still has switched on may be advertised.
+  const { data: enabled } = await supabase.from('languages').select('code').eq('enabled', true);
+  const live = new Set((enabled ?? []).map((row) => String(row.code)));
+
+  const byId = new Map<string, string[]>();
+  for (const row of rows ?? []) {
+    const code = String(row.language_code);
+    if (!live.has(code)) continue;
+    const list = byId.get(String(row.entity_id)) ?? [];
+    list.push(code);
+    byId.set(String(row.entity_id), list);
+  }
+
+  for (const record of records) {
+    const codes = new Set(byId.get(String(record.id)) ?? []);
+    if (live.has(defaultLanguage)) codes.add(defaultLanguage);
+    record.available_locales = [...codes].sort();
+  }
+};
+
 export const localizeRecords = async (
   entityType: string,
   records: Array<Record<string, unknown>>,

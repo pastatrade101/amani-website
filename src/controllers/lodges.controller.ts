@@ -11,6 +11,7 @@ import {
   softDeleteRecord,
   updateRecord
 } from '../utils/supabase-helpers';
+import { attachAvailableLocales, localeOf, localizeRecords } from '../utils/translations';
 
 // Explicit FK hint is required now that lodge_destinations provides a second
 // relationship path between these tables. Without it PostgREST returns an
@@ -27,7 +28,12 @@ export const listLodges = asyncHandler(async (req, res) => {
     filters: ['destination_id', 'accommodation_level', 'lodge_type', 'is_featured', 'show_property_publicly'],
     // Most properties keep their photography only in lodge_images and have no
     // image_url at all, so cards need the gallery cover to fall back to.
-    afterFetch: attachCovers
+    // Covers first, then the locale merge — translations must win over the
+    // source text, and covers are images, which are never translated.
+    afterFetch: async (items) => {
+      await attachCovers(items);
+      await localizeRecords('lodges', items, localeOf(req.query.locale));
+    }
   });
 });
 
@@ -51,6 +57,8 @@ export const getLodge = asyncHandler(async (req, res) => {
   if ((data as Record<string, unknown>).show_property_publicly === false) throw new AppError('Record not found.', 404);
 
   const lodge = data as Record<string, unknown>;
+  await attachAvailableLocales('lodges', [lodge]);
+  await localizeRecords('lodges', [lodge], localeOf(req.query.locale));
   const id = String(lodge.id);
   const [images, amenities, featuredIn, details] = await Promise.all([
     imagesForLodge(id),

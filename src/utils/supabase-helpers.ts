@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { safeAudit } from '../services/audit.service';
+import { attachAvailableLocales, localizeRecords } from './translations';
 import { createUniqueSlug } from '../services/slug.service';
 import { AppError, sendSuccess } from './api-response';
 import { cleanSearch, getPagination, getQueryString, paginationMeta } from './query';
@@ -151,7 +152,13 @@ export const listRecords = async (req: Request, res: Response, options: ListOpti
   });
 };
 
-export const getRecordBySlug = async (res: Response, table: string, slug: string, select = '*') => {
+export const getRecordBySlug = async (
+  res: Response,
+  table: string,
+  slug: string,
+  select = '*',
+  options: { locale?: string } = {}
+) => {
   const { data, error } = await supabase
     .from(table)
     .select(select)
@@ -164,6 +171,10 @@ export const getRecordBySlug = async (res: Response, table: string, slug: string
 
   const record = data as unknown as Record<string, unknown>;
   await attachThumbnails(table, [record]);
+  // Detail reads carry the locales a page genuinely exists in, so the frontend
+  // can emit hreflang without claiming translations that were never published.
+  await attachAvailableLocales(table, [record]);
+  await localizeRecords(table, [record], options.locale);
 
   return sendSuccess(res, 'Record fetched successfully.', record);
 };

@@ -8,6 +8,7 @@ import {
   bulkSoftDeleteRecords,
   softDeleteRecord,
 } from '../utils/supabase-helpers';
+import { attachAvailableLocales, localeOf, localizeRecords } from '../utils/translations';
 import { cleanSearch, getPagination, getQueryString, paginationMeta } from '../utils/query';
 import { sanitizeRichFields } from '../utils/rich-text';
 
@@ -251,6 +252,9 @@ export const listTours = asyncHandler(async (req, res) => {
 
   const items = (data ?? []) as unknown as Array<Record<string, unknown>>;
   await attachThumbnails('tours', items);
+  // One batched merge for the whole page of tours — a locale never costs a
+  // query per row.
+  await localizeRecords('tours', items, localeOf(req.query.locale));
   const specialists = items
     .map((item) => item.specialist)
     .filter((specialist): specialist is Record<string, unknown> => Boolean(specialist) && typeof specialist === 'object');
@@ -286,6 +290,8 @@ export const getTour = asyncHandler(async (req, res) => {
 
   const record = data as unknown as Record<string, unknown>;
   await attachTourDetailImages(record);
+  await attachAvailableLocales('tours', [record]);
+  await localizeRecords('tours', [record], localeOf(req.query.locale));
 
   return sendSuccess(res, 'Record fetched successfully.', record);
 });
