@@ -4,6 +4,7 @@ import { generateBookingCode } from '../services/booking-code.service';
 import { currencyService } from '../services/currency.service';
 import { sendBookingNotification, syncBookingToHubSpot } from '../services/notification.service';
 import { emitNotification } from '../services/notification-events.service';
+import { recordTransactionalConsent } from '../services/whatsapp-inbox.service';
 import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { cleanSearch, getPagination, getQueryString, paginationMeta } from '../utils/query';
@@ -39,6 +40,11 @@ export const createBooking = asyncHandler(async (req, res) => {
   // way so it never reaches the insert.)
   const honeypot = String(payload.hp_company ?? '').trim();
   delete payload.hp_company;
+
+  // Consent lives on the WhatsApp contact, not on the enquiry, so it must not
+  // reach the insert — booking_requests has no such column.
+  const whatsappConsent = payload.whatsapp_opt_in === true;
+  delete payload.whatsapp_opt_in;
   if (!isAdmin && honeypot) {
     return sendSuccess(res, 'Booking request submitted successfully.', { booking_code: null }, 201);
   }
@@ -136,6 +142,12 @@ export const createBooking = asyncHandler(async (req, res) => {
     throw new AppError('Unable to submit booking request.', 500, [error]);
   }
 
+  // Consent first, because the acknowledgement below is only allowed to go out
+  // if the traveller actually asked for it. An unticked box records nothing new
+  // rather than a refusal, so a number that opted in some other way is left be.
+  const created = data as Record<string, unknown>;
+  await recordTransactionalConsent(String(created.phone ?? ''), source, whatsappConsent);
+
   // Fire-and-forget side effects — must never block or fail booking creation.
   void sendBookingNotification(data as Record<string, unknown>);
 
@@ -143,7 +155,6 @@ export const createBooking = asyncHandler(async (req, res) => {
   // existing email and HubSpot paths: the notification service decides whether
   // the traveller has consented and whether a session message or a template is
   // allowed, and records the reason when it sends nothing.
-  const created = data as Record<string, unknown>;
   void emitNotification({
     type: 'LEAD_CREATED',
     entityType: 'booking_requests',

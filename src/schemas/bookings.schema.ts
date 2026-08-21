@@ -84,6 +84,9 @@ export const bookingCreateSchema = z.object({
   captcha_token: z.string().max(4096).optional().nullable(),
   // Honeypot — must stay empty for humans. Kept in the schema (zod strips unknown
   // keys) so the controller can inspect it, then it is dropped before insert.
+  // Explicit transactional consent from a form tick. Never inferred from the
+  // presence of a phone number.
+  whatsapp_opt_in: z.boolean().optional(),
   hp_company: z.string().max(120).optional().nullable()
 });
 

@@ -156,6 +156,53 @@ export const resolveConversation = async (contact: WhatsAppContact): Promise<str
   return String(created.id);
 };
 
+/**
+ * Record transactional WhatsApp consent given on a form, with its evidence.
+ *
+ * Two rules this must never break. Supplying a phone number is not consent —
+ * only an explicit tick is, which is why `granted` is passed in rather than
+ * inferred from the number being present. And an unticked box is the absence
+ * of new consent, not a withdrawal of consent given earlier by another route,
+ * so it never downgrades an existing opt-in; revoking is a deliberate act that
+ * belongs elsewhere.
+ *
+ * The first grant is the evidence of record: a later tick does not overwrite
+ * when or how permission was originally obtained.
+ */
+export const recordTransactionalConsent = async (
+  phone: string | null | undefined,
+  source: string,
+  granted: boolean
+): Promise<void> => {
+  const waId = toWaId(String(phone ?? ''));
+  if (!waId) return;
+
+  const now = new Date().toISOString();
+  const { data: existing } = await supabase
+    .from('whatsapp_contacts')
+    .select('id, whatsapp_opt_in')
+    .eq('wa_id', waId)
+    .maybeSingle();
+
+  if (!existing) {
+    await supabase.from('whatsapp_contacts').insert({
+      wa_id: waId,
+      phone_e164: `+${waId}`,
+      whatsapp_opt_in: granted,
+      whatsapp_opt_in_at: granted ? now : null,
+      whatsapp_opt_in_source: granted ? source : null
+    });
+    return;
+  }
+
+  if (granted && !existing.whatsapp_opt_in) {
+    await supabase
+      .from('whatsapp_contacts')
+      .update({ whatsapp_opt_in: true, whatsapp_opt_in_at: now, whatsapp_opt_in_source: source, updated_at: now })
+      .eq('id', existing.id);
+  }
+};
+
 /** Append a turn to the shared conversation history. */
 export const recordConversationMessage = async (
   conversationId: string,

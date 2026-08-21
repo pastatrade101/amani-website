@@ -244,7 +244,7 @@ const deliverWhatsApp = async (event: NotificationEvent): Promise<Outcome> => {
     } else {
       return {
         status: 'skipped',
-        detail: 'Outside the 24-hour window and no approved template is mapped for this event.'
+        detail: 'Outside the 24-hour window and no approved WhatsApp template is configured for this event.'
       };
     }
 
