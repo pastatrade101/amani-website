@@ -3,9 +3,7 @@ import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { supabase } from '../config/supabase';
 import { safeAudit } from '../services/audit.service';
-import { emitNotification } from '../services/notification-events.service';
-import { recipientFor } from '../services/notification.service';
-import { emailLayout, escapeHtml, sendEmail } from '../services/email.service';
+import { deliveredVia, emitNotification } from '../services/notification-events.service';
 
 /**
  * Quotations — the offer a traveller receives between enquiry and booking.
@@ -62,11 +60,32 @@ const noteOnConversation = async (conversationId: unknown, body: string) => {
   }
 };
 
+/**
+ * Retire offers whose date has passed.
+ *
+ * Only ones actually made to someone: a draft that sat too long is unfinished
+ * work an agent will date afresh before sending, not a promise that lapsed.
+ * Swept here so the admin list, the API and the traveller's page agree without
+ * every reader recomputing it.
+ */
+const sweepLapsed = async () => {
+  const today = new Date().toISOString().slice(0, 10);
+  await supabase
+    .from('quotations')
+    .update({ status: 'expired', updated_at: new Date().toISOString() })
+    .in('status', ['sent', 'viewed'])
+    .not('valid_until', 'is', null)
+    .lt('valid_until', today)
+    .is('deleted_at', null);
+};
+
 export const listQuotations = asyncHandler(async (req, res) => {
+  await sweepLapsed();
+
   const limit = Math.min(Number(req.query.limit) || 50, 100);
   let query = supabase
     .from('quotations')
-    .select('*')
+    .select('*, tour:tours(title, slug)')
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -75,10 +94,42 @@ export const listQuotations = asyncHandler(async (req, res) => {
   if (typeof req.query.conversation_id === 'string' && req.query.conversation_id) {
     query = query.eq('conversation_id', req.query.conversation_id);
   }
+  if (typeof req.query.booking_request_id === 'string' && req.query.booking_request_id) {
+    query = query.eq('booking_request_id', req.query.booking_request_id);
+  }
+
+  // One box that searches the three things an agent actually remembers: the
+  // reference they read out, the traveller's name, or what the trip was.
+  const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  if (search) {
+    const term = search.replace(/[%,()]/g, ' ').trim();
+    if (term) query = query.or(`quote_code.ilike.%${term}%,customer_name.ilike.%${term}%,title.ilike.%${term}%`);
+  }
 
   const { data, error } = await query;
   if (error) throw new AppError('Unable to load quotations.', 500, [error]);
-  return sendSuccess(res, 'Quotations fetched successfully.', data ?? []);
+
+  const rows = (data ?? []).map((row) => ({ ...row, public_url: quoteUrl(String(row.public_token)) }));
+  return sendSuccess(res, 'Quotations fetched successfully.', rows);
+});
+
+/**
+ * Soft delete. A quotation is a commercial document — it stays recoverable and
+ * keeps answering audit questions long after it stops being relevant, and its
+ * link stops resolving the moment it is removed.
+ */
+export const deleteQuotation = asyncHandler(async (req, res) => {
+  const { data: previous } = await supabase.from('quotations').select('*').eq('id', req.params.id).maybeSingle();
+  if (!previous) throw new AppError('Quotation not found.', 404);
+
+  const { error } = await supabase
+    .from('quotations')
+    .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq('id', req.params.id);
+  if (error) throw new AppError('Unable to delete the quotation.', 500, [error]);
+
+  await safeAudit({ action: 'delete', entityId: req.params.id, entityType: 'quotations', oldData: previous, req });
+  return sendSuccess(res, 'Quotation deleted.', { id: req.params.id });
 });
 
 export const getQuotation = asyncHandler(async (req, res) => {
@@ -158,14 +209,29 @@ export const updateQuotation = asyncHandler(async (req, res) => {
   // A revision to something the traveller has already seen is worth telling
   // them about; a draft edit is not.
   if (['sent', 'viewed'].includes(String(previous.status))) {
+    const url = quoteUrl(String(data.public_token));
+    const total = money(Number(data.total_amount), String(data.currency));
+
     await emitNotification({
       type: 'QUOTATION_UPDATED',
       entityType: 'quotations',
       entityId: String(data.id),
       phone: String(data.customer_phone ?? ''),
-      message: `Your quotation ${data.quote_code} has been updated.\n${data.title}\nTotal: ${money(Number(data.total_amount), String(data.currency))}\n\nView it here: ${quoteUrl(String(data.public_token))}`,
+      email: String(data.customer_email ?? ''),
+      message: `Your quotation ${data.quote_code} has been updated.\n${data.title}\nTotal: ${total}\n\nView it here: ${url}`,
       templateKey: 'quotation_updated',
-      templateParameters: [String(data.customer_name ?? 'there'), String(data.quote_code), quoteUrl(String(data.public_token))],
+      templateParameters: [String(data.customer_name ?? 'there'), String(data.quote_code), url],
+      emailContent: {
+        subject: `Your quotation has been updated — ${data.quote_code}`,
+        heading: 'Your quotation has been updated',
+        lines: [
+          `Hello ${String(data.customer_name ?? 'there')},`,
+          `We've revised your quotation ${data.quote_code} for ${data.title}.`,
+          `The new total is ${total}.`,
+          'Open it to see what changed. The link below always shows the current version.'
+        ],
+        cta: { label: 'View your quotation', url }
+      },
       // Keyed on the row's updated_at so each distinct revision may notify once.
       dedupeKey: `quotation_updated:${data.id}:${data.updated_at}`
     });
@@ -182,24 +248,65 @@ export const sendQuotation = asyncHandler(async (req, res) => {
   const phone = (req.body?.phone as string | undefined) ?? (quotation.customer_phone as string | undefined);
   if (!phone) throw new AppError('No WhatsApp number for this quotation.', 422);
 
+  // Refuse to put a dead price in front of someone. The traveller's page would
+  // show it as expired the moment they opened it, which is a worse way to find
+  // out than the agent being told here.
+  if (hasLapsed(quotation.valid_until)) {
+    throw new AppError('This quotation’s valid-until date has passed. Give it a new date before sending.', 422);
+  }
+
   const url = quoteUrl(String(quotation.public_token));
+
+  // Idempotent by default, so a double click cannot message the traveller
+  // twice. An explicit resend — they lost the link, or it went to an old
+  // number — gets a fresh key, still bucketed by the minute so the double
+  // click is caught on that path too.
+  const resend = req.body?.resend === true;
+  const dedupeKey = resend
+    ? `quotation_ready:${quotation.id}:${new Date().toISOString().slice(0, 16)}`
+    : `quotation_ready:${quotation.id}`;
+
+  const travellers = Number(quotation.adults) + Number(quotation.children);
+  const total = money(Number(quotation.total_amount), String(quotation.currency));
+
   const outcome = await emitNotification({
     type: 'QUOTATION_READY',
     entityType: 'quotations',
     entityId: String(quotation.id),
     phone,
-    message: `Your safari quotation is ready 🎉\n\n${quotation.title}\nTravellers: ${Number(quotation.adults) + Number(quotation.children)}\nTotal: ${money(Number(quotation.total_amount), String(quotation.currency))}\n\nView your quotation:\n${url}`,
+    email: String(req.body?.email ?? quotation.customer_email ?? ''),
+    // WhatsApp carries the least it can: what it is, what it costs, and the
+    // link. The detail belongs in the email, which is where someone reads
+    // carefully and where it stays findable months later.
+    message: `Your safari quotation is ready 🎉\n\n${quotation.title}\nTravellers: ${travellers}\nTotal: ${total}\n\nView your quotation:\n${url}`,
     templateKey: 'quotation_ready',
     templateParameters: [String(quotation.customer_name ?? 'there'), String(quotation.title), url],
-    dedupeKey: `quotation_ready:${quotation.id}`
+    emailContent: {
+      subject: `Your quotation is ready — ${quotation.title}`,
+      heading: 'Your quotation is ready',
+      lines: [
+        `Hello ${String(quotation.customer_name ?? 'there')},`,
+        `Here is the quotation for ${quotation.title}, for ${travellers} ${travellers === 1 ? 'traveller' : 'travellers'}${quotation.travel_date ? ` travelling on ${quotation.travel_date}` : ''}.`,
+        `Total: ${total}.`,
+        quotation.valid_until ? `This price is held until ${quotation.valid_until}.` : '',
+        'Open the link below to see what is included and to accept it. Nothing is payable to accept.'
+      ].filter(Boolean),
+      cta: { label: 'View your quotation', url }
+    },
+    dedupeKey
   });
 
-  // Only mark it sent if it actually went. A skipped send must not leave the
-  // record claiming the traveller has it.
+  // Only mark it sent if it actually went, and record which channels carried
+  // it. A skipped send must not leave the record claiming the traveller has it.
   if (outcome.status === 'sent') {
     await supabase
       .from('quotations')
-      .update({ status: 'sent', sent_at: new Date().toISOString(), sent_via: 'whatsapp', updated_at: new Date().toISOString() })
+      .update({
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+        sent_via: deliveredVia(outcome),
+        updated_at: new Date().toISOString()
+      })
       .eq('id', quotation.id);
   }
 
@@ -262,7 +369,7 @@ export const getPublicQuotation = asyncHandler(async (req, res) => {
   // A price the traveller can no longer take should say so everywhere, not
   // only on the page that happens to compute it. Settling the status here
   // means the admin list, the API and the page all agree.
-  if (hasLapsed(data.valid_until) && ['draft', 'sent', 'viewed'].includes(String(data.status))) {
+  if (hasLapsed(data.valid_until) && ['sent', 'viewed'].includes(String(data.status))) {
     patch.status = 'expired';
   }
 
@@ -366,41 +473,42 @@ export const acceptPublicQuotation = asyncHandler(async (req, res) => {
       (acceptance.notes ? `\nTheir note: ${acceptance.notes}` : '')
   );
 
-  // Tell the team. An accepted quotation nobody looks at is a lost booking, so
-  // this goes to the same inbox that already receives enquiries.
-  void (async () => {
-    try {
-      const recipient = await recipientFor('quotation_accepted');
-      if (!recipient) return;
-      await sendEmail({
-        to: recipient,
-        replyTo: acceptance.email || undefined,
-        subject: `Quotation accepted — ${quotation.quote_code} · ${total}`,
-        html: emailLayout(
-          `Quotation accepted · ${escapeHtml(String(quotation.quote_code))}`,
-          `<p><strong>${escapeHtml(acceptance.lead_traveller || 'A traveller')}</strong> accepted ${escapeHtml(
-            String(quotation.title)
-          )} — ${escapeHtml(total)}.</p>
-           <p>${escapeHtml(acceptance.email || 'no email')}${acceptance.phone ? ` · ${escapeHtml(acceptance.phone)}` : ''}</p>
-           ${acceptance.notes ? `<pre style="white-space:pre-wrap;font-family:inherit;font-size:14px;color:#384540">${escapeHtml(acceptance.notes)}</pre>` : ''}
-           <p style="color:#6b7280;font-size:13px">No payment has been taken. Confirm availability and follow up to turn this into a booking.</p>`
-        ),
-        text: `Quotation accepted ${quotation.quote_code}\n${acceptance.lead_traveller || 'A traveller'} — ${quotation.title} — ${total}\n${acceptance.email || 'no email'} ${acceptance.phone || ''}\n\n${acceptance.notes || ''}`
-      });
-    } catch {
-      // Never let a notification failure undo an acceptance.
-    }
-  })();
-
-  // And confirm to the traveller on the channel they came from.
+  // One event, three recipients' worth of channels: the traveller hears back
+  // immediately on WhatsApp and formally by email, and the team is told through
+  // the inbox that already receives enquiries. An accepted quotation nobody
+  // looks at is a lost booking.
   void emitNotification({
     type: 'QUOTATION_ACCEPTED',
     entityType: 'quotations',
     entityId: String(quotation.id),
     phone: String(quotation.customer_phone ?? acceptance.phone ?? ''),
+    email: String(acceptance.email ?? ''),
     message: `Thank you — we've received your acceptance of quotation ${quotation.quote_code}.\n\n${quotation.title}\nTotal: ${total}\n\nNo payment has been taken. Our team will confirm availability and come back to you to arrange the details.`,
     templateKey: 'quotation_accepted',
     templateParameters: [String(acceptance.lead_traveller ?? 'there'), String(quotation.quote_code)],
+    emailContent: {
+      subject: `We've received your acceptance — ${quotation.quote_code}`,
+      heading: 'Thank you — your quotation is accepted',
+      lines: [
+        `Hello ${String(acceptance.lead_traveller ?? 'there')},`,
+        `We've recorded your acceptance of ${quotation.title} (${quotation.quote_code}), totalling ${total}.`,
+        'No payment has been taken and nothing is due yet.',
+        'Our team will confirm availability for your dates and come back to you with the booking details to complete.',
+        acceptance.notes ? `You told us: ${acceptance.notes}` : ''
+      ].filter(Boolean),
+      cta: { label: 'View your quotation', url: quoteUrl(String(quotation.public_token)) }
+    },
+    staffEmailContent: {
+      subject: `Quotation accepted — ${quotation.quote_code} · ${total}`,
+      heading: `Quotation accepted · ${quotation.quote_code}`,
+      lines: [
+        `${acceptance.lead_traveller || 'A traveller'} accepted ${quotation.title} — ${total}.`,
+        `Contact: ${acceptance.email || 'no email'}${acceptance.phone ? ` · ${acceptance.phone}` : ''}`,
+        acceptance.notes ? `Their note: ${acceptance.notes}` : '',
+        'No payment has been taken. Confirm availability and follow up to turn this into a booking.'
+      ].filter(Boolean),
+      replyTo: acceptance.email || undefined
+    },
     dedupeKey: `quotation_accepted:${quotation.id}`
   });
 

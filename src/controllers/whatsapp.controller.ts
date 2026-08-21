@@ -457,6 +457,15 @@ export const getConversation = asyncHandler(async (req, res) => {
     tour = data as Record<string, unknown> | null;
   }
 
+  // Quotations raised from this thread, so the agent can see what has already
+  // been offered before quoting again — and pick up where the last one left off.
+  const { data: quotations } = await supabase
+    .from('quotations')
+    .select('id, quote_code, title, currency, total_amount, status, valid_until, sent_at, viewed_at, accepted_at, created_at')
+    .eq('conversation_id', id)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+
   const statusByMessage = new Map((deliveries ?? []).map((row) => [String(row.ai_message_id), row]));
   const withinWindow = canSendSessionMessage((contact as { last_inbound_at?: string } | null)?.last_inbound_at ?? null);
 
@@ -466,6 +475,7 @@ export const getConversation = asyncHandler(async (req, res) => {
     lead,
     tour,
     notes: notes ?? [],
+    quotations: quotations ?? [],
     // Drives the composer: outside the window only a template may be sent.
     session_window_open: withinWindow,
     messages: (messages ?? []).map((message) => ({

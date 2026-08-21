@@ -290,9 +290,22 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
       entityType: 'booking_requests',
       entityId: String(data.id),
       phone: String(data.phone ?? ''),
+      email: String(data.email ?? ''),
       message: `Great news ${String(data.full_name ?? '').split(' ')[0]} — your booking is confirmed 🎉\n\nReference: ${String(data.booking_code ?? '')}\n\nWe'll be in touch here with your final details.`,
       templateKey: 'booking_confirmed',
       templateParameters: [String(data.full_name ?? 'there').split(' ')[0], String(data.booking_code ?? '')],
+      // The confirmation someone forwards to whoever is travelling with them,
+      // and still has in their inbox at the airport.
+      emailContent: {
+        subject: `Your booking is confirmed — ${String(data.booking_code ?? '')}`,
+        heading: 'Your booking is confirmed',
+        lines: [
+          `Hello ${String(data.full_name ?? 'there')},`,
+          `Your booking is confirmed. Your reference is ${String(data.booking_code ?? '')} — quote it in any message to us.`,
+          data.travel_date ? `Travel date: ${String(data.travel_date)}.` : '',
+          'We will follow up with your detailed itinerary and joining instructions.'
+        ].filter(Boolean)
+      },
       dedupeKey: `booking_confirmed:${data.id}`
     });
   }

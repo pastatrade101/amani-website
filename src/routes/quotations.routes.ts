@@ -6,6 +6,7 @@ import {
   acceptPublicQuotation,
   createQuotation,
   declinePublicQuotation,
+  deleteQuotation,
   getPublicQuotation,
   getQuotation,
   listQuotations,
@@ -33,5 +34,6 @@ router.post('/', authenticate, requirePermission('bookings.update'), createQuota
 router.put('/:id', authenticate, requirePermission('bookings.update'), updateQuotation);
 router.post('/:id/send', authenticate, requirePermission('bookings.update'), sendQuotation);
 router.patch('/:id/status', authenticate, requirePermission('bookings.update'), setQuotationStatus);
+router.delete('/:id', authenticate, requirePermission('bookings.delete'), deleteQuotation);
 
 export default router;

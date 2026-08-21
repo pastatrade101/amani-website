@@ -7,20 +7,32 @@ import {
   toWaId
 } from './whatsapp-client.service';
 import { recordConversationMessage, resolveConversation, upsertContact } from './whatsapp-inbox.service';
+import { emailLayout, escapeHtml, isEmailConfigured, sendEmail } from './email.service';
+import { recipientFor } from './notification.service';
 
 /**
  * Event-driven notifications (§14).
  *
- * Business code emits an event and stops caring how it reaches the traveller.
- * Channels consume events, so adding email or SMS later means registering
- * another channel rather than editing every place that wants to notify.
+ * Business code emits an event and stops caring how it reaches anyone. The
+ * service decides which channels an event belongs on and each channel decides
+ * whether it is allowed to send:
  *
- *   BUSINESS EVENT -> notification service -> [ whatsapp | email* | sms* ]
- *                                              (*not built yet)
+ *   BUSINESS EVENT -> notification service -> [ whatsapp | email | email (staff) ]
+ *
+ * The split is about what each medium is good at, not about replacing one with
+ * the other. WhatsApp is for immediacy — an acknowledgement, a link, a
+ * reminder, something read on a phone within minutes. Email is the formal
+ * record: it survives, it forwards, it can carry detail, and it arrives whether
+ * or not the traveller ever opted into WhatsApp. Important events use both, and
+ * the two are deliberately independent — the 24-hour WhatsApp window closing
+ * must never mean the traveller hears nothing.
  *
  * Separate from notification.service.ts, which is the existing per-booking
- * email + HubSpot path. That one fires for a specific thing that happened;
- * this one is the generic outbox any future channel can subscribe to.
+ * email + HubSpot path and stays exactly as it is. That one fires for a
+ * specific thing that happened; this one is the generic outbox any channel
+ * subscribes to. LEAD_CREATED is WhatsApp-only here precisely because
+ * notification.service.ts already emails on booking creation — routing it
+ * through both would send the traveller the same thing twice.
  */
 
 export type NotificationEventType =
@@ -30,21 +42,59 @@ export type NotificationEventType =
   | 'QUOTATION_ACCEPTED'
   | 'BOOKING_CONFIRMED';
 
+export type Channel = 'whatsapp' | 'email' | 'email_staff';
+
+/**
+ * Which channels each event belongs on.
+ *
+ * Declared here rather than at the call sites, so "how does a traveller hear
+ * about a new quotation" is one table to read and one place to change.
+ */
+const CHANNEL_POLICY: Record<NotificationEventType, Channel[]> = {
+  // Email is handled by notification.service.ts on booking creation.
+  LEAD_CREATED: ['whatsapp'],
+  QUOTATION_READY: ['whatsapp', 'email'],
+  QUOTATION_UPDATED: ['whatsapp', 'email'],
+  QUOTATION_ACCEPTED: ['whatsapp', 'email', 'email_staff'],
+  BOOKING_CONFIRMED: ['whatsapp', 'email']
+};
+
+/**
+ * Email content as plain text. Callers never write HTML: the channel escapes
+ * every line and wraps it in the shared layout, so a traveller's own name or
+ * note cannot smuggle markup into an email we send about them.
+ */
+export type EmailContent = {
+  subject: string;
+  heading: string;
+  /** One paragraph per entry. */
+  lines: string[];
+  cta?: { label: string; url: string };
+  replyTo?: string;
+};
+
 export type NotificationEvent = {
   type: NotificationEventType;
   entityType?: string;
   entityId?: string;
-  /** Recipient. No phone means nothing to send — recorded as skipped. */
+  /** WhatsApp recipient. No number means nothing to send — recorded as skipped. */
   phone?: string | null;
-  /** Body for a session message, and the fallback if no template is mapped. */
+  /** Email recipient for the traveller-facing channel. */
+  email?: string | null;
+  /** Body for a WhatsApp session message, and the fallback if no template is mapped. */
   message: string;
   /** Internal template key; resolved through whatsapp_templates. */
   templateKey?: string;
   templateParameters?: string[];
+  /** The traveller's email. Required for any event whose policy includes 'email'. */
+  emailContent?: EmailContent;
+  /** The team's copy, routed to the enquiry inbox rather than to the traveller. */
+  staffEmailContent?: EmailContent;
   /**
    * Makes the event idempotent. Two emits with the same key send once — a
    * retry, a double-click or a replayed webhook collides instead of messaging
-   * the traveller twice.
+   * the traveller twice. Each channel gets its own claim off this key, so a
+   * WhatsApp failure never suppresses the email.
    */
   dedupeKey: string;
   /**
@@ -56,15 +106,18 @@ export type NotificationEvent = {
 
 type Outcome = { status: 'sent' | 'skipped' | 'failed'; detail?: string };
 
-const claim = async (event: NotificationEvent): Promise<string | null> => {
+export type EmitResult = Outcome & { channels: Partial<Record<Channel, Outcome>> };
+
+const claim = async (event: NotificationEvent, channel: Channel): Promise<string | null> => {
   const { data, error } = await supabase
     .from('notification_events')
     .insert({
       event_type: event.type,
       entity_type: event.entityType ?? null,
       entity_id: event.entityId ?? null,
-      channel: 'whatsapp',
-      dedupe_key: event.dedupeKey,
+      channel,
+      // Per channel, so one medium being unavailable never blocks the other.
+      dedupe_key: `${event.dedupeKey}:${channel}`,
       payload: {
         message: event.message,
         template_key: event.templateKey ?? null,
@@ -74,7 +127,7 @@ const claim = async (event: NotificationEvent): Promise<string | null> => {
     .select('id')
     .single();
 
-  // 23505 = this event was already emitted; do not send again.
+  // 23505 = this event was already emitted on this channel; do not send again.
   if (error && (error as { code?: string }).code === '23505') return null;
   if (error) throw error;
   return String(data.id);
@@ -175,26 +228,102 @@ const deliverWhatsApp = async (event: NotificationEvent): Promise<Outcome> => {
 };
 
 /**
+ * Deliver over email, through the Resend/SMTP transport the platform already
+ * uses. Everything the caller supplied is plain text and is escaped here.
+ */
+const deliverEmail = async (to: string | null | undefined, content: EmailContent | undefined): Promise<Outcome> => {
+  if (!content) return { status: 'skipped', detail: 'No email content supplied for this event.' };
+  if (!isEmailConfigured()) return { status: 'skipped', detail: 'Email is not configured.' };
+  if (!to || !to.includes('@')) return { status: 'skipped', detail: 'No email address for this recipient.' };
+
+  try {
+    const body = content.lines
+      .filter(Boolean)
+      .map((line) => `<p style="margin:0 0 12px">${escapeHtml(line).replace(/\n/g, '<br />')}</p>`)
+      .join('');
+
+    const cta = content.cta ? { label: escapeHtml(content.cta.label), url: escapeHtml(content.cta.url) } : undefined;
+
+    const delivered = await sendEmail({
+      to,
+      replyTo: content.replyTo,
+      subject: content.subject,
+      html: emailLayout(escapeHtml(content.heading), body, cta),
+      text: `${content.heading}\n\n${content.lines.join('\n\n')}${content.cta ? `\n\n${content.cta.label}: ${content.cta.url}` : ''}`
+    });
+
+    return delivered ? { status: 'sent' } : { status: 'failed', detail: 'The email provider rejected the message.' };
+  } catch (error) {
+    return { status: 'failed', detail: error instanceof Error ? error.message : 'Send failed.' };
+  }
+};
+
+const deliver = async (event: NotificationEvent, channel: Channel): Promise<Outcome> => {
+  if (channel === 'whatsapp') return deliverWhatsApp(event);
+  if (channel === 'email') {
+    // Marketing by email needs a consent record the platform does not keep yet,
+    // so it is refused rather than assumed.
+    if (event.marketing) return { status: 'skipped', detail: 'Email marketing consent is not tracked yet.' };
+    return deliverEmail(event.email, event.emailContent);
+  }
+
+  // The team's copy. Routed through the same setting that already decides
+  // where enquiries land, so there is one inbox to configure, not two.
+  const recipient = await recipientFor(event.type.toLowerCase());
+  return deliverEmail(recipient, event.staffEmailContent);
+};
+
+/**
  * Emit a business event.
  *
  * Never throws: a notification failing must not roll back the thing that
- * happened. The outcome is recorded on the event so the admin can see what
- * was sent, skipped or failed, and why.
+ * happened. Every channel is attempted independently and the outcome of each
+ * is recorded, so the admin can see what was sent, skipped or failed, and why.
+ *
+ * The aggregate status answers the only question callers actually have — did
+ * this reach the traveller at all — so a quotation counts as delivered when
+ * the email lands even if WhatsApp had nothing to send it through.
  */
-export const emitNotification = async (event: NotificationEvent): Promise<Outcome> => {
-  try {
-    const id = await claim(event);
-    if (!id) return { status: 'skipped', detail: 'Already sent for this event.' };
+export const emitNotification = async (event: NotificationEvent): Promise<EmitResult> => {
+  const channels: Partial<Record<Channel, Outcome>> = {};
 
-    const outcome = await deliverWhatsApp(event);
-    await settle(id, outcome);
-    return outcome;
-  } catch (error) {
-    // Log the shape only — never the traveller's message or number.
-    console.error('[notifications] emit failed', {
-      type: event.type,
-      error: error instanceof Error ? error.message : 'unknown'
-    });
-    return { status: 'failed', detail: 'Notification could not be recorded.' };
+  for (const channel of CHANNEL_POLICY[event.type] ?? ['whatsapp']) {
+    try {
+      const id = await claim(event, channel);
+      if (!id) {
+        channels[channel] = { status: 'skipped', detail: 'Already sent for this event.' };
+        continue;
+      }
+
+      const outcome = await deliver(event, channel);
+      await settle(id, outcome);
+      channels[channel] = outcome;
+    } catch (error) {
+      // Log the shape only — never the traveller's message, number or address.
+      console.error('[notifications] channel failed', {
+        type: event.type,
+        channel,
+        error: error instanceof Error ? error.message : 'unknown'
+      });
+      channels[channel] = { status: 'failed', detail: 'Notification could not be recorded.' };
+    }
   }
+
+  const traveller = (['whatsapp', 'email'] as const).map((c) => channels[c]).filter(Boolean) as Outcome[];
+  const sent = traveller.filter((o) => o.status === 'sent');
+
+  if (sent.length) {
+    return { status: 'sent', channels };
+  }
+
+  const failed = traveller.find((o) => o.status === 'failed');
+  return {
+    status: failed ? 'failed' : 'skipped',
+    detail: traveller.map((o) => o.detail).filter(Boolean).join(' · ') || 'Nothing to send.',
+    channels
+  };
 };
+
+/** Which traveller-facing channels actually delivered, for the audit trail. */
+export const deliveredVia = (result: EmitResult): string =>
+  (['whatsapp', 'email'] as const).filter((c) => result.channels[c]?.status === 'sent').join(',');
