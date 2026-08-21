@@ -307,36 +307,220 @@ export const whatsappStatus = asyncHandler(async (_req, res) => {
   });
 });
 
-/** Conversation list for the admin inbox. */
+/**
+ * Conversation list for the inbox.
+ *
+ * Unread is derived — newest inbound message vs the agent's last read — rather
+ * than stored as a counter, so it cannot drift away from the messages it
+ * describes. One extra query for the whole page, not one per row.
+ */
 export const listConversations = asyncHandler(async (req, res) => {
-  const limit = Math.min(Number(req.query.limit) || 30, 100);
-  const { data, error } = await supabase
+  const limit = Math.min(Number(req.query.limit) || 40, 100);
+  const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  const state = typeof req.query.state === 'string' ? req.query.state : '';
+
+  let query = supabase
     .from('ai_conversations')
-    .select('id, visitor_name, visitor_phone, visitor_country, status, lead_status, handoff_required, booking_request_id, conversation_summary, updated_at, whatsapp_contact_id')
+    .select(
+      'id, visitor_name, visitor_phone, visitor_country, status, lead_status, handoff_state, handoff_required, ai_enabled, assigned_to, booking_request_id, conversation_summary, agent_last_read_at, updated_at, whatsapp_contact_id'
+    )
     .eq('channel', 'whatsapp')
     .is('deleted_at', null)
     .order('updated_at', { ascending: false })
     .limit(limit);
+
+  if (state) query = query.eq('handoff_state', state);
+  if (search) query = query.or(`visitor_name.ilike.%${search}%,visitor_phone.ilike.%${search}%`);
+
+  const { data, error } = await query;
   if (error) throw new AppError('Unable to load WhatsApp conversations.', 500, [error]);
-  return sendSuccess(res, 'Conversations fetched successfully.', data ?? []);
+
+  const conversations = (data ?? []) as Array<Record<string, unknown>>;
+  const ids = conversations.map((row) => String(row.id));
+
+  if (ids.length) {
+    const [{ data: inbound }, { data: agents }] = await Promise.all([
+      supabase
+        .from('ai_messages')
+        .select('conversation_id, content, role, created_at')
+        .in('conversation_id', ids)
+        .order('created_at', { ascending: false }),
+      supabase.from('admin_users').select('id, full_name')
+    ]);
+
+    const agentNames = new Map((agents ?? []).map((a) => [String(a.id), String(a.full_name ?? '')]));
+    const latest = new Map<string, { content: string; role: string; created_at: string }>();
+    const unread = new Map<string, number>();
+
+    for (const message of inbound ?? []) {
+      const key = String(message.conversation_id);
+      if (!latest.has(key)) {
+        latest.set(key, {
+          content: String(message.content ?? ''),
+          role: String(message.role),
+          created_at: String(message.created_at)
+        });
+      }
+      if (message.role !== 'user') continue;
+      const conversation = conversations.find((row) => String(row.id) === key);
+      const readAt = conversation?.agent_last_read_at ? new Date(String(conversation.agent_last_read_at)).getTime() : 0;
+      if (new Date(String(message.created_at)).getTime() > readAt) {
+        unread.set(key, (unread.get(key) ?? 0) + 1);
+      }
+    }
+
+    for (const conversation of conversations) {
+      const key = String(conversation.id);
+      conversation.last_message = latest.get(key) ?? null;
+      conversation.unread_count = unread.get(key) ?? 0;
+      conversation.assigned_to_name = conversation.assigned_to ? agentNames.get(String(conversation.assigned_to)) ?? null : null;
+    }
+  }
+
+  return sendSuccess(res, 'Conversations fetched successfully.', conversations);
 });
 
-/** Full thread for one conversation, newest last. */
+/**
+ * One thread with everything an agent needs to answer without asking the
+ * traveller to repeat themselves: the messages, the delivery state of each,
+ * the lead behind it and the structured travel context the assistant captured.
+ */
 export const getConversation = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const [{ data: conversation }, { data: messages }, { data: deliveries }] = await Promise.all([
-    supabase.from('ai_conversations').select('*').eq('id', id).maybeSingle(),
-    supabase.from('ai_messages').select('*').eq('conversation_id', id).order('created_at', { ascending: true }),
-    supabase.from('whatsapp_messages').select('ai_message_id, status, error_message').eq('conversation_id', id)
-  ]);
+
+  const { data: conversation } = await supabase.from('ai_conversations').select('*').eq('id', id).maybeSingle();
   if (!conversation) throw new AppError('Conversation not found.', 404);
 
+  const [{ data: messages }, { data: deliveries }, { data: notes }, { data: contact }] = await Promise.all([
+    supabase.from('ai_messages').select('*').eq('conversation_id', id).order('created_at', { ascending: true }),
+    supabase.from('whatsapp_messages').select('ai_message_id, status, error_message, direction').eq('conversation_id', id),
+    supabase.from('conversation_notes').select('*').eq('conversation_id', id).order('created_at', { ascending: false }),
+    conversation.whatsapp_contact_id
+      ? supabase.from('whatsapp_contacts').select('*').eq('id', conversation.whatsapp_contact_id).maybeSingle()
+      : Promise.resolve({ data: null })
+  ]);
+
+  // The lead, so the panel shows the real enquiry rather than a guess.
+  let lead: Record<string, unknown> | null = null;
+  if (conversation.booking_request_id) {
+    const { data } = await supabase
+      .from('booking_requests')
+      .select('id, booking_code, tour_id, full_name, email, phone, country, travel_date, number_of_adults, number_of_children, total_people, estimated_amount, currency, status, payment_status, special_requests, lead_context')
+      .eq('id', conversation.booking_request_id)
+      .maybeSingle();
+    lead = data as Record<string, unknown> | null;
+  }
+
+  let tour: Record<string, unknown> | null = null;
+  const tourId = (lead?.tour_id as string | undefined) ?? (conversation.preferred_tour_id as string | undefined);
+  if (tourId) {
+    const { data } = await supabase.from('tours').select('id, title, slug, duration_days, price_from, currency').eq('id', tourId).maybeSingle();
+    tour = data as Record<string, unknown> | null;
+  }
+
   const statusByMessage = new Map((deliveries ?? []).map((row) => [String(row.ai_message_id), row]));
+  const withinWindow = canSendSessionMessage((contact as { last_inbound_at?: string } | null)?.last_inbound_at ?? null);
+
   return sendSuccess(res, 'Conversation fetched successfully.', {
     conversation,
+    contact: contact ?? null,
+    lead,
+    tour,
+    notes: notes ?? [],
+    // Drives the composer: outside the window only a template may be sent.
+    session_window_open: withinWindow,
     messages: (messages ?? []).map((message) => ({
       ...message,
       delivery: statusByMessage.get(String(message.id)) ?? null
     }))
   });
+});
+
+/** Mark the thread read up to now, clearing its unread badge. */
+export const markConversationRead = asyncHandler(async (req, res) => {
+  const { data, error } = await supabase
+    .from('ai_conversations')
+    .update({ agent_last_read_at: new Date().toISOString() })
+    .eq('id', req.params.id)
+    .select('id, agent_last_read_at')
+    .single();
+  if (error) throw new AppError('Unable to mark the conversation read.', 500, [error]);
+  return sendSuccess(res, 'Conversation marked read.', data);
+});
+
+/**
+ * Assign, resolve, or hand control back to the assistant.
+ *
+ * Taking a thread as a human disables the AI on it. That is the §15 rule and
+ * it is applied here rather than trusted to the caller, so no future code path
+ * can assign an agent and leave the assistant still replying underneath them.
+ */
+export const updateConversationState = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { handoff_state: handoffState, assigned_to: assignedTo, ai_enabled: aiEnabled } = req.body as {
+    handoff_state?: string;
+    assigned_to?: string | null;
+    ai_enabled?: boolean;
+  };
+
+  const STATES = ['AI_ACTIVE', 'HUMAN_REQUESTED', 'AGENT_ASSIGNED', 'HUMAN_ACTIVE', 'RESOLVED'];
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+  if (handoffState !== undefined) {
+    if (!STATES.includes(handoffState)) throw new AppError('Unknown handoff state.', 422);
+    patch.handoff_state = handoffState;
+    // A human owning the thread silences the assistant; returning it to
+    // AI_ACTIVE is the only thing that switches it back on.
+    if (['AGENT_ASSIGNED', 'HUMAN_ACTIVE'].includes(handoffState)) patch.ai_enabled = false;
+    if (handoffState === 'AI_ACTIVE') patch.ai_enabled = true;
+    if (handoffState === 'RESOLVED') patch.status = 'completed';
+  }
+
+  if (assignedTo !== undefined) {
+    patch.assigned_to = assignedTo;
+    if (assignedTo && handoffState === undefined) {
+      patch.handoff_state = 'AGENT_ASSIGNED';
+      patch.ai_enabled = false;
+      patch.handoff_at = new Date().toISOString();
+      patch.handoff_by = req.user?.sub ?? null;
+    }
+  }
+
+  // An explicit ai_enabled in the request is the operator's final word.
+  if (aiEnabled !== undefined) patch.ai_enabled = aiEnabled;
+
+  const { data, error } = await supabase
+    .from('ai_conversations')
+    .update(patch)
+    .eq('id', id)
+    .select('id, handoff_state, assigned_to, ai_enabled, status')
+    .single();
+  if (error) throw new AppError('Unable to update the conversation.', 500, [error]);
+
+  await safeAudit({ action: 'update', entityId: id, entityType: 'ai_conversations', newData: data, req });
+  return sendSuccess(res, 'Conversation updated.', data);
+});
+
+/** Internal note — staff only, never delivered to the traveller. */
+export const addConversationNote = asyncHandler(async (req, res) => {
+  const body = typeof req.body?.body === 'string' ? req.body.body.trim() : '';
+  if (!body) throw new AppError('A note body is required.', 422);
+
+  const { data, error } = await supabase
+    .from('conversation_notes')
+    .insert({ conversation_id: req.params.id, author_id: req.user?.sub ?? null, body })
+    .select('*')
+    .single();
+  if (error) throw new AppError('Unable to save the note.', 500, [error]);
+  return sendSuccess(res, 'Note added.', data, 201);
+});
+
+/** Assignable agents for the inbox picker. */
+export const listAgents = asyncHandler(async (_req, res) => {
+  const { data, error } = await supabase
+    .from('admin_users')
+    .select('id, full_name, email')
+    .order('full_name', { ascending: true });
+  if (error) throw new AppError('Unable to load agents.', 500, [error]);
+  return sendSuccess(res, 'Agents fetched successfully.', data ?? []);
 });

@@ -3,10 +3,14 @@ import rateLimit from 'express-rate-limit';
 import { authenticate } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/permission.middleware';
 import {
+  addConversationNote,
   getConversation,
+  listAgents,
   listConversations,
+  markConversationRead,
   receiveWebhook,
   sendMessage,
+  updateConversationState,
   verifyWebhook,
   whatsappStatus
 } from '../controllers/whatsapp.controller';
@@ -35,5 +39,13 @@ router.get('/status', authenticate, requirePermission('settings.view'), whatsapp
 router.get('/conversations', authenticate, requirePermission('ai_conversations.view'), listConversations);
 router.get('/conversations/:id', authenticate, requirePermission('ai_conversations.view'), getConversation);
 router.post('/send', authenticate, requirePermission('ai_conversations.handoff'), sendMessage);
+
+// Inbox actions. Reading a thread needs view; anything that changes it — a
+// reply, an assignment, a note, resolving — needs the handoff permission,
+// which is the existing right to take a conversation over from the assistant.
+router.get('/agents', authenticate, requirePermission('ai_conversations.view'), listAgents);
+router.post('/conversations/:id/read', authenticate, requirePermission('ai_conversations.view'), markConversationRead);
+router.patch('/conversations/:id', authenticate, requirePermission('ai_conversations.handoff'), updateConversationState);
+router.post('/conversations/:id/notes', authenticate, requirePermission('ai_conversations.handoff'), addConversationNote);
 
 export default router;
