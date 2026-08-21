@@ -108,7 +108,24 @@ type Outcome = { status: 'sent' | 'skipped' | 'failed'; detail?: string };
 
 export type EmitResult = Outcome & { channels: Partial<Record<Channel, Outcome>> };
 
+/**
+ * Take ownership of one channel's attempt at this event.
+ *
+ * Idempotent on success, retryable on everything else. A delivery that was
+ * skipped or failed never reached the traveller, so locking it forever would
+ * mean an agent who fixes the cause — grants consent, configures email, gets a
+ * template approved — can never send the thing they were trying to send. Only
+ * a genuine send is final.
+ */
 const claim = async (event: NotificationEvent, channel: Channel): Promise<string | null> => {
+  // Per channel, so one medium being unavailable never blocks the other.
+  const dedupeKey = `${event.dedupeKey}:${channel}`;
+  const payload = {
+    message: event.message,
+    template_key: event.templateKey ?? null,
+    parameters: event.templateParameters ?? []
+  };
+
   const { data, error } = await supabase
     .from('notification_events')
     .insert({
@@ -116,21 +133,30 @@ const claim = async (event: NotificationEvent, channel: Channel): Promise<string
       entity_type: event.entityType ?? null,
       entity_id: event.entityId ?? null,
       channel,
-      // Per channel, so one medium being unavailable never blocks the other.
-      dedupe_key: `${event.dedupeKey}:${channel}`,
-      payload: {
-        message: event.message,
-        template_key: event.templateKey ?? null,
-        parameters: event.templateParameters ?? []
-      }
+      dedupe_key: dedupeKey,
+      payload
     })
     .select('id')
     .single();
 
-  // 23505 = this event was already emitted on this channel; do not send again.
-  if (error && (error as { code?: string }).code === '23505') return null;
-  if (error) throw error;
-  return String(data.id);
+  if (!error) return String(data.id);
+  if ((error as { code?: string }).code !== '23505') throw error;
+
+  // Already attempted on this channel. Retry unless it actually went.
+  const { data: existing } = await supabase
+    .from('notification_events')
+    .select('id, status')
+    .eq('dedupe_key', dedupeKey)
+    .maybeSingle();
+
+  if (!existing || existing.status === 'sent') return null;
+
+  await supabase
+    .from('notification_events')
+    .update({ status: 'pending', detail: null, payload, created_at: new Date().toISOString() })
+    .eq('id', existing.id);
+
+  return String(existing.id);
 };
 
 const settle = async (id: string, outcome: Outcome) => {
@@ -313,7 +339,8 @@ export const emitNotification = async (event: NotificationEvent): Promise<EmitRe
     try {
       const id = await claim(event, channel);
       if (!id) {
-        channels[channel] = { status: 'skipped', detail: 'Already sent for this event.' };
+        // Only reachable when a previous attempt genuinely delivered.
+        channels[channel] = { status: 'sent', detail: 'Already delivered for this event.' };
         continue;
       }
 
@@ -339,9 +366,12 @@ export const emitNotification = async (event: NotificationEvent): Promise<EmitRe
   }
 
   const failed = traveller.find((o) => o.status === 'failed');
+  // Both channels commonly refuse for the same reason; saying it twice reads
+  // like two problems.
+  const reasons = [...new Set(traveller.map((o) => o.detail).filter(Boolean))];
   return {
     status: failed ? 'failed' : 'skipped',
-    detail: traveller.map((o) => o.detail).filter(Boolean).join(' · ') || 'Nothing to send.',
+    detail: reasons.join(' · ') || 'Nothing to send.',
     channels
   };
 };

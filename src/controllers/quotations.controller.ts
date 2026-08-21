@@ -85,7 +85,9 @@ export const listQuotations = asyncHandler(async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 50, 100);
   let query = supabase
     .from('quotations')
-    .select('*, tour:tours(title, slug)')
+    // The lead comes along so the list can show which enquiry a quotation
+    // answers — the link is the whole point of raising one from a booking.
+    .select('*, tour:tours(title, slug), lead:booking_requests(booking_code, full_name)')
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(limit);
