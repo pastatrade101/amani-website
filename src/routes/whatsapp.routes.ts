@@ -7,6 +7,7 @@ import {
   getConversation,
   listAgents,
   listConversations,
+  listTemplates,
   markConversationRead,
   receiveWebhook,
   sendMessage,
@@ -44,6 +45,7 @@ router.post('/send', authenticate, requirePermission('ai_conversations.handoff')
 // reply, an assignment, a note, resolving — needs the handoff permission,
 // which is the existing right to take a conversation over from the assistant.
 router.get('/agents', authenticate, requirePermission('ai_conversations.view'), listAgents);
+router.get('/templates', authenticate, requirePermission('ai_conversations.view'), listTemplates);
 router.post('/conversations/:id/read', authenticate, requirePermission('ai_conversations.view'), markConversationRead);
 router.patch('/conversations/:id', authenticate, requirePermission('ai_conversations.handoff'), updateConversationState);
 router.post('/conversations/:id/notes', authenticate, requirePermission('ai_conversations.handoff'), addConversationNote);

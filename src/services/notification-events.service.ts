@@ -144,13 +144,36 @@ const settle = async (id: string, outcome: Outcome) => {
     .eq('id', id);
 };
 
+/**
+ * Resolve an internal key to a template Meta will actually accept.
+ *
+ * Approved only. A registered-but-unapproved row is a name WhatsApp Manager
+ * has never seen, so attempting it would earn an opaque API error; treating it
+ * as "no template" instead means the event is skipped with a reason an admin
+ * can read and act on.
+ */
 const templateFor = async (key: string) => {
   const { data } = await supabase
     .from('whatsapp_templates')
-    .select('meta_template_name, language')
+    .select('meta_template_name, language, variables')
     .eq('internal_key', key)
+    .eq('status', 'approved')
     .maybeSingle();
-  return data as { meta_template_name: string; language: string } | null;
+  return data as { meta_template_name: string; language: string; variables: unknown } | null;
+};
+
+/**
+ * Meta rejects a template whose placeholder count does not match the
+ * parameters supplied, so the registry's own record of its variables is
+ * checked first. This is what keeps the layer generic: mapping an event to a
+ * template that expects a different number of values fails here, loudly and
+ * before it reaches a traveller, rather than being discovered in production.
+ */
+const parameterMismatch = (variables: unknown, parameters: string[]): string | null => {
+  if (!Array.isArray(variables) || !variables.length) return null;
+  return variables.length === parameters.length
+    ? null
+    : `Template expects ${variables.length} parameter${variables.length === 1 ? '' : 's'} (${variables.join(', ')}) but ${parameters.length} were supplied.`;
 };
 
 /**
@@ -186,12 +209,11 @@ const deliverWhatsApp = async (event: NotificationEvent): Promise<Outcome> => {
     if (inWindow) {
       ({ waMessageId } = await sendTextMessage(waId, event.message));
     } else if (template) {
-      ({ waMessageId } = await sendTemplateMessage(
-        waId,
-        template.meta_template_name,
-        template.language,
-        event.templateParameters ?? []
-      ));
+      const parameters = event.templateParameters ?? [];
+      const mismatch = parameterMismatch(template.variables, parameters);
+      if (mismatch) return { status: 'skipped', detail: mismatch };
+
+      ({ waMessageId } = await sendTemplateMessage(waId, template.meta_template_name, template.language, parameters));
       usedTemplate = template.meta_template_name;
     } else {
       return {

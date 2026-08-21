@@ -101,6 +101,43 @@ const claimEvent = async (key: string, type: string, payload: unknown): Promise<
   return true;
 };
 
+type TemplateRow = {
+  internal_key: string;
+  meta_template_name: string;
+  language: string;
+  variables: unknown;
+  body_text: string | null;
+};
+
+/**
+ * Find an approved template by either name it goes by — the internal key the
+ * platform emits, or the name Meta approved. Unapproved rows never resolve, so
+ * a template WhatsApp Manager has not seen cannot be sent by any route.
+ */
+const approvedTemplate = async (name: string): Promise<TemplateRow | null> => {
+  // Meta's own naming rule, applied before the value reaches a filter string:
+  // anything outside it is not a template name and must not be interpolated.
+  if (!/^[a-z0-9_]{1,512}$/.test(name)) return null;
+
+  const { data } = await supabase
+    .from('whatsapp_templates')
+    .select('internal_key, meta_template_name, language, variables, body_text')
+    .eq('status', 'approved')
+    .or(`internal_key.eq.${name},meta_template_name.eq.${name}`)
+    // Prefer the internal key, and take one: a future registration could in
+    // principle use one template's internal key as another's Meta name.
+    .order('internal_key', { ascending: true })
+    .limit(1);
+
+  return ((data ?? [])[0] as TemplateRow | undefined) ?? null;
+};
+
+/** What the traveller will actually read, with {{n}} filled in. */
+const renderTemplate = (template: TemplateRow, parameters: string[]): string =>
+  template.body_text
+    ? template.body_text.replace(/\{\{(\d+)\}\}/g, (match, index) => parameters[Number(index) - 1] ?? match)
+    : `[${template.meta_template_name}] ${parameters.join(' | ')}`.trim();
+
 /** The readable text of an inbound message, whatever shape it arrived in. */
 const inboundText = (message: NonNullable<WhatsAppValue['messages']>[number]): string =>
   message.text?.body ??
@@ -293,12 +330,44 @@ export const sendMessage = asyncHandler(async (req, res) => {
     );
   }
 
-  const result = useTemplate
-    ? await sendTemplateMessage(waId, templateName as string, language, parameters)
+  // Templates go through the registry, never straight to Meta. The client may
+  // name a template either way it knows it — our internal key or the name Meta
+  // approved — and what actually reaches the API is always the approved one.
+  let template: TemplateRow | null = null;
+  if (useTemplate) {
+    template = await approvedTemplate(String(templateName));
+    if (!template) {
+      throw new AppError(
+        'That template is not registered and approved. Approve it in WhatsApp Manager and register it before sending.',
+        422
+      );
+    }
+
+    const expected = Array.isArray(template.variables) ? template.variables : [];
+    if (expected.length !== parameters.length) {
+      throw new AppError(
+        `This template needs ${expected.length} value${expected.length === 1 ? '' : 's'} (${expected.join(', ')}), but ${parameters.length} were given.`,
+        422
+      );
+    }
+  }
+
+  // A double-tap on Send must not message the traveller twice. The key comes
+  // from the client because only it knows which click is a retry of which.
+  const idempotencyKey = typeof req.body?.idempotency_key === 'string' ? req.body.idempotency_key.trim() : '';
+  if (idempotencyKey && !(await claimEvent(`send:${idempotencyKey}`, 'outbound', { to: waId }))) {
+    return sendSuccess(res, 'Already sent.', { duplicate: true });
+  }
+
+  const result = template
+    ? await sendTemplateMessage(waId, template.meta_template_name, template.language, parameters)
     : await sendTextMessage(waId, body as string);
 
   const conversationId = await resolveConversation(contact);
-  const content = useTemplate ? `[template: ${templateName}] ${parameters.join(' | ')}`.trim() : (body as string);
+  // Store what the traveller will actually read, not the template's name. The
+  // thread is the record of the conversation, and "[template: booking_update]"
+  // tells the next agent nothing about what was said.
+  const content = template ? renderTemplate(template, parameters) : (body as string);
   const aiMessageId = await recordConversationMessage(conversationId, 'agent', content, {
     wa_message_id: result.waMessageId,
     sent_by: req.user?.sub ?? null
@@ -310,9 +379,9 @@ export const sendMessage = asyncHandler(async (req, res) => {
     conversation_id: conversationId,
     ai_message_id: aiMessageId,
     direction: 'outbound',
-    message_type: useTemplate ? 'template' : 'text',
+    message_type: template ? 'template' : 'text',
     status: 'accepted',
-    template_name: templateName ?? null,
+    template_name: template?.meta_template_name ?? null,
     sent_at: new Date().toISOString(),
     payload: result.raw
   });
@@ -321,7 +390,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
     action: 'create',
     entityId: result.waMessageId,
     entityType: 'whatsapp_messages',
-    newData: { to: waId, template: templateName ?? null },
+    newData: { to: waId, template: template?.meta_template_name ?? null },
     req
   });
 
@@ -329,6 +398,24 @@ export const sendMessage = asyncHandler(async (req, res) => {
     wa_message_id: result.waMessageId,
     conversation_id: conversationId
   });
+});
+
+/**
+ * The approved templates an agent may send.
+ *
+ * Read from the registry rather than listed in code, so approving a fifth
+ * template in WhatsApp Manager and registering it here is all it takes for the
+ * inbox to offer it — no deployment, no code change.
+ */
+export const listTemplates = asyncHandler(async (_req, res) => {
+  const { data, error } = await supabase
+    .from('whatsapp_templates')
+    .select('internal_key, meta_template_name, language, category, label, description, variables, body_text')
+    .eq('status', 'approved')
+    .order('label', { ascending: true });
+
+  if (error) throw new AppError('Unable to load templates.', 500, [error]);
+  return sendSuccess(res, 'Templates fetched successfully.', data ?? []);
 });
 
 /** Configuration health, without ever returning a credential. */
