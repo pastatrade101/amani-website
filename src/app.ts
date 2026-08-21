@@ -18,6 +18,7 @@ import tripPortalRoutes from './routes/trip-portal.routes';
 import categoriesRoutes from './routes/categories.routes';
 import translationsRoutes from './routes/translations.routes';
 import whatsappRoutes from './routes/whatsapp.routes';
+import quotationsRoutes from './routes/quotations.routes';
 import contactRoutes from './routes/contact.routes';
 import lodgesRoutes from './routes/lodges.routes';
 import activitiesRoutes from './routes/activities.routes';
@@ -133,6 +134,7 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/translations', translationsRoutes);
 // WhatsApp Business Cloud API: Meta webhook + admin send/inbox.
 app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/quotations', quotationsRoutes);
 app.use('/api/destinations', destinationsRoutes);
 app.use('/api/lodges', lodgesRoutes);
 app.use('/api/activities', activitiesRoutes);

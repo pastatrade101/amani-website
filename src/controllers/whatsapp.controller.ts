@@ -109,6 +109,43 @@ const inboundText = (message: NonNullable<WhatsAppValue['messages']>[number]): s
   message.interactive?.list_reply?.title ??
   `[${message.type ?? 'unsupported'} message]`;
 
+/**
+ * A quotation reference the traveller quoted back at us.
+ *
+ * The quote page prefills "…about quotation GFQ-XXXXXX", so when they tap
+ * through from a quotation the code arrives with their first message. Binding
+ * the thread to that quotation is what stops the reply landing in the inbox as
+ * an unrelated conversation the agent has to piece together.
+ */
+const QUOTE_CODE = /\bGFQ-[A-Z0-9]{4,12}\b/i;
+
+const linkQuotationMentioned = async (text: string, conversationId: string) => {
+  const code = text.match(QUOTE_CODE)?.[0]?.toUpperCase();
+  if (!code) return;
+
+  try {
+    const { data } = await supabase
+      .from('quotations')
+      .select('id, conversation_id')
+      .ilike('quote_code', code)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    // Only ever fills a blank. A quotation already attached to a thread keeps
+    // it — someone forwarding a reference must not move another traveller's
+    // quotation onto their own conversation.
+    if (!data || data.conversation_id) return;
+
+    await supabase
+      .from('quotations')
+      .update({ conversation_id: conversationId, updated_at: new Date().toISOString() })
+      .eq('id', data.id)
+      .is('conversation_id', null);
+  } catch {
+    // Best-effort context, never a reason to fail the webhook.
+  }
+};
+
 const handleInbound = async (value: WhatsAppValue) => {
   for (const message of value.messages ?? []) {
     const waMessageId = message.id;
@@ -138,6 +175,8 @@ const handleInbound = async (value: WhatsAppValue) => {
       delivered_at: new Date().toISOString(),
       payload: message as unknown as Record<string, unknown>
     });
+
+    await linkQuotationMentioned(content, conversationId);
 
     // Blue ticks. Best-effort: a failure here must not fail the webhook.
     void markMessageRead(waMessageId).catch(() => undefined);

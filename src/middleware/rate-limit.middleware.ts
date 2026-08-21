@@ -53,6 +53,18 @@ export const analyticsEventLimiter = rateLimit({
   message: { success: false, message: 'Too many events.', errors: [] }
 });
 
+// Accepting or declining a quotation is a once-in-a-trip action, so anything
+// repeated is either a mistake or someone poking at tokens. Generous enough to
+// survive a double tap and a change of mind, tight enough to be useless for
+// walking the token space.
+export const quotationActionLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 12,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many attempts. Please wait a few minutes and try again.', errors: [] }
+});
+
 export const exchangeRateRefreshLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 4,

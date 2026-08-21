@@ -3,6 +3,7 @@ import { safeAudit } from '../services/audit.service';
 import { generateBookingCode } from '../services/booking-code.service';
 import { currencyService } from '../services/currency.service';
 import { sendBookingNotification, syncBookingToHubSpot } from '../services/notification.service';
+import { emitNotification } from '../services/notification-events.service';
 import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { cleanSearch, getPagination, getQueryString, paginationMeta } from '../utils/query';
@@ -137,6 +138,22 @@ export const createBooking = asyncHandler(async (req, res) => {
 
   // Fire-and-forget side effects — must never block or fail booking creation.
   void sendBookingNotification(data as Record<string, unknown>);
+
+  // §4 — acknowledge the enquiry on WhatsApp. Fire-and-forget beside the
+  // existing email and HubSpot paths: the notification service decides whether
+  // the traveller has consented and whether a session message or a template is
+  // allowed, and records the reason when it sends nothing.
+  const created = data as Record<string, unknown>;
+  void emitNotification({
+    type: 'LEAD_CREATED',
+    entityType: 'booking_requests',
+    entityId: String(created.id),
+    phone: String(created.phone ?? ''),
+    message: `Hi ${String(created.full_name ?? 'there').split(' ')[0]} 👋\n\nThank you for your enquiry with Goldfinch Adventures.\nYour reference is ${String(created.booking_code ?? '')}.\n\nOur travel team will assist you here on WhatsApp.`,
+    templateKey: 'inquiry_received',
+    templateParameters: [String(created.full_name ?? 'there').split(' ')[0], String(created.booking_code ?? '')],
+    dedupeKey: `lead_created:${created.id}`
+  });
   void syncBookingToHubSpot(data as Record<string, unknown>);
 
   if (isAdmin) {
@@ -264,6 +281,22 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
   if (error) throw new AppError('Unable to update booking status.', 500, [error]);
 
   await safeAudit({ action: 'status_change', entityId: req.params.id, entityType: 'booking_requests', oldData: previous, newData: data, req });
+
+  // Only on the transition INTO confirmed — re-saving a confirmed booking must
+  // not message the traveller again. The dedupe key makes that doubly true.
+  if (data.status === 'confirmed' && previous?.status !== 'confirmed') {
+    void emitNotification({
+      type: 'BOOKING_CONFIRMED',
+      entityType: 'booking_requests',
+      entityId: String(data.id),
+      phone: String(data.phone ?? ''),
+      message: `Great news ${String(data.full_name ?? '').split(' ')[0]} — your booking is confirmed 🎉\n\nReference: ${String(data.booking_code ?? '')}\n\nWe'll be in touch here with your final details.`,
+      templateKey: 'booking_confirmed',
+      templateParameters: [String(data.full_name ?? 'there').split(' ')[0], String(data.booking_code ?? '')],
+      dedupeKey: `booking_confirmed:${data.id}`
+    });
+  }
+
   return sendSuccess(res, 'Booking status updated successfully.', data);
 });
 

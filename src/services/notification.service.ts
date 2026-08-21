@@ -11,7 +11,7 @@ import { syncToHubSpot } from './hubspot.service';
  * Keys are stored with is_public false, so they never reach the unauthenticated
  * public settings endpoint.
  */
-const recipientFor = async (source: string): Promise<string> => {
+export const recipientFor = async (source: string): Promise<string> => {
   const keys = [`enquiry_email_${source}`, 'enquiry_email_default'];
 
   try {
