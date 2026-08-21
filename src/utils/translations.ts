@@ -231,9 +231,18 @@ export const localizeRecords = async (
     const translation = byId.get(String(record.id));
     if (!translation) continue;
     const fields = (translation.fields ?? {}) as TranslationFields;
+    const applied: string[] = [];
     for (const [key, value] of Object.entries(fields)) {
-      if (Array.isArray(value) ? value.length : String(value).trim()) record[key] = value;
+      if (Array.isArray(value) ? value.length : String(value).trim()) {
+        record[key] = value;
+        applied.push(key);
+      }
     }
+    // Which keys actually came from the translation. A merged record otherwise
+    // looks uniform, so a page cannot tell translated copy from a field that
+    // fell back to the default language — which matters for SEO, where a
+    // translated summary beats an untranslated meta description.
+    record.translated_fields = applied;
     if (translation.translated_slug) record.translated_slug = translation.translated_slug;
     record.locale = locale;
   }
