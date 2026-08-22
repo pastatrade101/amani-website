@@ -1,4 +1,5 @@
 import { AppError } from '../utils/api-response';
+import { connectTransportEnabled, sendViaConnect } from './makutano-connect.service';
 import { resolveWhatsAppCredentials } from './whatsapp-credentials.service';
 import type { ResolvedWhatsAppCredentials } from './whatsapp-credentials.service';
 
@@ -51,6 +52,9 @@ const graphBase = (): string => `${GRAPH_HOST}/${whatsappConfig().graphVersion}`
  * if an attempt is actually made.
  */
 export const whatsappSendingAvailable = async (): Promise<boolean> => {
+  // Through Makutano Connect the account is resolved server-side there; the
+  // only local question is whether the transport is configured.
+  if (connectTransportEnabled()) return true;
   try {
     const credentials = await resolveWhatsAppCredentials();
     return Boolean(credentials.phoneNumberId && credentials.accessToken);
@@ -169,6 +173,9 @@ export const describeSendFailure = (error: unknown): { message: string; code: st
  * caller is expected to have checked the window — see canSendSessionMessage.
  */
 export const sendTextMessage = async (to: string, body: string): Promise<SendResult> => {
+  if (connectTransportEnabled()) {
+    return sendViaConnect(toWaId(to), { type: 'text', text: body, previewUrl: true });
+  }
   const credentials = await requireSendableCredentials();
   const raw = await graphPost(
     `${credentials.phoneNumberId}/messages`,
@@ -194,6 +201,16 @@ export const sendTemplateMessage = async (
   languageCode: string,
   bodyParameters: string[] = []
 ): Promise<SendResult> => {
+  if (connectTransportEnabled()) {
+    return sendViaConnect(toWaId(to), {
+      type: 'template',
+      templateName,
+      language: languageCode,
+      ...(bodyParameters.length
+        ? { components: [{ type: 'body', parameters: bodyParameters.map((text) => ({ type: 'text', text })) }] }
+        : {})
+    });
+  }
   const credentials = await requireSendableCredentials();
   const components = bodyParameters.length
     ? [{ type: 'body', parameters: bodyParameters.map((text) => ({ type: 'text', text })) }]

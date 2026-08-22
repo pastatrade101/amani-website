@@ -3,6 +3,7 @@ import { safeAudit } from '../services/audit.service';
 import { generateBookingCode } from '../services/booking-code.service';
 import { currencyService } from '../services/currency.service';
 import { sendBookingNotification, syncBookingToHubSpot } from '../services/notification.service';
+import { syncBookingToMakutano } from '../services/makutano-connect.service';
 import { emitNotification } from '../services/notification-events.service';
 import { recordTransactionalConsent } from '../services/whatsapp-inbox.service';
 import { asyncHandler } from '../utils/async-handler';
@@ -166,6 +167,11 @@ export const createBooking = asyncHandler(async (req, res) => {
     dedupeKey: `lead_created:${created.id}`
   });
   void syncBookingToHubSpot(data as Record<string, unknown>);
+  // Dual-write to Makutano Connect — the central booking/WhatsApp
+  // infrastructure this site is a tenant of. Same fire-and-forget rule as the
+  // HubSpot sync: the traveller's enquiry is already stored locally and must
+  // never fail on an infrastructure hop.
+  void syncBookingToMakutano(data as Record<string, unknown>);
 
   if (isAdmin) {
     await safeAudit({ action: 'create', entityId: (data as { id?: string })?.id, entityType: 'booking_requests', newData: data, req });

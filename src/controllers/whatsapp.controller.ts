@@ -4,6 +4,7 @@ import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { supabase } from '../config/supabase';
 import { safeAudit } from '../services/audit.service';
+import { connectTransportEnabled } from '../services/makutano-connect.service';
 import {
   canSendSessionMessage,
   describeSendFailure,
@@ -339,10 +340,14 @@ export const receiveWebhook = asyncHandler(async (req, res) => {
  */
 export const sendMessage = asyncHandler(async (req, res) => {
   // Which account is used is resolved, not assumed: a connected business number
-  // takes precedence over this deployment's own environment credentials.
-  const credentials = await resolveWhatsAppCredentials();
-  if (!credentials.phoneNumberId || !credentials.accessToken) {
-    throw new AppError(credentials.unavailableReason ?? 'WhatsApp is not configured on this server.', 503);
+  // takes precedence over this deployment's own environment credentials. When
+  // outbound routes through Makutano Connect, the account lives there instead
+  // and no local credential is required.
+  if (!connectTransportEnabled()) {
+    const credentials = await resolveWhatsAppCredentials();
+    if (!credentials.phoneNumberId || !credentials.accessToken) {
+      throw new AppError(credentials.unavailableReason ?? 'WhatsApp is not configured on this server.', 503);
+    }
   }
 
   const { to, body, template_name: templateName, language = 'en', parameters = [] } = req.body as {
