@@ -104,6 +104,23 @@ const claimEvent = async (key: string, type: string, payload: unknown): Promise<
   return true;
 };
 
+/**
+ * Give a claim back when the thing it was protecting never happened.
+ *
+ * Idempotency exists to stop a double tap messaging someone twice. It must not
+ * also stop the agent trying again after a send that failed — pressing Send on
+ * a message the traveller never received and being told "already sent" is the
+ * same untruth this whole path is meant to remove.
+ */
+const releaseEvent = async (key: string): Promise<void> => {
+  try {
+    await supabase.from('whatsapp_webhook_events').delete().eq('event_key', key);
+  } catch {
+    // A stuck claim is recoverable by retrying with a fresh key; failing the
+    // request over it is not.
+  }
+};
+
 type TemplateRow = {
   internal_key: string;
   meta_template_name: string;
@@ -418,6 +435,9 @@ export const sendMessage = asyncHandler(async (req, res) => {
         error: recordError instanceof Error ? recordError.message : 'unknown'
       });
     }
+    // Nothing was delivered, so the claim has nothing left to protect. Holding
+    // it would answer the agent's next attempt with "already sent".
+    if (idempotencyKey) await releaseEvent(`send:${idempotencyKey}`);
     // The agent still gets Meta's own reason, unchanged.
     throw error;
   }
