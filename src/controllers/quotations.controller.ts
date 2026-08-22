@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { syncQuotationToMakutano } from '../services/makutano-connect.service';
 import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { supabase } from '../config/supabase';
@@ -191,6 +192,7 @@ export const createQuotation = asyncHandler(async (req, res) => {
 
   if (error) throw new AppError('Unable to create the quotation.', 500, [error]);
   await safeAudit({ action: 'create', entityId: String(data.id), entityType: 'quotations', newData: data, req });
+  void syncQuotationToMakutano(data as Record<string, unknown>);
   return sendSuccess(res, 'Quotation created.', { ...data, public_url: quoteUrl(String(data.public_token)) }, 201);
 });
 
@@ -239,6 +241,7 @@ export const updateQuotation = asyncHandler(async (req, res) => {
     });
   }
 
+  void syncQuotationToMakutano(data as Record<string, unknown>);
   return sendSuccess(res, 'Quotation updated.', { ...data, public_url: quoteUrl(String(data.public_token)) });
 });
 
@@ -316,15 +319,17 @@ export const sendQuotation = asyncHandler(async (req, res) => {
   // Only mark it sent if it actually went, and record which channels carried
   // it. A skipped send must not leave the record claiming the traveller has it.
   if (outcome.status === 'sent') {
+    const sentAtIso = new Date().toISOString();
     await supabase
       .from('quotations')
       .update({
         status: 'sent',
-        sent_at: new Date().toISOString(),
+        sent_at: sentAtIso,
         sent_via: deliveredVia(outcome),
-        updated_at: new Date().toISOString()
+        updated_at: sentAtIso
       })
       .eq('id', quotation.id);
+    void syncQuotationToMakutano({ ...(quotation as Record<string, unknown>), status: 'sent', sent_at: sentAtIso });
   }
 
   await safeAudit({ action: 'update', entityId: String(quotation.id), entityType: 'quotations', newData: { sent: outcome.status }, req });
@@ -349,6 +354,7 @@ export const setQuotationStatus = asyncHandler(async (req, res) => {
   if (error) throw new AppError('Unable to update the quotation.', 500, [error]);
 
   await safeAudit({ action: 'update', entityId: String(data.id), entityType: 'quotations', newData: { status }, req });
+  void syncQuotationToMakutano(data as Record<string, unknown>);
   return sendSuccess(res, 'Quotation updated.', data);
 });
 
@@ -469,6 +475,9 @@ export const acceptPublicQuotation = asyncHandler(async (req, res) => {
     .maybeSingle();
 
   if (updateError) throw new AppError('Unable to record your acceptance.', 500, [updateError]);
+  if (updated) {
+    void syncQuotationToMakutano({ ...(quotation as Record<string, unknown>), status: 'accepted', accepted_at: acceptedAt, acceptance });
+  }
   if (!updated) {
     return sendSuccess(res, 'This quotation is already accepted.', { status: 'accepted', accepted_at: quotation.accepted_at });
   }
@@ -564,6 +573,7 @@ export const declinePublicQuotation = asyncHandler(async (req, res) => {
     .eq('id', quotation.id)
     .in('status', ['draft', 'sent', 'viewed', 'expired']);
   if (error) throw new AppError('Unable to record your response.', 500, [error]);
+  void syncQuotationToMakutano({ ...(quotation as Record<string, unknown>), status: 'declined', declined_at: declinedAt, decline_reason: reason });
 
   await safeAudit({
     action: 'update',
