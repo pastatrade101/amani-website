@@ -112,7 +112,14 @@ const envSchema = z.object({
   AI_SEMANTIC_CACHE_THRESHOLD: z.coerce.number().default(0.92),
   // Abuse protection (CGNAT-aware): Turnstile is the primary control.
   TURNSTILE_SECRET_KEY: z.string().optional().or(z.literal('')),
-  // WhatsApp Business Cloud API — reserved for the Phase 2 two-way upgrade.
+  // ── WhatsApp Business Cloud API ───────────────────────────────────────────
+  // App level: these belong to the Meta app, are shared by every business
+  // account it serves, and sign the webhook. They stay here.
+  WHATSAPP_APP_ID: z.string().optional().or(z.literal('')),
+  // The Embedded Signup configuration id. Public — the browser SDK needs it.
+  META_EMBEDDED_SIGNUP_CONFIG_ID: z.string().optional().or(z.literal('')),
+  // Account level: the fallback sender for a site whose business has not
+  // connected their own account yet. A connected account overrides both.
   WHATSAPP_PHONE_NUMBER_ID: z.string().optional().or(z.literal('')),
   WHATSAPP_ACCESS_TOKEN: z.string().optional().or(z.literal('')),
   // Privacy: purge anonymous conversations after N days (§27).

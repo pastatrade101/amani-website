@@ -3,6 +3,13 @@ import rateLimit from 'express-rate-limit';
 import { authenticate } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/permission.middleware';
 import {
+  connectAccount,
+  connectAccountManually,
+  disconnectAccount,
+  getConnection,
+  testConnection
+} from '../controllers/whatsapp-connection.controller';
+import {
   addConversationNote,
   getConversation,
   listAgents,
@@ -49,5 +56,16 @@ router.get('/templates', authenticate, requirePermission('ai_conversations.view'
 router.post('/conversations/:id/read', authenticate, requirePermission('ai_conversations.view'), markConversationRead);
 router.patch('/conversations/:id', authenticate, requirePermission('ai_conversations.handoff'), updateConversationState);
 router.post('/conversations/:id/notes', authenticate, requirePermission('ai_conversations.handoff'), addConversationNote);
+
+// Account connection. Which number the site sends from is a settings decision,
+// not a conversation one, so these follow the settings permissions — and every
+// route that changes the sender needs settings.update, never merely view.
+router.get('/connection', authenticate, requirePermission('settings.view'), getConnection);
+router.post('/connect', authenticate, requirePermission('settings.update'), connectAccount);
+router.post('/connect/manual', authenticate, requirePermission('settings.update'), connectAccountManually);
+router.post('/disconnect', authenticate, requirePermission('settings.update'), disconnectAccount);
+// A live check writes last_verified_at and can move the account into 'error',
+// so it is a write, not a read.
+router.post('/connection/test', authenticate, requirePermission('settings.update'), testConnection);
 
 export default router;

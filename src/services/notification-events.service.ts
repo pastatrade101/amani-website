@@ -2,10 +2,10 @@ import { supabase } from '../config/supabase';
 import {
   canSendSessionMessage,
   describeSendFailure,
-  isWhatsAppConfigured,
   sendTemplateMessage,
   sendTextMessage,
-  toWaId
+  toWaId,
+  whatsappSendingAvailable
 } from './whatsapp-client.service';
 import {
   recordConversationMessage,
@@ -224,7 +224,7 @@ const deliverWhatsApp = async (event: NotificationEvent): Promise<Outcome> => {
   // Deliberately no row: an unconfigured server is an environment problem, not
   // something that happened to this traveller, and writing it to every thread
   // would bury the refusals that are.
-  if (!isWhatsAppConfigured()) return { status: 'skipped', detail: 'WhatsApp is not configured.' };
+  if (!(await whatsappSendingAvailable())) return { status: 'skipped', detail: 'WhatsApp is not configured.' };
   if (!event.phone) return { status: 'skipped', detail: 'No WhatsApp number for this recipient.' };
 
   const waId = toWaId(event.phone);

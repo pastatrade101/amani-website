@@ -7,7 +7,6 @@ import { safeAudit } from '../services/audit.service';
 import {
   canSendSessionMessage,
   describeSendFailure,
-  isWhatsAppConfigured,
   markMessageRead,
   sendTemplateMessage,
   sendTextMessage,
@@ -15,6 +14,7 @@ import {
   whatsappConfig
 } from '../services/whatsapp-client.service';
 import type { SendResult } from '../services/whatsapp-client.service';
+import { resolveWhatsAppCredentials } from '../services/whatsapp-credentials.service';
 import {
   contactByPhone,
   recordConversationMessage,
@@ -338,7 +338,12 @@ export const receiveWebhook = asyncHandler(async (req, res) => {
  * learns to use a template instead of seeing an opaque API error.
  */
 export const sendMessage = asyncHandler(async (req, res) => {
-  if (!isWhatsAppConfigured()) throw new AppError('WhatsApp is not configured on this server.', 503);
+  // Which account is used is resolved, not assumed: a connected business number
+  // takes precedence over this deployment's own environment credentials.
+  const credentials = await resolveWhatsAppCredentials();
+  if (!credentials.phoneNumberId || !credentials.accessToken) {
+    throw new AppError(credentials.unavailableReason ?? 'WhatsApp is not configured on this server.', 503);
+  }
 
   const { to, body, template_name: templateName, language = 'en', parameters = [] } = req.body as {
     to?: string;
@@ -497,15 +502,19 @@ export const listTemplates = asyncHandler(async (_req, res) => {
 /** Configuration health, without ever returning a credential. */
 export const whatsappStatus = asyncHandler(async (_req, res) => {
   const config = whatsappConfig();
+  const credentials = await resolveWhatsAppCredentials();
   return sendSuccess(res, 'WhatsApp status.', {
-    configured: isWhatsAppConfigured(),
+    configured: Boolean(credentials.phoneNumberId && credentials.accessToken),
     webhook_ready: Boolean(config.verifyToken && config.appSecret),
     graph_version: config.graphVersion,
+    // Whether the sender is the business's own connected account or this
+    // deployment's environment fallback. See GET /connection for the detail.
+    credential_source: credentials.source,
     // Presence only — never the values.
-    has_phone_number_id: Boolean(config.phoneNumberId),
-    has_access_token: Boolean(config.accessToken),
+    has_phone_number_id: Boolean(credentials.phoneNumberId),
+    has_access_token: Boolean(credentials.accessToken),
     has_app_secret: Boolean(config.appSecret),
-    has_business_account_id: Boolean(config.businessAccountId)
+    has_business_account_id: Boolean(credentials.businessAccountId)
   });
 });
 
