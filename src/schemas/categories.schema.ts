@@ -1,3 +1,4 @@
+import { sanitizeRichText, toPlainText } from '../utils/rich-text';
 import { z } from 'zod';
 
 const statusSchema = z.enum(['draft', 'published', 'archived']);
@@ -31,6 +32,21 @@ const monthsSchema = z
 // content. The admin filters these client-side; this keeps the rule true for
 // every caller. Tag-stripping is enough here because sanitizeRichFields runs
 // on the same payload before the DB write.
+/**
+ * One planning note: sanitised on the way in, and emptied to null when the
+ * editor leaves only markup behind, so a blank block never renders a card.
+ */
+const richNote = z
+  .string()
+  .max(4000)
+  .optional()
+  .nullable()
+  .transform((value) => {
+    if (!value) return null;
+    const clean = sanitizeRichText(value);
+    return toPlainText(clean).trim() ? clean : null;
+  });
+
 const highlightsSchema = z
   .array(z.string())
   .optional()
@@ -60,11 +76,16 @@ const categoryBaseSchema = z.object({
    * Per-style planning prose the "how to plan" band renders. Both keys
    * optional: a style with neither shows no block, which is deliberate — an
    * empty planning section beats an invented one.
+   *
+   * Rich text, so a specialist can write bullets rather than one long
+   * paragraph. Sanitised here rather than by sanitizeRichFields, which walks a
+   * flat list of column names and cannot reach inside a jsonb value — leaving
+   * these two the only rich content on the table that would arrive unfiltered.
    */
   planning_notes: z
     .object({
-      costs: z.string().max(1200).optional().nullable(),
-      route: z.string().max(1200).optional().nullable()
+      costs: richNote,
+      route: richNote
     })
     .partial()
     .optional()
