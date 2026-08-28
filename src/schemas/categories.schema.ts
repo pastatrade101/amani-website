@@ -56,6 +56,19 @@ const categoryBaseSchema = z.object({
   max_days: optionalDays,
   best_months: monthsSchema,
   highlights: highlightsSchema,
+  /**
+   * Per-style planning prose the "how to plan" band renders. Both keys
+   * optional: a style with neither shows no block, which is deliberate — an
+   * empty planning section beats an invented one.
+   */
+  planning_notes: z
+    .object({
+      costs: z.string().max(1200).optional().nullable(),
+      route: z.string().max(1200).optional().nullable()
+    })
+    .partial()
+    .optional()
+    .nullable(),
   icon_url: optionalUrl,
   image_url: optionalUrl,
   lottie_url: optionalUrl,
