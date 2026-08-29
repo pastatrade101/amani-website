@@ -24,6 +24,8 @@
     "content:prune": "tsx src/scripts/prune-content.ts",
     "content:destination-guides": "tsx src/scripts/import-destination-guides.ts",
     "content:destination-guides:prod": "node dist/scripts/import-destination-guides.js",
+    "content:safari-style-landing": "tsx src/scripts/backfill-safari-style-landing-content.ts",
+    "content:safari-style-landing:prod": "node dist/scripts/backfill-safari-style-landing-content.js",
     "content:prune:prod": "node dist/scripts/prune-content.js",
     "email:test": "tsx src/scripts/email-test.ts",
     "email:test:prod": "node dist/scripts/email-test.js",

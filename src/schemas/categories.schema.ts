@@ -54,6 +54,92 @@ const highlightsSchema = z
     items?.filter((item) => item.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').trim().length > 0)
   );
 
+const landingText = (max = 4000) => z.string().trim().min(1).max(max);
+const landingList = z.array(landingText(600)).length(4);
+const landingLinkSchema = z.object({
+  label: landingText(160),
+  // Guide links are deliberately internal. This prevents copied content from
+  // silently sending visitors off-site and matches the approved page export.
+  href: z.string().trim().max(500).regex(/^(?:\/(?!\/)|#)/, 'Use an internal path or page anchor.')
+}).strict();
+
+/**
+ * One complete safari-style landing-page document. Its keys intentionally
+ * mirror the public template props, making a CMS JSON export copy-pasteable.
+ * Exact list lengths enforce the visual rhythm in the approved UI.
+ */
+const landingPageContentSchema = z.object({
+  hero: z.object({
+    eyebrow: landingText(120),
+    headline: landingText(180),
+    subheadline: landingText(600),
+    primaryCtaLabel: landingText(80),
+    secondaryCtaLabel: landingText(80),
+    trustLine: landingText(500)
+  }).strict(),
+  trustChips: landingList,
+  overview: z.object({
+    label: landingText(120),
+    headline: landingText(180),
+    paragraphs: z.array(landingText(4000)).min(1).max(4),
+    imageUrl: optionalUrl
+  }).strict(),
+  planner: z.object({
+    label: landingText(120),
+    headline: landingText(180),
+    intro: landingText(600)
+  }).strict(),
+  tourCollection: z.object({
+    label: landingText(120),
+    headline: landingText(180),
+    subheadline: landingText(600),
+    resultsNoun: landingText(120),
+    loadMoreLabel: landingText(80)
+  }).strict(),
+  planningGuide: z.object({
+    label: landingText(120),
+    title: landingText(180),
+    intro: landingText(1200),
+    blocks: z.array(z.object({
+      title: landingText(160),
+      body: landingText(5000),
+      links: z.array(landingLinkSchema).min(1).max(8)
+    }).strict()).length(4)
+  }).strict(),
+  advisor: z.object({
+    headline: landingText(180),
+    intro: landingText(1200),
+    big: landingList,
+    quiet: landingList
+  }).strict(),
+  howItsPlanned: z.object({
+    label: landingText(120),
+    title: landingText(180),
+    intro: landingText(600),
+    steps: z.array(z.object({
+      title: landingText(160),
+      text: landingText(600)
+    }).strict()).length(4)
+  }).strict(),
+  reviews: z.object({
+    label: landingText(120),
+    title: landingText(180),
+    intro: landingText(800)
+  }).strict(),
+  faq: z.object({
+    title: landingText(180),
+    answeredBy: landingText(120)
+  }).strict(),
+  finalCta: z.object({
+    label: landingText(120),
+    headline: landingText(180),
+    subheadline: landingText(800),
+    proofs: landingList,
+    buttonLabel: landingText(80),
+    whatsappLabel: landingText(160)
+  }).strict()
+}).strict();
+
 const daysRangeValid = (data: { min_days?: number | null; max_days?: number | null }) =>
   data.min_days == null || data.max_days == null || data.max_days >= data.min_days;
 
@@ -90,6 +176,7 @@ const categoryBaseSchema = z.object({
     .partial()
     .optional()
     .nullable(),
+  landing_page_content: landingPageContentSchema.optional().nullable(),
   icon_url: optionalUrl,
   image_url: optionalUrl,
   lottie_url: optionalUrl,
@@ -109,6 +196,13 @@ export const categoryCreateSchema = categoryBaseSchema.superRefine((data, ctx) =
       message: 'Recommended maximum days must be greater than or equal to minimum days.'
     });
   }
+  if (data.status === 'published' && !data.landing_page_content) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['landing_page_content'],
+      message: 'Complete safari-style landing-page content is required before publishing.'
+    });
+  }
 });
 
 export const categoryUpdateSchema = categoryBaseSchema.partial().superRefine((data, ctx) => {
@@ -117,6 +211,13 @@ export const categoryUpdateSchema = categoryBaseSchema.partial().superRefine((da
       code: z.ZodIssueCode.custom,
       path: ['max_days'],
       message: 'Recommended maximum days must be greater than or equal to minimum days.'
+    });
+  }
+  if (data.status === 'published' && !data.landing_page_content) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['landing_page_content'],
+      message: 'Complete safari-style landing-page content is required before publishing.'
     });
   }
 });
