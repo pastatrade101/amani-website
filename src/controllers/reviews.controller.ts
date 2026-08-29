@@ -4,26 +4,66 @@ import { AppError, sendSuccess } from '../utils/api-response';
 import { getQueryString } from '../utils/query';
 import { createRecord, getRecordById, listRecords, softDeleteRecord, updateRecord } from '../utils/supabase-helpers';
 
+type ReviewTour = {
+  id: string;
+  title: string;
+  slug: string;
+  main_image_url: string | null;
+  banner_image_url: string | null;
+};
+
+/**
+ * Reviews originally used a PostgREST `tours(...)` embed. The legacy reviews
+ * table intentionally stores a loose `tour_id` (there is no foreign key), so
+ * PostgREST cannot resolve that relationship and rejects the whole request.
+ *
+ * Fetch the reviews first, then enrich them with the same optional `tours`
+ * object. Enrichment is best-effort: a missing/deleted tour must never make the
+ * Reviews CMS or public review widgets unavailable.
+ */
+const attachReviewTours = async (items: Array<Record<string, unknown>>) => {
+  const tourIds = [
+    ...new Set(
+      items
+        .map((item) => item.tour_id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0)
+    )
+  ];
+
+  if (!tourIds.length) return;
+
+  const { data, error } = await supabase
+    .from('tours')
+    .select('id,title,slug,main_image_url,banner_image_url')
+    .in('id', tourIds);
+
+  if (error || !data) return;
+
+  const toursById = new Map((data as ReviewTour[]).map((tour) => [tour.id, tour]));
+  for (const item of items) {
+    const tourId = typeof item.tour_id === 'string' ? item.tour_id : '';
+    const tour = toursById.get(tourId) ?? null;
+    item.tours = tour;
+    if (!item.tour_title && tour?.title) item.tour_title = tour.title;
+  }
+};
+
 export const listReviews = asyncHandler(async (req, res) => {
   return listRecords(req, res, {
     table: 'reviews',
-    select: '*, tours(id,title,slug,main_image_url,banner_image_url)',
+    select: '*',
     searchColumns: ['author_name', 'message', 'tour_title'],
     statusColumn: 'status',
     defaultStatus: 'approved',
-    filters: ['tour_id', 'platform', 'is_featured'],
+    filters: ['tour_id', 'platform', 'rating', 'is_featured'],
     orderBy: 'sort_order',
-    ascending: true
+    ascending: true,
+    afterFetch: attachReviewTours
   });
 });
 
 export const getReview = asyncHandler(async (req, res) => {
-  return getRecordById(
-    res,
-    'reviews',
-    req.params.id,
-    '*, tours(id,title,slug,main_image_url,banner_image_url)'
-  );
+  return getRecordById(res, 'reviews', req.params.id, '*');
 });
 
 export const createReview = asyncHandler(async (req, res) => {
