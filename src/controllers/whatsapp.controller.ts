@@ -79,7 +79,7 @@ type WhatsAppValue = {
     type?: string;
     timestamp?: string;
     text?: { body?: string };
-    button?: { text?: string };
+    button?: { text?: string; payload?: string };
     interactive?: { list_reply?: { title?: string }; button_reply?: { title?: string; id?: string } };
   }>;
   statuses?: Array<{
@@ -191,15 +191,28 @@ const PAID_CLAIM = 'PAID_CLAIM';
  * A note goes on the conversation so it surfaces where the team already looks.
  */
 const notePaymentClaim = async (
-  message: { type?: string; interactive?: { button_reply?: { id?: string; title?: string } }; button?: { text?: string } },
+  message: {
+    type?: string;
+    interactive?: { button_reply?: { id?: string; title?: string } };
+    button?: { text?: string; payload?: string };
+  },
   contact: { id?: unknown; phone?: unknown; wa_id?: unknown },
   conversationId: string
 ) => {
-  const payload = message.interactive?.button_reply?.id ?? '';
-  // Quick replies on template messages arrive as `button`, which carries the
-  // label rather than the payload — so the label is accepted as a fallback.
-  const label = message.button?.text ?? message.interactive?.button_reply?.title ?? '';
-  const claimed = payload === PAID_CLAIM || /^i'?ve paid$/i.test(label.trim());
+  // The payload is the reliable signal. A quick reply on a TEMPLATE arrives as
+  // `button` carrying the payload registered with the template; one on an
+  // interactive message arrives as `interactive.button_reply.id`.
+  const payload = message.button?.payload ?? message.interactive?.button_reply?.id ?? '';
+
+  // Label fallback, for a template configured with a different payload than the
+  // registry expects. Apostrophes are normalised because Meta's editor turns a
+  // typed ' into a curly ’, and matching on typography would silently drop the
+  // tap the traveller thinks they just made.
+  const label = (message.button?.text ?? message.interactive?.button_reply?.title ?? '')
+    .replace(/[‘’ʼ]/g, "'")
+    .trim();
+
+  const claimed = payload === PAID_CLAIM || /^i'?ve paid$/i.test(label);
   if (!claimed) return;
 
   try {
