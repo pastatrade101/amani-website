@@ -106,7 +106,19 @@ export const promoteQuotationToBooking = async (
           return { bookingId: String(lead.id), bookingCode: String(lead.booking_code ?? ''), result: 'already' };
         }
 
-        const patch: Record<string, unknown> = { status: 'confirmed', updated_at: new Date().toISOString() };
+        const patch: Record<string, unknown> = {
+          status: 'confirmed',
+          updated_at: new Date().toISOString(),
+          // The agreed price, carried onto the booking.
+          //
+          // Without this the booking is confirmed for an unknown amount: the
+          // traveller's trip page shows no balance, nobody can be asked for a
+          // deposit against nothing, and payment_status can never reach 'paid'
+          // because there is no figure to settle against. Whatever estimate the
+          // enquiry carried is superseded — an accepted quotation IS the price.
+          estimated_amount: quotation.total_amount ?? null,
+          currency: quotation.currency ?? 'USD'
+        };
         // Only seed the payment state if it has none. A booking that has
         // already taken a deposit must not be reset to unpaid because the
         // quotation it came from was accepted a second time.
@@ -157,6 +169,10 @@ export const promoteQuotationToBooking = async (
         number_of_children: Number(quotation.children ?? 0) || 0,
         status: 'confirmed',
         payment_status: 'unpaid',
+        // Same reasoning as the promotion path above: a booking confirmed for
+        // an unknown amount cannot be paid, shown, or chased.
+        estimated_amount: quotation.total_amount ?? null,
+        currency: quotation.currency ?? 'USD',
         source: 'admin_created',
         special_requests: typeof acceptance.notes === 'string' ? acceptance.notes : null,
         lead_context: { v: 1, origin: 'quotation_accepted', quote_code: quotation.quote_code ?? null }
