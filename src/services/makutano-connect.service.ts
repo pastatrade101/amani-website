@@ -140,8 +140,55 @@ export const syncBookingToMakutano = async (booking: Record<string, unknown>): P
 };
 
 /** Quotation mirroring dual-writes only when explicitly switched on. */
+/**
+ * The source deleted an enquiry — tell Connect.
+ *
+ * syncBookingToMakutano only ever posts enquiries that EXIST, so without this a
+ * deletion here leaves a row on Connect's work list that nothing can clear.
+ * Keyed on the same booking_code the create used, since that is what Connect
+ * stored as external_reference.
+ */
+export const deleteBookingFromMakutano = async (booking: Record<string, unknown>): Promise<void> => {
+  if (!connectBookingSyncEnabled()) return;
+  const reference = String(booking.booking_code ?? booking.id ?? '');
+  if (!reference) return;
+  try {
+    await del(`/booking-requests/mirror/${encodeURIComponent(reference)}`);
+  } catch (error) {
+    console.error('[makutano-connect] enquiry delete sync failed (local record unaffected):', (error as Error).message);
+  }
+};
+
 export const connectQuotationSyncEnabled = (): boolean =>
   configured() && process.env.MAKUTANO_SYNC_QUOTATIONS === 'on';
+
+/**
+ * DELETE, checked the same way post/put are.
+ *
+ * Deliberately not fire-and-forget: an unchecked write is what created this
+ * problem in the first place. A 404, a 401 or an expired key must not read as
+ * success — syncQuotationToMakutano's catch logs whatever this throws.
+ */
+const del = async (path: string): Promise<void> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 25_000);
+  try {
+    const res = await fetch(`${apiUrl()}/api/v1${path}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${apiKey()}` },
+      signal: controller.signal
+    });
+    const payload = (await res.json().catch(() => null)) as Envelope<unknown> | null;
+    if (!payload) throw new AppError(`Makutano Connect returned a non-JSON response (HTTP ${res.status}).`, 502);
+    if (!payload.success) throw new AppError(payload.error.message, res.status, [{ code: payload.error.code }]);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    const timedOut = error instanceof Error && error.name === 'AbortError';
+    throw new AppError(timedOut ? 'Makutano Connect timed out.' : 'Makutano Connect is unreachable.', 504);
+  } finally {
+    clearTimeout(timer);
+  }
+};
 
 const put = async <T>(path: string, body: unknown): Promise<T> => {
   const controller = new AbortController();
@@ -184,7 +231,16 @@ const QUOTATION_STATUS_MAP: Record<string, 'DRAFT' | 'SENT' | 'VIEWED' | 'ACCEPT
 export const syncQuotationToMakutano = async (quotation: Record<string, unknown>): Promise<void> => {
   if (!connectQuotationSyncEnabled()) return;
   try {
-    if (quotation.deleted_at) return; // soft-deleted documents are not mirrored
+    // A deleted quotation is mirrored AS DELETED, not skipped.
+    //
+    // Skipping meant Connect was only ever told about quotations that still
+    // existed, so deleting sixteen here left sixteen on Connect's work list
+    // with nothing able to clear them. Reachable only because deleteQuotation
+    // now calls this — the guard alone was dead code.
+    if (quotation.deleted_at) {
+      await del(`/quotations/mirror/${encodeURIComponent(String(quotation.quote_code ?? quotation.id))}`);
+      return;
+    }
     const status = QUOTATION_STATUS_MAP[String(quotation.status ?? 'draft')] ?? 'DRAFT';
     const [firstName, ...rest] = String(quotation.customer_name ?? '').trim().split(/\s+/);
     const items = Array.isArray(quotation.items) ? (quotation.items as Array<Record<string, unknown>>) : [];

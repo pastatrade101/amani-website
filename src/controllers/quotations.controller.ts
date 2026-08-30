@@ -125,13 +125,20 @@ export const deleteQuotation = asyncHandler(async (req, res) => {
   const { data: previous } = await supabase.from('quotations').select('*').eq('id', req.params.id).maybeSingle();
   if (!previous) throw new AppError('Quotation not found.', 404);
 
+  const deletedAt = new Date().toISOString();
   const { error } = await supabase
     .from('quotations')
-    .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({ deleted_at: deletedAt, updated_at: deletedAt })
     .eq('id', req.params.id);
   if (error) throw new AppError('Unable to delete the quotation.', 500, [error]);
 
   await safeAudit({ action: 'delete', entityId: req.params.id, entityType: 'quotations', oldData: previous, req });
+
+  // Tell Connect. Without this the mirror only ever reports quotations that
+  // still exist, and a deletion here leaves a row over there forever — the
+  // deleted_at branch in the service is unreachable from anywhere else.
+  void syncQuotationToMakutano({ ...(previous as Record<string, unknown>), deleted_at: deletedAt });
+
   return sendSuccess(res, 'Quotation deleted.', { id: req.params.id });
 });
 

@@ -3,7 +3,7 @@ import { safeAudit } from '../services/audit.service';
 import { generateBookingCode } from '../services/booking-code.service';
 import { currencyService } from '../services/currency.service';
 import { sendBookingNotification, syncBookingToHubSpot } from '../services/notification.service';
-import { syncBookingToMakutano } from '../services/makutano-connect.service';
+import { deleteBookingFromMakutano, syncBookingToMakutano } from '../services/makutano-connect.service';
 import { emitNotification } from '../services/notification-events.service';
 import { recordTransactionalConsent } from '../services/whatsapp-inbox.service';
 import { asyncHandler } from '../utils/async-handler';
@@ -365,5 +365,19 @@ export const updateBookingNotes = asyncHandler(async (req, res) => {
 });
 
 export const deleteBooking = asyncHandler(async (req, res) => {
-  return softDeleteRecord(res, 'booking_requests', req.params.id, req);
+  // Read it before it is hidden: the mirror is keyed on booking_code, and
+  // softDeleteRecord does not hand the row back.
+  const { data: previous } = await supabase
+    .from('booking_requests')
+    .select('id, booking_code')
+    .eq('id', req.params.id)
+    .maybeSingle();
+
+  const result = await softDeleteRecord(res, 'booking_requests', req.params.id, req);
+
+  // Tell Connect. Without this the mirror only ever reports enquiries that
+  // still exist, and a deletion here leaves a row over there forever.
+  if (previous) void deleteBookingFromMakutano(previous as Record<string, unknown>);
+
+  return result;
 });
