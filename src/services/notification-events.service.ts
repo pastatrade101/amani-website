@@ -48,7 +48,8 @@ export type NotificationEventType =
   | 'QUOTATION_CHANGES_REQUESTED'
   | 'QUOTATION_REVISED'
   | 'QUOTATION_ACCEPTED'
-  | 'BOOKING_CONFIRMED';
+  | 'BOOKING_CONFIRMED'
+  | 'BOOKING_AMENDED';
 
 export type Channel = 'whatsapp' | 'email' | 'email_staff';
 
@@ -69,7 +70,12 @@ const CHANNEL_POLICY: Record<NotificationEventType, Channel[]> = {
   QUOTATION_CHANGES_REQUESTED: ['email_staff'],
   QUOTATION_REVISED: ['whatsapp', 'email'],
   QUOTATION_ACCEPTED: ['whatsapp', 'email', 'email_staff'],
-  BOOKING_CONFIRMED: ['whatsapp', 'email']
+  BOOKING_CONFIRMED: ['whatsapp', 'email'],
+  // A change to a trip someone has already agreed to. Same two channels as the
+  // confirmation it amends — WhatsApp because that is where this conversation
+  // has been happening, email because a change to what was agreed is worth
+  // having in writing.
+  BOOKING_AMENDED: ['whatsapp', 'email']
 };
 
 /**

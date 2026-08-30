@@ -2,6 +2,7 @@ import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { supabase } from '../config/supabase';
 import { safeAudit } from '../services/audit.service';
+import { emitNotification } from '../services/notification-events.service';
 
 /**
  * Changes agreed after a quotation was accepted.
@@ -65,12 +66,19 @@ const clean = (value: unknown, max: number): string | null => {
 const loadBooking = async (id: string) => {
   const { data } = await supabase
     .from('booking_requests')
-    .select('id, booking_code, currency, estimated_amount, status')
+    .select('id, booking_code, currency, estimated_amount, status, full_name, email, phone')
     .eq('id', id)
     .maybeSingle();
   if (!data) throw new AppError('Booking not found.', 404);
   return data;
 };
+
+const money = (amount: number, currency: string) =>
+  `${currency} ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/** Signed, because on an amendment the direction is half the information. */
+const signedMoney = (amount: number, currency: string) =>
+  `${amount > 0 ? '+' : amount < 0 ? '−' : ''}${money(Math.abs(amount), currency)}`;
 
 /**
  * The amendments on a booking, plus what they do to the price.
@@ -169,7 +177,7 @@ export const createAmendment = asyncHandler(async (req, res) => {
 });
 
 export const updateAmendment = asyncHandler(async (req, res) => {
-  await loadBooking(req.params.id);
+  const booking = await loadBooking(req.params.id);
 
   const { data: previous } = await supabase
     .from('booking_amendments')
@@ -237,6 +245,54 @@ export const updateAmendment = asyncHandler(async (req, res) => {
     newData: data,
     req
   });
+
+  // Only on applied, and only on the transition into it.
+  //
+  // Applied is the point the trip actually changed; everything before it is us
+  // working out whether it will. Notifying on 'agreed' as well would send two
+  // messages about one change, and 'proposed' is a conversation an agent is
+  // already having. A decline is deliberately not automated either: "we could
+  // not get that lodge, but here is what we can do" is a reply, not a template.
+  if (patch.status === 'applied') {
+    const currency = String(booking.currency ?? 'USD');
+    const delta = data.amount_delta == null ? null : Number(data.amount_delta);
+    const priceLine =
+      delta === null
+        ? 'There is no change to your price.'
+        : delta === 0
+          ? 'There is no change to your price.'
+          : `Your total changes by ${signedMoney(delta, currency)}.`;
+
+    const change = `${data.summary}\n${priceLine}`;
+    const firstName = String(booking.full_name ?? 'there').split(' ')[0];
+    const code = String(booking.booking_code ?? '');
+
+    void emitNotification({
+      type: 'BOOKING_AMENDED',
+      entityType: 'booking_amendments',
+      entityId: String(data.id),
+      phone: String(booking.phone ?? ''),
+      email: String(booking.email ?? ''),
+      message: `Hello ${firstName}, there's an update to your booking ${code}.\n\n${change}\n\nReply here if you have any questions.`,
+      templateKey: 'booking_amended',
+      templateParameters: [firstName, code, change],
+      emailContent: {
+        subject: `An update to your booking — ${code}`,
+        heading: 'An update to your booking',
+        lines: [
+          `Hello ${String(booking.full_name ?? 'there')},`,
+          `We've made a change to your booking ${code}.`,
+          data.summary,
+          data.detail ? String(data.detail) : '',
+          priceLine,
+          'Everything else about your trip stays as arranged.'
+        ].filter(Boolean)
+      },
+      // One message per amendment, not per save. An agent correcting a typo on
+      // an applied amendment must not message the traveller again.
+      dedupeKey: `booking_amended:${data.id}`
+    });
+  }
 
   return sendSuccess(res, 'Amendment updated.', data);
 });
