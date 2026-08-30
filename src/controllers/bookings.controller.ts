@@ -3,7 +3,7 @@ import { safeAudit } from '../services/audit.service';
 import { generateBookingCode } from '../services/booking-code.service';
 import { currencyService } from '../services/currency.service';
 import { sendBookingNotification, syncBookingToHubSpot } from '../services/notification.service';
-import { deleteBookingFromMakutano, syncBookingToMakutano } from '../services/makutano-connect.service';
+import { deleteBookingFromMakutano, syncBookingChangeToMakutano, syncBookingToMakutano } from '../services/makutano-connect.service';
 import { emitNotification } from '../services/notification-events.service';
 import { recordTransactionalConsent } from '../services/whatsapp-inbox.service';
 import { asyncHandler } from '../utils/async-handler';
@@ -326,6 +326,10 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
       dedupeKey: `booking_confirmed:${data.id}`
     });
   }
+
+  // Connect's copy used to freeze at creation. It mirrors this enquiry, so it
+  // has to hear that the booking is confirmed, cancelled or completed.
+  void syncBookingChangeToMakutano(data as Record<string, unknown>);
 
   return sendSuccess(res, 'Booking status updated successfully.', data);
 });

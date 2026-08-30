@@ -159,6 +159,39 @@ export const deleteBookingFromMakutano = async (booking: Record<string, unknown>
   }
 };
 
+/**
+ * A booking changed here — status, money, or an amendment applied to it.
+ *
+ * syncBookingToMakutano posts the enquiry once, when it is created, and that
+ * was the only thing Connect ever heard. Its copy then froze while the real
+ * record went on being confirmed, paid and amended.
+ *
+ * Update-only on Connect's side: a status change for a reference it never
+ * mirrored is ignored rather than turning into a new lead in somebody's inbox.
+ */
+export const syncBookingChangeToMakutano = async (
+  booking: Record<string, unknown>,
+  amendment?: { summary?: string | null; priceEffect?: string | null; state?: string | null }
+): Promise<void> => {
+  if (!connectBookingSyncEnabled()) return;
+  const reference = String(booking.booking_code ?? booking.id ?? '');
+  if (!reference) return;
+  try {
+    const total = booking.estimated_amount == null ? null : Number(booking.estimated_amount);
+    await put('/booking-requests/mirror', {
+      externalReference: reference,
+      externalSource: 'goldfinch',
+      status: booking.status ? String(booking.status) : null,
+      paymentStatus: booking.payment_status ? String(booking.payment_status) : null,
+      estimatedTotal: total && total > 0 ? total.toFixed(2) : null,
+      currency: booking.currency ? String(booking.currency) : null,
+      amendment: amendment ?? null
+    });
+  } catch (error) {
+    console.error('[makutano-connect] booking change sync failed (local booking unaffected):', (error as Error).message);
+  }
+};
+
 export const connectQuotationSyncEnabled = (): boolean =>
   configured() && process.env.MAKUTANO_SYNC_QUOTATIONS === 'on';
 

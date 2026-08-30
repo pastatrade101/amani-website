@@ -3,6 +3,7 @@ import { AppError, sendSuccess } from '../utils/api-response';
 import { supabase } from '../config/supabase';
 import { safeAudit } from '../services/audit.service';
 import { emitNotification } from '../services/notification-events.service';
+import { syncBookingChangeToMakutano } from '../services/makutano-connect.service';
 
 /**
  * Changes agreed after a quotation was accepted.
@@ -292,6 +293,23 @@ export const updateAmendment = asyncHandler(async (req, res) => {
       // an applied amendment must not message the traveller again.
       dedupeKey: `booking_amended:${data.id}`
     });
+
+    // Connect mirrors this enquiry and reads the total as what the trip costs.
+    // The revised figure is DERIVED here rather than written back, so it has to
+    // be computed before it is sent — passing estimated_amount straight through
+    // would send the ORIGINAL and quietly understate the trip.
+    const { data: all } = await supabase
+      .from('booking_amendments')
+      .select('status, amount_delta')
+      .eq('booking_request_id', booking.id);
+    const { revised } = revisedTotal(
+      booking.estimated_amount == null ? null : Number(booking.estimated_amount),
+      all ?? []
+    );
+    void syncBookingChangeToMakutano(
+      { ...booking, estimated_amount: revised },
+      { summary: String(data.summary ?? ''), priceEffect: priceLine, state: 'applied' }
+    );
   }
 
   return sendSuccess(res, 'Amendment updated.', data);
