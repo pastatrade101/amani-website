@@ -217,6 +217,12 @@ const QUOTATION_STATUS_MAP: Record<string, 'DRAFT' | 'SENT' | 'VIEWED' | 'ACCEPT
   draft: 'DRAFT',
   sent: 'SENT',
   viewed: 'VIEWED',
+  // Connect has no vocabulary for the negotiation loop. Both states are mapped
+  // to the nearest truthful one it does understand rather than being invented
+  // on its side: a quotation awaiting our revision has been seen, and one we
+  // have revised but not yet sent is a draft again.
+  changes_requested: 'VIEWED',
+  revised: 'DRAFT',
   accepted: 'ACCEPTED',
   declined: 'DECLINED',
   expired: 'EXPIRED'

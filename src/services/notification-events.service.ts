@@ -45,6 +45,8 @@ export type NotificationEventType =
   | 'LEAD_CREATED'
   | 'QUOTATION_READY'
   | 'QUOTATION_UPDATED'
+  | 'QUOTATION_CHANGES_REQUESTED'
+  | 'QUOTATION_REVISED'
   | 'QUOTATION_ACCEPTED'
   | 'BOOKING_CONFIRMED';
 
@@ -61,6 +63,11 @@ const CHANNEL_POLICY: Record<NotificationEventType, Channel[]> = {
   LEAD_CREATED: ['whatsapp'],
   QUOTATION_READY: ['whatsapp', 'email'],
   QUOTATION_UPDATED: ['whatsapp', 'email'],
+  // Staff only. The traveller has just told us what they want changed — sending
+  // them a message that repeats it back is noise, and the whole point of the
+  // event is that someone here picks it up.
+  QUOTATION_CHANGES_REQUESTED: ['email_staff'],
+  QUOTATION_REVISED: ['whatsapp', 'email'],
   QUOTATION_ACCEPTED: ['whatsapp', 'email', 'email_staff'],
   BOOKING_CONFIRMED: ['whatsapp', 'email']
 };
