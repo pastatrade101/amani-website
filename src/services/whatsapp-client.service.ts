@@ -199,22 +199,47 @@ export const sendTemplateMessage = async (
   to: string,
   templateName: string,
   languageCode: string,
-  bodyParameters: string[] = []
+  bodyParameters: string[] = [],
+  /**
+   * Payloads for the template's quick-reply buttons, in the same order as the
+   * buttons on the approved template.
+   *
+   * WhatsApp will not infer these: a template with quick replies must name each
+   * button's payload in the send, or the message is rejected. Templates without
+   * buttons — every existing one — pass nothing and produce the same request
+   * body as before.
+   */
+  quickReplyPayloads: string[] = []
 ): Promise<SendResult> => {
+  const buttonComponents = quickReplyPayloads.map((payload, index) => ({
+    type: 'button',
+    sub_type: 'quick_reply',
+    index: String(index),
+    parameters: [{ type: 'payload', payload }]
+  }));
+
   if (connectTransportEnabled()) {
+    const parts = [
+      ...(bodyParameters.length
+        ? [{ type: 'body', parameters: bodyParameters.map((text) => ({ type: 'text', text })) }]
+        : []),
+      ...buttonComponents
+    ];
     return sendViaConnect(toWaId(to), {
       type: 'template',
       templateName,
       language: languageCode,
-      ...(bodyParameters.length
-        ? { components: [{ type: 'body', parameters: bodyParameters.map((text) => ({ type: 'text', text })) }] }
-        : {})
+      ...(parts.length ? { components: parts } : {})
     });
   }
   const credentials = await requireSendableCredentials();
-  const components = bodyParameters.length
-    ? [{ type: 'body', parameters: bodyParameters.map((text) => ({ type: 'text', text })) }]
-    : undefined;
+  const parts = [
+    ...(bodyParameters.length
+      ? [{ type: 'body', parameters: bodyParameters.map((text) => ({ type: 'text', text })) }]
+      : []),
+    ...buttonComponents
+  ];
+  const components = parts.length ? parts : undefined;
 
   const raw = await graphPost(
     `${credentials.phoneNumberId}/messages`,

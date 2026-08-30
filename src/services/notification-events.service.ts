@@ -49,7 +49,8 @@ export type NotificationEventType =
   | 'QUOTATION_REVISED'
   | 'QUOTATION_ACCEPTED'
   | 'BOOKING_CONFIRMED'
-  | 'BOOKING_AMENDED';
+  | 'BOOKING_AMENDED'
+  | 'PAYMENT_REQUESTED';
 
 export type Channel = 'whatsapp' | 'email' | 'email_staff';
 
@@ -75,7 +76,10 @@ const CHANNEL_POLICY: Record<NotificationEventType, Channel[]> = {
   // confirmation it amends — WhatsApp because that is where this conversation
   // has been happening, email because a change to what was agreed is worth
   // having in writing.
-  BOOKING_AMENDED: ['whatsapp', 'email']
+  BOOKING_AMENDED: ['whatsapp', 'email'],
+  // Asking for money. WhatsApp is where it will actually be read, email
+  // because payment details are worth having somewhere searchable later.
+  PAYMENT_REQUESTED: ['whatsapp', 'email']
 };
 
 /**
@@ -200,11 +204,16 @@ const settle = async (id: string, outcome: Outcome) => {
 const templateFor = async (key: string) => {
   const { data } = await supabase
     .from('whatsapp_templates')
-    .select('meta_template_name, language, variables')
+    .select('meta_template_name, language, variables, quick_replies')
     .eq('internal_key', key)
     .eq('status', 'approved')
     .maybeSingle();
-  return data as { meta_template_name: string; language: string; variables: unknown } | null;
+  return data as {
+    meta_template_name: string;
+    language: string;
+    variables: unknown;
+    quick_replies: unknown;
+  } | null;
 };
 
 /**
@@ -312,7 +321,18 @@ const deliverWhatsApp = async (event: NotificationEvent): Promise<Outcome> => {
       if (mismatch) return await skipped(mismatch, 'template');
 
       usedTemplate = template.meta_template_name;
-      ({ waMessageId } = await sendTemplateMessage(waId, template.meta_template_name, template.language, parameters));
+      // Quick-reply payloads come from the registry rather than the call site,
+      // so a template's buttons are described in one place beside its variables.
+      const quickReplies = Array.isArray(template.quick_replies)
+        ? (template.quick_replies as unknown[]).map((value) => String(value))
+        : [];
+      ({ waMessageId } = await sendTemplateMessage(
+        waId,
+        template.meta_template_name,
+        template.language,
+        parameters,
+        quickReplies
+      ));
     } else {
       return await skipped(
         'Outside the 24-hour window and no approved WhatsApp template is configured for this event.'

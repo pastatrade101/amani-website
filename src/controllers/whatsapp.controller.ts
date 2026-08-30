@@ -80,7 +80,7 @@ type WhatsAppValue = {
     timestamp?: string;
     text?: { body?: string };
     button?: { text?: string };
-    interactive?: { list_reply?: { title?: string }; button_reply?: { title?: string } };
+    interactive?: { list_reply?: { title?: string }; button_reply?: { title?: string; id?: string } };
   }>;
   statuses?: Array<{
     id?: string;
@@ -177,6 +177,72 @@ const inboundText = (message: NonNullable<WhatsAppValue['messages']>[number]): s
  */
 const QUOTE_CODE = /\bGFQ-[A-Z0-9]{4,12}\b/i;
 
+/** The payload behind the "I've paid" button on the payment_request template. */
+const PAID_CLAIM = 'PAID_CLAIM';
+
+/**
+ * The traveller tapping "I've paid".
+ *
+ * Recorded as a claim, never as a payment. Nothing here has seen any money —
+ * the tap means "go and check", and treating it as settlement would mark a trip
+ * paid on nothing but the customer's say-so. The booking's payment_status is
+ * deliberately untouched; only a recorded payment moves that.
+ *
+ * A note goes on the conversation so it surfaces where the team already looks.
+ */
+const notePaymentClaim = async (
+  message: { type?: string; interactive?: { button_reply?: { id?: string; title?: string } }; button?: { text?: string } },
+  contact: { id?: unknown; phone?: unknown; wa_id?: unknown },
+  conversationId: string
+) => {
+  const payload = message.interactive?.button_reply?.id ?? '';
+  // Quick replies on template messages arrive as `button`, which carries the
+  // label rather than the payload — so the label is accepted as a fallback.
+  const label = message.button?.text ?? message.interactive?.button_reply?.title ?? '';
+  const claimed = payload === PAID_CLAIM || /^i'?ve paid$/i.test(label.trim());
+  if (!claimed) return;
+
+  try {
+    const phone = String(contact.phone ?? contact.wa_id ?? '');
+    if (!phone) return;
+
+    // The most recent booking for this number that is still owed money.
+    const { data: booking } = await supabase
+      .from('booking_requests')
+      .select('id')
+      .eq('phone', phone)
+      .is('deleted_at', null)
+      .in('payment_status', ['unpaid', 'partially_paid'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!booking) return;
+
+    const now = new Date().toISOString();
+    const { data: request } = await supabase
+      .from('payment_requests')
+      .select('id, amount, currency')
+      .eq('booking_request_id', booking.id)
+      .eq('status', 'sent')
+      .is('claimed_paid_at', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (request) await supabase.from('payment_requests').update({ claimed_paid_at: now }).eq('id', request.id);
+
+    await supabase.from('conversation_notes').insert({
+      conversation_id: conversationId,
+      author_id: null,
+      body: request
+        ? `The traveller says they have paid ${request.currency} ${Number(request.amount).toFixed(2)}. Nothing is recorded yet — check the account and record the payment to move the booking's status.`
+        : 'The traveller says they have paid. There is no open payment request to match it to — check the account before recording anything.'
+    });
+  } catch {
+    // Best-effort context, never a reason to fail the webhook.
+  }
+};
+
 const linkQuotationMentioned = async (text: string, conversationId: string) => {
   const code = text.match(QUOTE_CODE)?.[0]?.toUpperCase();
   if (!code) return;
@@ -235,6 +301,7 @@ const handleInbound = async (value: WhatsAppValue) => {
     });
 
     await linkQuotationMentioned(content, conversationId);
+    await notePaymentClaim(message, contact, conversationId);
 
     // Blue ticks. Best-effort: a failure here must not fail the webhook.
     void markMessageRead(waMessageId).catch(() => undefined);

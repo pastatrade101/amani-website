@@ -16,6 +16,11 @@ import {
   listAmendments,
   updateAmendment
 } from '../controllers/booking-amendments.controller';
+import {
+  cancelPaymentRequest,
+  getPaymentPosition,
+  requestPayment
+} from '../controllers/payment-requests.controller';
 import { authenticate, optionalAuthenticate } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/permission.middleware';
 import { formGuard } from '../middleware/form-guard.middleware';
@@ -47,6 +52,12 @@ router.delete('/:id', authenticate, requirePermission('bookings.delete'), delete
 // Changes agreed after the quotation was accepted and frozen. They hang off
 // the booking rather than the quotation: the quotation is the record of what
 // was agreed and stops changing, while the booking is the live trip.
+// Asking the traveller to pay. Under bookings.update rather than a payments
+// permission: this sends a message about a booking, it does not touch money.
+router.get('/:id/payment-position', authenticate, requirePermission('bookings.view'), getPaymentPosition);
+router.post('/:id/payment-requests', authenticate, requirePermission('bookings.update'), requestPayment);
+router.patch('/:id/payment-requests/:requestId/cancel', authenticate, requirePermission('bookings.update'), cancelPaymentRequest);
+
 router.get('/:id/amendments', authenticate, requirePermission('bookings.view'), listAmendments);
 router.post('/:id/amendments', authenticate, requirePermission('bookings.update'), createAmendment);
 router.patch('/:id/amendments/:amendmentId', authenticate, requirePermission('bookings.update'), updateAmendment);
