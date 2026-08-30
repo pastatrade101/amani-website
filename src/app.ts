@@ -13,6 +13,7 @@ import availableDatesRoutes from './routes/available-dates.routes';
 import blogRoutes from './routes/blog.routes';
 import blogCategoriesRoutes from './routes/blog-categories.routes';
 import bookingsRoutes from './routes/bookings.routes';
+import connectWebhookRoutes from './routes/connect-webhook.routes';
 import currenciesRoutes from './routes/currencies.routes';
 import tripPortalRoutes from './routes/trip-portal.routes';
 import categoriesRoutes from './routes/categories.routes';
@@ -96,14 +97,18 @@ morgan.token('url', (req) => {
   return url.replace(/([?&]hub\.verify_token=)[^&]*/i, '$1[redacted]');
 });
 app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-// The WhatsApp webhook signature is an HMAC over the EXACT bytes Meta sent, so
-// the raw buffer is kept for that path only — parsing and re-serialising JSON
+// Webhook signatures are an HMAC over the EXACT bytes the sender sent, so the
+// raw buffer is kept for those paths only — parsing and re-serialising JSON
 // changes key order and whitespace and would invalidate every signature.
+const SIGNED_WEBHOOK_PATHS = ['/whatsapp/webhook', '/webhooks/connect'];
+
 app.use(
   express.json({
     limit: '1mb',
     verify: (req, _res, buf) => {
-      if (typeof req.url === 'string' && req.url.includes('/whatsapp/webhook')) {
+      // Bound to a local: the narrowing on req.url is lost inside the callback.
+      const url = req.url;
+      if (typeof url === 'string' && SIGNED_WEBHOOK_PATHS.some((path) => url.includes(path))) {
         (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
       }
     }
@@ -146,6 +151,10 @@ app.use('/api/bookings', bookingsRoutes);
 app.use('/api/currencies', currenciesRoutes);
 app.use('/api/trip', tripPortalRoutes);
 app.use('/api/payments', paymentsRoutes);
+// Inbound from Makutano Connect. Unauthenticated by design — the HMAC over the
+// raw body is the credential, and the handler refuses everything without a
+// configured signing secret.
+app.use('/api/webhooks', connectWebhookRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api/blog-categories', blogCategoriesRoutes);
 app.use('/api/gallery', galleryRoutes);

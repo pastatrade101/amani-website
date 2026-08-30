@@ -13,6 +13,8 @@ export const BOOKING_STATUSES = [
 
 export const PAYMENT_STATUSES = ['unpaid', 'partially_paid', 'paid', 'refunded', 'failed'] as const;
 
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
 /**
  * The three contextual enquiry forms. These are stored in `source`, which is a
  * free-text column — no migration was needed to introduce them, and the older
