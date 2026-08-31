@@ -188,7 +188,7 @@ const QUOTE_CODE = /\bGFQ-[A-Z0-9]{4,12}\b/i;
  *
  * Matched by prefix, because Connect's carries a per-request id.
  */
-const PAID_CLAIM_PREFIXES = ['gf:payment_claim', 'connect:payment_report'];
+const PAID_CLAIM_PREFIXES = ['gf:payment_report', 'gf:payment_claim', 'connect:payment_report'];
 
 /**
  * Fallback for a button whose payload was configured differently from the
@@ -235,31 +235,55 @@ const notePaymentClaim = async (
   if (!claimed) return;
 
   try {
-    const phone = String(contact.phone ?? contact.wa_id ?? '');
-    if (!phone) return;
-
-    // The most recent booking for this number that is still owed money.
-    const { data: booking } = await supabase
-      .from('booking_requests')
-      .select('id')
-      .eq('phone', phone)
-      .is('deleted_at', null)
-      .in('payment_status', ['unpaid', 'partially_paid'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!booking) return;
-
     const now = new Date().toISOString();
-    const { data: request } = await supabase
-      .from('payment_requests')
-      .select('id, amount, currency')
-      .eq('booking_request_id', booking.id)
-      .eq('status', 'sent')
-      .is('claimed_paid_at', null)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+
+    // Our own button names the request it belongs to, so the tap resolves to
+    // exactly one row. Anything else — Connect's button, or a bare label —
+    // falls back to the newest open request for this number, which is a guess
+    // and is treated as one.
+    const ownId = payload.startsWith('gf:payment_report:')
+      ? payload.slice('gf:payment_report:'.length)
+      : '';
+
+    type ClaimedRequest = { id: string; amount: number; currency: string };
+    let request: ClaimedRequest | null = null;
+
+    if (ownId) {
+      const { data } = await supabase
+        .from('payment_requests')
+        .select('id, amount, currency')
+        .eq('id', ownId)
+        .maybeSingle();
+      request = (data as ClaimedRequest | null) ?? null;
+    }
+
+    if (!request) {
+      const phone = String(contact.phone ?? contact.wa_id ?? '');
+      if (!phone) return;
+
+      const { data: booking } = await supabase
+        .from('booking_requests')
+        .select('id')
+        .eq('phone', phone)
+        .is('deleted_at', null)
+        .in('payment_status', ['unpaid', 'partially_paid'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (booking) {
+        const { data } = await supabase
+          .from('payment_requests')
+          .select('id, amount, currency')
+          .eq('booking_request_id', booking.id)
+          .eq('status', 'sent')
+          .is('claimed_paid_at', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        request = (data as ClaimedRequest | null) ?? null;
+      }
+    }
 
     if (request) await supabase.from('payment_requests').update({ claimed_paid_at: now }).eq('id', request.id);
 
@@ -268,7 +292,7 @@ const notePaymentClaim = async (
       author_id: null,
       body: request
         ? `The traveller says they have paid ${request.currency} ${Number(request.amount).toFixed(2)}. Nothing is recorded yet — check the account and record the payment to move the booking's status.`
-        : 'The traveller says they have paid. There is no open payment request to match it to — check the account before recording anything.'
+        : 'The traveller says they have paid, but there is no open payment request here to match it to. It may have been asked for elsewhere — check the account before recording anything.'
     });
   } catch {
     // Best-effort context, never a reason to fail the webhook.

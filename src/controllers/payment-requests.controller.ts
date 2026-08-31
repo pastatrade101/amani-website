@@ -189,7 +189,14 @@ export const requestPayment = asyncHandler(async (req, res) => {
     email: String(booking.email ?? ''),
     message: `Hello ${firstName}, here are the payment details for your booking ${code}.\n\nAmount due: ${due}\n\n${whenAndHow}\n\nOnce you have sent it, reply here and we will confirm.`,
     templateKey: 'payment_request',
+    // Order matches the approved template: first name, booking reference,
+    // amount due, then when-and-how.
     templateParameters: [firstName, code, due, whenAndHow],
+    // The button carries THIS request's id, so a tap resolves to one row rather
+    // than being guessed at from the phone number and a timestamp. Namespaced
+    // `gf:` so it can never be confused with Connect's own button on the same
+    // WhatsApp number.
+    templateQuickReplies: [`gf:payment_report:${record.id}`],
     emailContent: {
       subject: `Payment for your booking — ${code}`,
       heading: kind === 'deposit' ? 'Your deposit' : kind === 'balance' ? 'Your balance' : 'Payment for your trip',

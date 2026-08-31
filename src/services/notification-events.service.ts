@@ -109,6 +109,17 @@ export type NotificationEvent = {
   /** Internal template key; resolved through whatsapp_templates. */
   templateKey?: string;
   templateParameters?: string[];
+  /**
+   * Quick-reply payloads for this send, in button order — overriding whatever
+   * the registry holds.
+   *
+   * The registry's value is right when a button means the same thing every
+   * time. It is not enough when the reply has to identify WHICH thing was
+   * tapped: a payment request's button carries that request's own id, so the
+   * tap resolves to one row instead of being guessed at from the phone number
+   * and a timestamp.
+   */
+  templateQuickReplies?: string[];
   /** The traveller's email. Required for any event whose policy includes 'email'. */
   emailContent?: EmailContent;
   /** The team's copy, routed to the enquiry inbox rather than to the traveller. */
@@ -321,11 +332,12 @@ const deliverWhatsApp = async (event: NotificationEvent): Promise<Outcome> => {
       if (mismatch) return await skipped(mismatch, 'template');
 
       usedTemplate = template.meta_template_name;
-      // Quick-reply payloads come from the registry rather than the call site,
-      // so a template's buttons are described in one place beside its variables.
-      const quickReplies = Array.isArray(template.quick_replies)
-        ? (template.quick_replies as unknown[]).map((value) => String(value))
-        : [];
+      // The registry describes a template's buttons beside its variables, which
+      // is right for a payload that never varies. An event may override it when
+      // the reply has to say which record it belongs to.
+      const quickReplies =
+        event.templateQuickReplies ??
+        (Array.isArray(template.quick_replies) ? (template.quick_replies as unknown[]).map((v) => String(v)) : []);
       ({ waMessageId } = await sendTemplateMessage(
         waId,
         template.meta_template_name,
