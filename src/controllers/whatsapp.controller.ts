@@ -177,8 +177,26 @@ const inboundText = (message: NonNullable<WhatsAppValue['messages']>[number]): s
  */
 const QUOTE_CODE = /\bGFQ-[A-Z0-9]{4,12}\b/i;
 
-/** The payload behind the "I've paid" button on the payment_request template. */
-const PAID_CLAIM = 'PAID_CLAIM';
+/**
+ * Payloads that mean "the traveller says they have paid".
+ *
+ * Goldfinch's own button carries `gf:payment_claim`. Connect's carries
+ * `connect:payment_report:<uuid>` — that one is recognised because Connect
+ * sends through the same WhatsApp number, so its taps arrive here too and are
+ * about the same traveller and the same money. Ignoring them would leave a
+ * claim visible to a third party and invisible to the business it concerns.
+ *
+ * Matched by prefix, because Connect's carries a per-request id.
+ */
+const PAID_CLAIM_PREFIXES = ['gf:payment_claim', 'connect:payment_report'];
+
+/**
+ * Fallback for a button whose payload was configured differently from the
+ * registry. Deliberately loose about apostrophes and about "I have" vs "I've":
+ * Meta's editor turns a typed ' into a curly one, and the real button on this
+ * WABA reads "I have paid" — an earlier version of this matched neither.
+ */
+const PAID_CLAIM_LABEL = /^i\s*(?:'|’)?\s*(?:ve|have)\s+paid$/i;
 
 /**
  * The traveller tapping "I've paid".
@@ -212,7 +230,8 @@ const notePaymentClaim = async (
     .replace(/[‘’ʼ]/g, "'")
     .trim();
 
-  const claimed = payload === PAID_CLAIM || /^i'?ve paid$/i.test(label);
+  const claimed =
+    PAID_CLAIM_PREFIXES.some((prefix) => payload.startsWith(prefix)) || PAID_CLAIM_LABEL.test(label);
   if (!claimed) return;
 
   try {
