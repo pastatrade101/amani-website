@@ -1,6 +1,7 @@
 import { supabase } from '../config/supabase';
 import { asyncHandler } from '../utils/async-handler';
 import { sendSuccess } from '../utils/api-response';
+import { commerceSnapshot } from '../services/dashboard-commerce.service';
 
 type QueryFilter = {
   column: string;
@@ -248,8 +249,18 @@ export const getDashboardStats = asyncHandler(async (_req, res) => {
     publishedTestimonials
   };
 
+  // The commercial half: money, the quotation funnel, what is waiting on
+  // someone, and whether the messages we sent actually landed. Fetched after
+  // the content stats rather than alongside them so a failure here degrades to
+  // an absent section instead of an empty dashboard.
+  const commerce = await commerceSnapshot(30).catch((error) => {
+    console.error('[dashboard] commerce snapshot failed:', (error as Error).message);
+    return null;
+  });
+
   return sendSuccess(res, 'Dashboard stats fetched successfully.', {
     counts,
+    commerce,
     bookingPipeline,
     contentHealth,
     recent: {
