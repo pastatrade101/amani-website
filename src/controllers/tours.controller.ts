@@ -33,9 +33,9 @@ const summaryListSelect =
   'id, title, slug, destination_id, duration_days, duration_nights, status, created_at';
 // Detail view also embeds the assigned trip specialist, day-by-day itinerary,
 // what's included/excluded, pricing options and the tour gallery images.
-const detailExtras = 'itinerary_days(day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:lodges!itinerary_days_accommodation_id_fkey(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations!lodges_destination_id_fkey(name),lodge_images(id,image_url,alt_text,caption,sort_order,is_cover))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_pricing_seasons(id,season_type,season_name,start_date,end_date,currency,pricing_basis,status,sort_order,group_prices:tour_group_prices(id,minimum_travelers,maximum_travelers,room_count,price,price_status,sort_order)), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
-const detailExtrasWithoutSeasons = 'itinerary_days(day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:lodges!itinerary_days_accommodation_id_fkey(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations!lodges_destination_id_fkey(name),lodge_images(id,image_url,alt_text,caption,sort_order,is_cover))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
-const detailExtrasWithoutLodgeEmbed = 'itinerary_days(day_number,title,description,accommodation,accommodation_id,meals,activities,image_url), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
+const detailExtras = 'itinerary_days(id,day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:lodges!itinerary_days_accommodation_id_fkey(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations!lodges_destination_id_fkey(name),lodge_images(id,image_url,alt_text,caption,sort_order,is_cover))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_pricing_seasons(id,season_type,season_name,start_date,end_date,currency,pricing_basis,status,sort_order,group_prices:tour_group_prices(id,minimum_travelers,maximum_travelers,room_count,price,price_status,sort_order)), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
+const detailExtrasWithoutSeasons = 'itinerary_days(id,day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:lodges!itinerary_days_accommodation_id_fkey(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations!lodges_destination_id_fkey(name),lodge_images(id,image_url,alt_text,caption,sort_order,is_cover))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
+const detailExtrasWithoutLodgeEmbed = 'itinerary_days(id,day_number,title,description,accommodation,accommodation_id,meals,activities,image_url), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
 const detailSelect = `${select}, ${detailExtras}`;
 const fallbackDetailSelect = `${fallbackSelect}, ${detailExtrasWithoutLodgeEmbed}`;
 const detailSelectWithoutSeasons = `${select}, ${detailExtrasWithoutSeasons}`;
@@ -291,7 +291,14 @@ export const getTour = asyncHandler(async (req, res) => {
   const record = data as unknown as Record<string, unknown>;
   await attachTourDetailImages(record);
   await attachAvailableLocales('tours', [record]);
-  await localizeRecords('tours', [record], localeOf(req.query.locale));
+  const locale = localeOf(req.query.locale);
+  await localizeRecords('tours', [record], locale);
+
+  // The days are embedded rows, so localizing the tour leaves them in the
+  // source language — a German page with an English day-by-day plan, which is
+  // the half-translated result that reads worse than no translation at all.
+  const days = Array.isArray(record.itinerary_days) ? (record.itinerary_days as Array<Record<string, unknown>>) : [];
+  if (days.length) await localizeRecords('itinerary_days', days, locale);
 
   return sendSuccess(res, 'Record fetched successfully.', record);
 });

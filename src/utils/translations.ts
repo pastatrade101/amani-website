@@ -78,6 +78,25 @@ export const TRANSLATABLE_ENTITIES: Record<string, TranslatableField[]> = {
     { key: 'description', label: 'Description', kind: 'rich', required: true },
     { key: 'meta_title', label: 'SEO title', kind: 'text' },
     { key: 'meta_description', label: 'SEO description', kind: 'textarea' }
+  ],
+  /**
+   * The day-by-day plan. Translated per day, because that is the unit a
+   * traveller reads and the unit an editor works in.
+   *
+   * accommodation is free text here — the property NAME, where a day is not
+   * linked to a lodge record. A linked lodge carries its own translation, so
+   * this only covers the days that spell it out by hand.
+   *
+   * day_number, image_url and accommodation_id are deliberately absent: a day
+   * is the same day in every language, and its photo and linked property are
+   * shared data, not language.
+   */
+  itinerary_days: [
+    { key: 'title', label: 'Day title', kind: 'text', required: true },
+    { key: 'description', label: 'What happens that day', kind: 'rich', required: true },
+    { key: 'accommodation', label: 'Where they stay', kind: 'text' },
+    { key: 'meals', label: 'Meals included', kind: 'text' },
+    { key: 'activities', label: 'Activities', kind: 'textarea' }
   ]
 };
 
@@ -90,7 +109,9 @@ export const ENTITY_PERMISSIONS: Record<string, string> = {
   homepage_sections: 'homepage.update',
   faqs: 'faqs.update',
   blog_posts: 'blog.update',
-  activities: 'activities.update'
+  activities: 'activities.update',
+  // A day belongs to its tour, so editing one is editing that tour.
+  itinerary_days: 'tours.update'
 };
 
 export type TranslationFields = Record<string, string | string[]>;
