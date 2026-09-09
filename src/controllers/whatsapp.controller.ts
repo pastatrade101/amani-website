@@ -17,7 +17,6 @@ import {
 import type { SendResult } from '../services/whatsapp-client.service';
 import { resolveWhatsAppCredentials } from '../services/whatsapp-credentials.service';
 import {
-  contactByPhone,
   recordConversationMessage,
   recordUntransported,
   resolveConversation,
@@ -473,11 +472,14 @@ export const sendMessage = asyncHandler(async (req, res) => {
     }
   }
 
-  const { to, body, template_name: templateName, language = 'en', parameters = [] } = req.body as {
+  // `language` is deliberately not read off the request: a template is sent in
+  // the language Meta approved it in, which is the one stored on the record
+  // (see sendTemplateMessage below). Accepting a language here and honouring a
+  // different one would fail at Meta rather than at us.
+  const { to, body, template_name: templateName, parameters = [] } = req.body as {
     to?: string;
     body?: string;
     template_name?: string;
-    language?: string;
     parameters?: string[];
   };
 

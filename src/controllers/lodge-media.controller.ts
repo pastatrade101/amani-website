@@ -1,4 +1,3 @@
-import type { Response } from 'express';
 import { supabase } from '../config/supabase';
 import { safeAudit } from '../services/audit.service';
 import { AppError, sendSuccess } from '../utils/api-response';
@@ -150,7 +149,7 @@ export const getLodgeMedia = asyncHandler(async (req, res) => {
   });
 });
 
-const notMigrated = (res: Response) =>
+const notMigrated = () =>
   new AppError(
     'The accommodation gallery tables are not in the database yet. Run the 2026-08-10 accommodation migration first.',
     503
@@ -181,7 +180,7 @@ export const replaceLodgeImages = asyncHandler(async (req, res) => {
   // these rows are derived entirely from what the client just sent, so a
   // failure loses nothing the admin cannot immediately re-save.
   const del = await supabase.from('lodge_images').delete().eq('lodge_id', lodgeId);
-  if (del.error) throw notMigrated(res);
+  if (del.error) throw notMigrated();
 
   if (rows.length) {
     const ins = await supabase.from('lodge_images').insert(rows);
@@ -199,7 +198,7 @@ export const replaceLodgeAmenities = asyncHandler(async (req, res) => {
   const ids = [...new Set(((req.body as { amenity_ids?: string[] }).amenity_ids ?? []).map(String))];
 
   const del = await supabase.from('lodge_amenities').delete().eq('lodge_id', lodgeId);
-  if (del.error) throw notMigrated(res);
+  if (del.error) throw notMigrated();
 
   if (ids.length) {
     const ins = await supabase

@@ -1,6 +1,6 @@
 import { env } from '../config/env';
 import { createMessage, isAnthropicConfigured } from './anthropic.service';
-import { getClarityInsights, isClarityConfigured, type ClarityInsights } from './clarity.service';
+import { getClarityInsights, type ClarityInsights } from './clarity.service';
 import { getTraffic, isGa4Configured } from './ga4.service';
 import { getFunnel, getOverview, type ResolvedRange } from './analytics.service';
 

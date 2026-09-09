@@ -1,8 +1,8 @@
 import {
-  getEventTimeseries, getFunnel, getOverview, resolveRange, type ResolvedRange
+  getEventTimeseries, getFunnel, getOverview, type ResolvedRange
 } from './analytics.service';
 import { getTraffic, isGa4Configured } from './ga4.service';
-import { getClarityInsights, isClarityConfigured, type ClarityInsights } from './clarity.service';
+import { getClarityInsights, type ClarityInsights } from './clarity.service';
 
 // ----------------------------------------------------------------------------
 // Website Intelligence — a DETERMINISTIC rules engine (no LLM). It turns the
@@ -68,12 +68,11 @@ type FunnelShape = any;
 
 export const getWebsiteIntelligence = async (range: ResolvedRange): Promise<WebsiteIntelligence> => {
   const prev = previousRange(range);
-  const [overview, funnel, timeseries, overviewPrev, funnelPrev, ga4, clarity] = await Promise.all([
+  const [overview, funnel, timeseries, overviewPrev, ga4, clarity] = await Promise.all([
     getOverview(range).catch(() => null),
     getFunnel(range).catch(() => null),
     getEventTimeseries(range).catch(() => null),
     getOverview(prev).catch(() => null),
-    getFunnel(prev).catch(() => null),
     getTraffic(range).catch(() => null),
     getClarityInsights().catch(() => null)
   ]);
