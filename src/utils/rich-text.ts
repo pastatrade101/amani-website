@@ -465,7 +465,12 @@ export const RICH_TEXT_COLUMNS: Record<string, readonly string[]> = {
   comparisons: ['intro', 'verdict'],
   // The admin route is /admin/categories, but the table is tour_categories.
   // highlights is text[], edited as individual bullets like tours.highlights.
-  tour_categories: ['description', 'highlights']
+  tour_categories: ['description', 'highlights'],
+  // `subtitle` is the long-form body of a section — it is what the Advisor's
+  // Note renders as its paragraph. Rich fields nested inside `extra_data` are
+  // not reachable from here (this walks top-level columns), so the homepage
+  // controller sanitises those explicitly.
+  homepage_sections: ['subtitle', 'content']
 };
 
 /**

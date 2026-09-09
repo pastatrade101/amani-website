@@ -4,6 +4,7 @@ import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { createRecord, softDeleteRecord, updateRecord } from '../utils/supabase-helpers';
 import { getQueryString } from '../utils/query';
+import { looksLikeHtml, sanitizeRichText } from '../utils/rich-text';
 
 type HomepageSectionInput = {
   section_key?: string;
@@ -61,6 +62,14 @@ const normalizeHomepageSectionPayload = (section: HomepageSectionInput): Homepag
 
   if (sectionKey === 'partners' || hasPartnerLogos) {
     normalized.extra_data = normalizePartnerLogos(extraData);
+  }
+
+  // Rich fields stored inside extra_data are invisible to sanitizeRichFields,
+  // which only walks top-level columns. The Advisor's Note footnote is edited
+  // as rich text, so it is sanitised here rather than trusted on the way in.
+  const nextExtra = normalized.extra_data;
+  if (isRecord(nextExtra) && typeof nextExtra.footnote === 'string' && looksLikeHtml(nextExtra.footnote)) {
+    normalized.extra_data = { ...nextExtra, footnote: sanitizeRichText(nextExtra.footnote) };
   }
 
   return normalized;
