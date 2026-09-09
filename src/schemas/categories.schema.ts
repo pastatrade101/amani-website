@@ -82,7 +82,10 @@ const landingPageContentSchema = z.object({
     label: landingText(120),
     headline: landingText(180),
     paragraphs: z.array(landingText(4000)).min(1).max(4),
-    imageUrl: optionalUrl
+    // Required: this band is a photo beside the paragraphs, so a page without
+    // one publishes half empty. Every existing row already carries an absolute
+    // URL, so tightening this rejects nothing that is already stored.
+    imageUrl: z.string().url()
   }).strict(),
   planner: z.object({
     label: landingText(120),
