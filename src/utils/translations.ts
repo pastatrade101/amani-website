@@ -110,9 +110,28 @@ export const TRANSLATABLE_ENTITIES: Record<string, TranslatableField[]> = {
   // visitor on /de/ met an entirely English homepage. Only the flat headline
   // fields are covered — the nested lists inside extra_data need a richer
   // field kind than the registry has today.
+  /*
+   * A homepage section's visible copy, which is not only its heading: the
+   * eyebrow above it and the button under it are read by the same visitor, and
+   * a translated heading between an English eyebrow and an English button
+   * reads worse than leaving the section in one language.
+   *
+   * Sections are not alike — most have an eyebrow and a button, the Advisor's
+   * Note also names a person and signs off. Registering all of it is safe
+   * because the editor only shows a field the section actually uses.
+   *
+   * button_url and image_url are deliberately absent. A translation changes
+   * words, not where a link goes or which photograph loads.
+   */
   homepage_sections: [
     { key: 'title', label: 'Heading', kind: 'text', required: true },
-    { key: 'subtitle', label: 'Sub-heading', kind: 'textarea' }
+    { key: 'subtitle', label: 'Sub-heading', kind: 'textarea' },
+    { key: 'content', label: 'Body', kind: 'rich' },
+    { key: 'button_text', label: 'Button', kind: 'text' },
+    { key: 'extra_data.eyebrow', label: 'Small label above the heading', kind: 'text' },
+    { key: 'extra_data.author_name', label: "Advisor's Note — name", kind: 'text' },
+    { key: 'extra_data.author_role', label: "Advisor's Note — role", kind: 'text' },
+    { key: 'extra_data.footnote', label: "Advisor's Note — closing line", kind: 'text' }
   ],
   faqs: [
     { key: 'question', label: 'Question', kind: 'text', required: true },
