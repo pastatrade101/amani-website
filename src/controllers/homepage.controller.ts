@@ -75,24 +75,46 @@ const normalizeHomepageSectionPayload = (section: HomepageSectionInput): Homepag
   return normalized;
 };
 
+/**
+ * One section, as the public homepage is allowed to see it.
+ *
+ * A section that is switched off still has to be answered for. This endpoint
+ * used to drop those rows, which left the frontend unable to tell "switched
+ * off" from "no record at all" — and it has to read no-record as visible, or a
+ * site whose sections have never been created would render an empty homepage.
+ * So the CMS switch did nothing: turning a section off removed the only
+ * evidence that it had been turned off, and the page went on drawing it from
+ * the component's own copy.
+ *
+ * A switched-off row therefore comes back as a marker — its key, and the fact
+ * that it is off. None of its copy travels with it, so wording the client has
+ * taken down stays off the wire.
+ */
+export const publicSection = (row: Record<string, unknown>): Record<string, unknown> =>
+  row.is_active === false ? { section_key: row.section_key, is_active: false } : row;
+
 export const getHomepage = asyncHandler(async (req, res) => {
   const includeInactive = getQueryString(req.query, 'all') === 'true';
 
-  let query = supabase
+  const { data, error } = await supabase
     .from('homepage_sections')
     .select('*')
     .is('deleted_at', null)
     .order('sort_order', { ascending: true });
 
-  if (!includeInactive) query = query.eq('is_active', true);
-
-  const { data, error } = await query;
   if (error) throw new AppError('Unable to fetch homepage content.', 500, [error]);
 
+  const rows = (data ?? []) as Array<Record<string, unknown>>;
+  const sections = includeInactive ? rows : rows.map(publicSection);
+
   // The homepage is the highest-traffic page on the site; without this a
-  // visitor on /de/ met an entirely English homepage. One batched merge.
-  const sections = (data ?? []) as Array<Record<string, unknown>>;
-  await localizeRecords('homepage_sections', sections, localeOf(req.query.locale));
+  // visitor on /de/ met an entirely English homepage. One batched merge, and
+  // only over rows that carry copy — a marker has nothing to translate.
+  await localizeRecords(
+    'homepage_sections',
+    sections.filter((row) => row.is_active !== false),
+    localeOf(req.query.locale)
+  );
 
   return sendSuccess(res, 'Homepage content fetched successfully.', sections);
 });
