@@ -14,11 +14,49 @@ import { sanitizeRichText, toPlainText } from './rich-text';
 export type FieldKind = 'text' | 'textarea' | 'rich' | 'rich_list';
 
 export type TranslatableField = {
+  /**
+   * A column name, or a dotted path into a jsonb column —
+   * `landing_page_content.hero.headline`.
+   *
+   * Most translatable copy is a column of its own, but the safari-style landing
+   * pages keep theirs inside one jsonb blob, and a visitor on /it/ was meeting
+   * an Italian page under an English headline because a flat key could not
+   * reach into it. The path is the storage key too, so a translation records
+   * exactly which field it belongs to.
+   */
   key: string;
   label: string;
   kind: FieldKind;
   /** Required for a translation to be publishable and counted in completeness. */
   required?: boolean;
+};
+
+/** Reads `a.b.c` out of a record. Undefined for any missing step. */
+export const readPath = (record: Record<string, unknown>, path: string): unknown =>
+  path.split('.').reduce<unknown>((value, step) => {
+    if (value === null || typeof value !== 'object') return undefined;
+    return (value as Record<string, unknown>)[step];
+  }, record);
+
+/**
+ * Writes `a.b.c` into a record, but only where the containers already exist.
+ *
+ * A translation must never bring a structure into being: if a category has no
+ * landing_page_content, it has no landing page, and writing a lone translated
+ * headline into a blank object would produce a half-formed page that the
+ * default language does not have.
+ */
+export const writePath = (record: Record<string, unknown>, path: string, value: unknown): void => {
+  const steps = path.split('.');
+  const last = steps.pop();
+  if (!last) return;
+  let target: Record<string, unknown> = record;
+  for (const step of steps) {
+    const next = target[step];
+    if (next === null || typeof next !== 'object') return;
+    target = next as Record<string, unknown>;
+  }
+  target[last] = value;
 };
 
 export const TRANSLATABLE_ENTITIES: Record<string, TranslatableField[]> = {
@@ -29,7 +67,21 @@ export const TRANSLATABLE_ENTITIES: Record<string, TranslatableField[]> = {
     { key: 'who_its_for', label: "Who it's for", kind: 'textarea' },
     { key: 'highlights', label: 'Highlights', kind: 'rich_list' },
     { key: 'meta_title', label: 'SEO title', kind: 'text' },
-    { key: 'meta_description', label: 'SEO description', kind: 'textarea' }
+    { key: 'meta_description', label: 'SEO description', kind: 'textarea' },
+    /*
+     * The landing hero, reached inside the landing_page_content blob.
+     *
+     * Not marked required: plenty of categories have no landing page, and a
+     * translation cannot be blocked from publishing over a field the default
+     * language never filled in. Labels match what the landing editor calls
+     * them, so a translator is looking at the same words the author was.
+     */
+    { key: 'landing_page_content.hero.eyebrow', label: 'Hero — small label', kind: 'text' },
+    { key: 'landing_page_content.hero.headline', label: 'Hero — headline', kind: 'text' },
+    { key: 'landing_page_content.hero.subheadline', label: 'Hero — sub-headline', kind: 'textarea' },
+    { key: 'landing_page_content.hero.primaryCtaLabel', label: 'Hero — main button', kind: 'text' },
+    { key: 'landing_page_content.hero.secondaryCtaLabel', label: 'Hero — second button', kind: 'text' },
+    { key: 'landing_page_content.hero.trustLine', label: 'Hero — trust line', kind: 'text' }
   ],
   tours: [
     { key: 'title', label: 'Title', kind: 'text', required: true },
@@ -127,7 +179,7 @@ export const localeOf = (value: unknown): string | undefined =>
 export const sourceFieldsFor = (entityType: string, record: Record<string, unknown>): TranslationFields => {
   const out: TranslationFields = {};
   for (const field of TRANSLATABLE_ENTITIES[entityType] ?? []) {
-    const value = record[field.key];
+    const value = readPath(record, field.key);
     if (field.kind === 'rich_list') {
       if (Array.isArray(value)) out[field.key] = value.map(String);
     } else if (typeof value === 'string' && value.trim()) {
@@ -284,7 +336,7 @@ export const localizeRecords = async (
     const applied: string[] = [];
     for (const [key, value] of Object.entries(fields)) {
       if (Array.isArray(value) ? value.length : String(value).trim()) {
-        record[key] = value;
+        writePath(record, key, value);
         applied.push(key);
       }
     }
