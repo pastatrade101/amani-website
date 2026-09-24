@@ -29,14 +29,37 @@ export type TranslatableField = {
   kind: FieldKind;
   /** Required for a translation to be publishable and counted in completeness. */
   required?: boolean;
+  /**
+   * The heading this field sits under in the translation panel. Only records
+   * built from blocks use it — a safari package can carry sixty fields, and
+   * sixty unlabelled rows in one column is not something anyone can work in.
+   */
+  group?: string;
 };
 
-/** Reads `a.b.c` out of a record. Undefined for any missing step. */
+/**
+ * One step of a path. `#abc` picks the element of an array whose `_id` is
+ * `abc`; anything else is an ordinary key.
+ *
+ * Identity rather than position, for content kept as a list of blocks: an
+ * editor who moves the FAQ above the overview must not move the Italian
+ * overview into the FAQ. A block that has since been deleted simply no longer
+ * matches, so its old translation drops out instead of landing elsewhere.
+ */
+const stepInto = (value: unknown, step: string): unknown => {
+  if (value === null || typeof value !== 'object') return undefined;
+  if (step.startsWith('#') && Array.isArray(value)) {
+    const id = step.slice(1);
+    return value.find(
+      (item) => item !== null && typeof item === 'object' && (item as Record<string, unknown>)._id === id
+    );
+  }
+  return (value as Record<string, unknown>)[step];
+};
+
+/** Reads `a.b.c` (or `sections.#id.title`) out of a record. Undefined for any missing step. */
 export const readPath = (record: Record<string, unknown>, path: string): unknown =>
-  path.split('.').reduce<unknown>((value, step) => {
-    if (value === null || typeof value !== 'object') return undefined;
-    return (value as Record<string, unknown>)[step];
-  }, record);
+  path.split('.').reduce<unknown>((value, step) => stepInto(value, step), record);
 
 /**
  * Writes `a.b.c` into a record, but only where the containers already exist.
@@ -52,10 +75,13 @@ export const writePath = (record: Record<string, unknown>, path: string, value: 
   if (!last) return;
   let target: Record<string, unknown> = record;
   for (const step of steps) {
-    const next = target[step];
+    const next = stepInto(target, step);
     if (next === null || typeof next !== 'object') return;
     target = next as Record<string, unknown>;
   }
+  // The last step names a field, never an array element: a translation
+  // replaces words, it does not swap whole blocks.
+  if (last.startsWith('#')) return;
   target[last] = value;
 };
 
@@ -168,6 +194,24 @@ export const TRANSLATABLE_ENTITIES: Record<string, TranslatableField[]> = {
     { key: 'accommodation', label: 'Where they stay', kind: 'text' },
     { key: 'meals', label: 'Meals included', kind: 'text' },
     { key: 'activities', label: 'Activities', kind: 'textarea' }
+  ],
+  /*
+   * A safari package's own columns. The rest of its copy lives in `sections`,
+   * a list of blocks that differs from page to page, so those fields are
+   * listed per record by packageBlockFields below rather than here.
+   *
+   * Only the name is required: the hero and SEO fields are often left to fall
+   * back to it, and a translation cannot be kept from publishing over a field
+   * the default language never filled in.
+   */
+  safari_packages: [
+    { key: 'name', label: 'Package name', kind: 'text', required: true, group: 'Page' },
+    { key: 'hero_eyebrow', label: 'Hero — small label', kind: 'text', group: 'Page' },
+    { key: 'hero_title', label: 'Hero — headline', kind: 'text', group: 'Page' },
+    { key: 'hero_subtitle', label: 'Hero — sub-headline', kind: 'textarea', group: 'Page' },
+    { key: 'meta_title', label: 'SEO title', kind: 'text', group: 'Search engines' },
+    { key: 'seo_title', label: 'SEO title (alternative)', kind: 'text', group: 'Search engines' },
+    { key: 'meta_description', label: 'SEO description', kind: 'textarea', group: 'Search engines' }
   ]
 };
 
@@ -182,7 +226,272 @@ export const ENTITY_PERMISSIONS: Record<string, string> = {
   blog_posts: 'blog.update',
   activities: 'activities.update',
   // A day belongs to its tour, so editing one is editing that tour.
-  itinerary_days: 'tours.update'
+  itinerary_days: 'tours.update',
+  safari_packages: 'safari_packages.update'
+};
+
+// ── Safari packages: fields that live in blocks ──────────────────────────────
+
+type BlockTextField = { key: string; label: string; kind: FieldKind };
+type BlockTextSpec = {
+  label: string;
+  fields?: BlockTextField[];
+  /** Lists of rows inside the block, each row with its own text fields. */
+  items?: Record<string, { label: string; fields: BlockTextField[] }>;
+};
+
+/** Every block may carry these three above its own content. */
+const BLOCK_HEADING_FIELDS: BlockTextField[] = [
+  { key: 'eyebrow', label: 'Small label above the heading', kind: 'text' },
+  { key: 'title', label: 'Heading', kind: 'text' },
+  { key: 'intro', label: 'Intro paragraph', kind: 'textarea' }
+];
+
+/**
+ * The words in each kind of block, mirroring the package editor's own field
+ * list (frontend src/lib/safariPackageBlocks.ts). Only language is listed —
+ * photos, icons, tour links, accommodation choices and route selections are
+ * the same page in every language and never enter a translation.
+ *
+ * A block type missing here is not an error: its content just stays in the
+ * default language until it is added.
+ */
+const PACKAGE_BLOCK_TEXT: Record<string, BlockTextSpec> = {
+  facts: {
+    label: 'Quick facts',
+    items: {
+      items: {
+        label: 'Fact',
+        fields: [
+          { key: 'label', label: 'Label', kind: 'text' },
+          { key: 'value', label: 'Detail', kind: 'text' }
+        ]
+      }
+    }
+  },
+  prose: {
+    label: 'Overview',
+    fields: [
+      { key: 'body', label: 'Trip overview', kind: 'rich' },
+      { key: 'aside_title', label: 'Side card label', kind: 'text' },
+      { key: 'aside_body', label: 'Side card text', kind: 'textarea' }
+    ]
+  },
+  highlights: { label: 'Highlights', fields: [{ key: 'items', label: 'Highlights', kind: 'rich_list' }] },
+  tiers: {
+    label: 'Price tiers',
+    fields: [{ key: 'note', label: 'Small print', kind: 'textarea' }],
+    items: {
+      tiers: {
+        label: 'Tier',
+        fields: [
+          { key: 'label', label: 'Tier name', kind: 'text' },
+          { key: 'price', label: 'Price', kind: 'text' },
+          { key: 'body', label: 'What it includes', kind: 'textarea' }
+        ]
+      }
+    }
+  },
+  itinerary: { label: 'Day-by-day itinerary' },
+  compare: {
+    label: 'Comparison table',
+    fields: [{ key: 'columns', label: 'Column headings', kind: 'rich_list' }],
+    items: {
+      rows: {
+        label: 'Row',
+        fields: [
+          { key: 'label', label: 'Row label', kind: 'text' },
+          { key: 'values', label: 'Cells', kind: 'rich_list' }
+        ]
+      }
+    }
+  },
+  inclusions: {
+    label: 'Included / not included',
+    fields: [
+      { key: 'included', label: 'Included', kind: 'rich_list' },
+      { key: 'excluded', label: 'Not included', kind: 'rich_list' }
+    ]
+  },
+  gallery: {
+    label: 'Photo grid',
+    items: { images: { label: 'Photo', fields: [{ key: 'caption', label: 'Caption', kind: 'text' }] } }
+  },
+  tours: { label: 'Related trips' },
+  faq: {
+    label: 'Questions and answers',
+    items: {
+      items: {
+        label: 'Question',
+        fields: [
+          { key: 'question', label: 'Question', kind: 'text' },
+          { key: 'answer', label: 'Answer', kind: 'rich' }
+        ]
+      }
+    }
+  },
+  enquiry: { label: 'Enquiry band' },
+  routes: {
+    label: 'Route options',
+    fields: [{ key: 'cta_label', label: 'Button under each route', kind: 'text' }],
+    items: {
+      routes: {
+        label: 'Route',
+        fields: [
+          { key: 'tab', label: 'Tab name', kind: 'text' },
+          { key: 'best_for', label: 'Best for', kind: 'text' },
+          { key: 'note', label: 'Route note', kind: 'textarea' },
+          { key: 'stay_note', label: 'Introduction above accommodation', kind: 'textarea' },
+          { key: 'stay_disclaimer', label: 'Paragraph below accommodation', kind: 'textarea' }
+        ]
+      }
+    }
+  },
+  expectations: {
+    label: 'What it can and cannot be',
+    fields: [
+      { key: 'can_title', label: 'Left heading', kind: 'text' },
+      { key: 'can', label: 'Can', kind: 'rich_list' },
+      { key: 'cannot_title', label: 'Right heading', kind: 'text' },
+      { key: 'cannot', label: 'Cannot', kind: 'rich_list' },
+      { key: 'note', label: 'Closing line', kind: 'textarea' }
+    ]
+  },
+  priceguide: {
+    label: 'Price guide',
+    fields: [
+      { key: 'small_print', label: 'Line under the table', kind: 'textarea' },
+      { key: 'factors_title', label: 'Factors heading', kind: 'text' },
+      { key: 'factors_note', label: 'Line under the factors', kind: 'textarea' },
+      { key: 'note_label', label: 'Pull-quote label', kind: 'text' },
+      { key: 'note', label: 'Pull quote', kind: 'textarea' },
+      { key: 'cta_label', label: 'Button', kind: 'text' }
+    ],
+    items: {
+      rows: {
+        label: 'Option',
+        fields: [
+          { key: 'route', label: 'Option', kind: 'text' },
+          { key: 'price', label: 'Price', kind: 'text' },
+          { key: 'best_for', label: 'Usually best for', kind: 'text' },
+          { key: 'tendency', label: 'Price tendency', kind: 'text' },
+          { key: 'why', label: 'Why it costs that way', kind: 'textarea' }
+        ]
+      },
+      factors: { label: 'Factor', fields: [{ key: 'text', label: 'Factor', kind: 'text' }] }
+    }
+  },
+  advisor: {
+    label: "Advisor's note",
+    fields: [
+      { key: 'body', label: 'The note', kind: 'rich' },
+      { key: 'footnote', label: 'Closing line', kind: 'textarea' },
+      { key: 'author_name', label: 'Advisor name', kind: 'text' },
+      { key: 'author_role', label: 'Advisor role', kind: 'text' }
+    ],
+    items: {
+      columns: {
+        label: 'List',
+        fields: [
+          { key: 'title', label: 'List heading', kind: 'text' },
+          { key: 'items', label: 'Points', kind: 'rich_list' }
+        ]
+      }
+    }
+  }
+};
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const hasId = (value: Record<string, unknown>) => typeof value._id === 'string' && value._id.trim().length > 0;
+
+/**
+ * Gives every block, and every row inside a block, the `_id` its translations
+ * are keyed by — in memory, on this copy of the record.
+ *
+ * Packages saved from now on carry their ids in the database; the editor adds
+ * them. Older ones do not, so they get the one rule the editor also follows
+ * when it first opens such a page: block N is `bN`, row N of a list is `rN`.
+ * The two sides agree without either having to write to the other, and once
+ * the page is saved the same ids are simply stored.
+ */
+export const ensurePackageIds = (record: Record<string, unknown>): void => {
+  const sections = record.sections;
+  if (!Array.isArray(sections)) return;
+  sections.forEach((block, blockIndex) => {
+    if (!isPlainObject(block)) return;
+    if (!hasId(block)) block._id = `b${blockIndex}`;
+    for (const value of Object.values(block)) {
+      if (!Array.isArray(value)) continue;
+      value.forEach((row, rowIndex) => {
+        if (isPlainObject(row) && !hasId(row)) row._id = `r${rowIndex}`;
+      });
+    }
+  });
+};
+
+/** A short, readable name for a block or row in the panel: its own heading if it has one. */
+const excerpt = (value: unknown, length = 48): string => {
+  const text = toPlainText(typeof value === 'string' ? value : '').replace(/\s+/g, ' ').trim();
+  return text.length > length ? `${text.slice(0, length - 1)}…` : text;
+};
+
+/**
+ * The translatable fields inside one package's blocks, in page order.
+ *
+ * Every field is listed whether or not the default language has filled it in
+ * — sourceFieldsFor keeps only the ones with text, and the panel hides the
+ * rest — so a translation's keys never depend on what happens to be written
+ * today. None is required: blocks come and go, and publishing must not hang on
+ * one that was added after the translation was done.
+ */
+export const packageBlockFields = (record: Record<string, unknown>): TranslatableField[] => {
+  ensurePackageIds(record);
+  const sections = Array.isArray(record.sections) ? record.sections : [];
+  const out: TranslatableField[] = [];
+
+  for (const block of sections) {
+    if (!isPlainObject(block)) continue;
+    const spec = PACKAGE_BLOCK_TEXT[String(block.type)];
+    if (!spec) continue;
+    const blockId = String(block._id);
+    const named = excerpt(block.title);
+    const group = named ? `${spec.label} — ${named}` : spec.label;
+
+    for (const field of [...BLOCK_HEADING_FIELDS, ...(spec.fields ?? [])]) {
+      out.push({ key: `sections.#${blockId}.${field.key}`, label: field.label, kind: field.kind, group });
+    }
+
+    for (const [listKey, list] of Object.entries(spec.items ?? {})) {
+      const rows = Array.isArray(block[listKey]) ? (block[listKey] as unknown[]) : [];
+      rows.forEach((row, rowIndex) => {
+        if (!isPlainObject(row)) return;
+        const rowName = excerpt(row.tab ?? row.question ?? row.label ?? row.title ?? row.route ?? row.text, 32);
+        const prefix = `${list.label} ${rowIndex + 1}${rowName ? ` (${rowName})` : ''}`;
+        for (const field of list.fields) {
+          out.push({
+            key: `sections.#${blockId}.${listKey}.#${String(row._id)}.${field.key}`,
+            label: `${prefix} — ${field.label}`,
+            kind: field.kind,
+            group
+          });
+        }
+      });
+    }
+  }
+  return out;
+};
+
+/**
+ * The fields of one record: the registry's, plus — for an entity whose copy
+ * lives in a list of blocks — the ones that list holds. Pass the record
+ * wherever it is known; without it only the registry's fields exist.
+ */
+export const fieldsFor = (entityType: string, record?: Record<string, unknown> | null): TranslatableField[] => {
+  const base = TRANSLATABLE_ENTITIES[entityType] ?? [];
+  if (entityType === 'safari_packages' && record) return [...base, ...packageBlockFields(record)];
+  return base;
 };
 
 export type TranslationFields = Record<string, string | string[]>;
@@ -197,7 +506,7 @@ export const localeOf = (value: unknown): string | undefined =>
 /** Current source-language values for an entity, from its own columns. */
 export const sourceFieldsFor = (entityType: string, record: Record<string, unknown>): TranslationFields => {
   const out: TranslationFields = {};
-  for (const field of TRANSLATABLE_ENTITIES[entityType] ?? []) {
+  for (const field of fieldsFor(entityType, record)) {
     const value = readPath(record, field.key);
     if (field.kind === 'rich_list') {
       if (Array.isArray(value)) out[field.key] = value.map(String);
@@ -246,11 +555,17 @@ export const missingRequiredFields = (entityType: string, fields: TranslationFie
  * CMS content like any other, whether it came from a person or a model. Rich
  * kinds go through the HTML sanitiser; plain kinds are stripped to text.
  */
-export const cleanTranslationFields = (entityType: string, raw: unknown): TranslationFields => {
+export const cleanTranslationFields = (
+  entityType: string,
+  raw: unknown,
+  record?: Record<string, unknown> | null
+): TranslationFields => {
   const out: TranslationFields = {};
   if (!raw || typeof raw !== 'object') return out;
   const input = raw as Record<string, unknown>;
-  for (const field of TRANSLATABLE_ENTITIES[entityType] ?? []) {
+  // With the record, fields that live in its blocks are accepted too; without
+  // it, only the registry's — an unknown key is dropped, never stored.
+  for (const field of fieldsFor(entityType, record)) {
     const value = input[field.key];
     if (value === undefined) continue;
     if (field.kind === 'rich_list') {
@@ -351,6 +666,9 @@ export const localizeRecords = async (
   for (const record of records) {
     const translation = byId.get(String(record.id));
     if (!translation) continue;
+    // Block translations are keyed by id; a package saved before ids existed
+    // needs the same in-memory ids its translation was written against.
+    if (entityType === 'safari_packages') ensurePackageIds(record);
     const fields = (translation.fields ?? {}) as TranslationFields;
     const applied: string[] = [];
     for (const [key, value] of Object.entries(fields)) {

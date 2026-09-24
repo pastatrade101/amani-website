@@ -6,6 +6,7 @@ import { safeAudit } from '../services/audit.service';
 import { rolePermissions, type PermissionKey } from '../config/permissions';
 import {
   cleanTranslationFields,
+  fieldsFor,
   completenessFor,
   ENTITY_PERMISSIONS,
   getDefaultLanguage,
@@ -13,7 +14,6 @@ import {
   missingRequiredFields,
   sourceFieldsFor,
   sourceHashFor,
-  TRANSLATABLE_ENTITIES,
   type TranslationFields
 } from '../utils/translations';
 import { getTranslationProvider } from '../services/translation-provider';
@@ -137,7 +137,8 @@ export const listEntityTranslations = asyncHandler(async (req, res) => {
   return sendSuccess(res, 'Translations fetched successfully.', {
     default_language: defaultLanguage,
     languages: languages ?? [],
-    fields: TRANSLATABLE_ENTITIES[entityType],
+    // The record's own list: for a safari package that includes every block.
+    fields: fieldsFor(entityType, entity),
     source: sourceFieldsFor(entityType, entity),
     source_hash: currentHash,
     translations
@@ -208,7 +209,10 @@ export const upsertTranslation = asyncHandler(async (req, res) => {
   const status = String(req.body.translation_status ?? 'draft') as TranslationStatus;
   if (!STATUSES.includes(status)) throw new AppError('Unknown translation status.', 422);
 
-  const fields = cleanTranslationFields(entityType, req.body.fields);
+  // The record decides which keys are real — a package's block fields exist
+  // only on the package that has those blocks.
+  const entity = await loadEntity(entityType, entityId);
+  const fields = cleanTranslationFields(entityType, req.body.fields, entity);
   const saved = await saveTranslation(req, entityType, entityId, code, fields, status);
   return sendSuccess(res, 'Translation saved successfully.', saved);
 });
@@ -234,7 +238,7 @@ export const copyFromDefault = asyncHandler(async (req, res) => {
   }
 
   const status = (existing?.translation_status as TranslationStatus | undefined) ?? 'draft';
-  const saved = await saveTranslation(req, entityType, entityId, code, cleanTranslationFields(entityType, merged), status === 'not_started' ? 'draft' : status);
+  const saved = await saveTranslation(req, entityType, entityId, code, cleanTranslationFields(entityType, merged, entity), status === 'not_started' ? 'draft' : status);
   return sendSuccess(res, 'Empty fields copied from the default language.', saved);
 });
 
@@ -261,9 +265,7 @@ export const aiTranslate = asyncHandler(async (req, res) => {
     return sendSuccess(res, 'Nothing to translate — every field already has content.', null);
   }
 
-  const labels = Object.fromEntries(
-    (TRANSLATABLE_ENTITIES[entityType] ?? []).map((field) => [field.key, field.label])
-  );
+  const labels = Object.fromEntries(fieldsFor(entityType, entity).map((field) => [field.key, field.label]));
   const translated = await getTranslationProvider().translate(toTranslate, {
     entityType,
     entityName: String(entity.name ?? entity.title ?? ''),
@@ -274,7 +276,7 @@ export const aiTranslate = asyncHandler(async (req, res) => {
 
   // Machine output is sanitised like any other input and always lands as
   // needs_review — publishing stays a human decision.
-  const merged = cleanTranslationFields(entityType, { ...current, ...translated });
+  const merged = cleanTranslationFields(entityType, { ...current, ...translated }, entity);
   const saved = await saveTranslation(req, entityType, entityId, code, merged, 'needs_review');
   return sendSuccess(res, 'AI translation saved for review.', saved);
 });
