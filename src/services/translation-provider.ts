@@ -67,6 +67,62 @@ export const batchFields = (fields: TranslationFields, budget = BATCH_CHARS): Tr
   return batches;
 };
 
+// Marks the pieces of one long field while they are out for translation.
+const PIECE = '§';
+const BLOCK_END = /(?<=<\/(?:p|ul|ol|blockquote|h[2-4])>)/i;
+
+/**
+ * A long HTML field in pieces of about `budget` characters, cut before its
+ * section headings and, inside an over-long section, after whole blocks —
+ * never inside a tag or a paragraph. A legal page's text is one field of
+ * ~10,000 characters: sent whole it took a minute and a half, and a longer
+ * one would not fit a single reply at all. Joining the pieces gives the
+ * original back exactly.
+ */
+export const splitLongHtml = (html: string, budget = BATCH_CHARS): string[] => {
+  if (html.length <= budget) return [html];
+  const sections = html.split(/(?=<h[23][\s>])/i);
+  const blocks = sections.flatMap((section) => (section.length > budget ? section.split(BLOCK_END) : [section]));
+  const pieces: string[] = [];
+  let current = '';
+  for (const block of blocks) {
+    if (current && current.length + block.length > budget) {
+      pieces.push(current);
+      current = '';
+    }
+    current += block;
+  }
+  if (current) pieces.push(current);
+  return pieces;
+};
+
+/** Long HTML fields replaced by numbered pieces, and how many pieces each became. */
+const explode = (fields: TranslationFields): { fields: TranslationFields; pieces: Record<string, number> } => {
+  const out: TranslationFields = {};
+  const pieces: Record<string, number> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    const parts = typeof value === 'string' && /<\/(?:p|ul|ol|h[2-4])>/i.test(value) ? splitLongHtml(value) : [value];
+    if (parts.length < 2) {
+      out[key] = value;
+      continue;
+    }
+    parts.forEach((part, index) => (out[`${key}${PIECE}${index}`] = part));
+    pieces[key] = parts.length;
+  }
+  return { fields: out, pieces };
+};
+
+/** Pieces joined back into their field; a field missing any piece is left out, never half-translated. */
+const implode = (translated: TranslationFields, pieces: Record<string, number>): TranslationFields => {
+  const out: TranslationFields = { ...translated };
+  for (const [key, count] of Object.entries(pieces)) {
+    const parts = Array.from({ length: count }, (_, index) => translated[`${key}${PIECE}${index}`]);
+    for (let index = 0; index < count; index++) delete out[`${key}${PIECE}${index}`];
+    if (parts.every((part) => typeof part === 'string')) out[key] = parts.join('');
+  }
+  return out;
+};
+
 /** The JSON object in a reply, tolerating code fences or a stray sentence around it. */
 export const parseReply = (text: string): Record<string, unknown> | null => {
   const candidates = [text.trim().replace(/^```(?:json)?\s*|\s*```$/g, '')];
@@ -92,7 +148,19 @@ class AnthropicTranslationProvider implements TranslationProvider {
       throw new AppError('AI translation is not configured on this server (ANTHROPIC_API_KEY is unset).', 503);
     }
 
-    const batches = batchFields(fields);
+    // A piece keeps its field's label, so the model knows what it is reading.
+    const exploded = explode(fields);
+    const pieceLabels = Object.fromEntries(
+      Object.keys(exploded.fields)
+        .filter((key) => key.includes(PIECE))
+        .map((key) => {
+          const base = key.slice(0, key.indexOf(PIECE));
+          return [key, `${context.fieldLabels[base] ?? base} (part ${Number(key.slice(key.indexOf(PIECE) + 1)) + 1})`];
+        })
+    );
+    context = { ...context, fieldLabels: { ...context.fieldLabels, ...pieceLabels } };
+
+    const batches = batchFields(exploded.fields);
     const results: TranslationFields[] = [];
     let next = 0;
     let failed = false;
@@ -110,7 +178,7 @@ class AnthropicTranslationProvider implements TranslationProvider {
       }
     };
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, batches.length) }, worker));
-    return Object.assign({}, ...results);
+    return implode(Object.assign({}, ...results), exploded.pieces);
   }
 
   private async translateBatch(fields: TranslationFields, context: TranslationContext): Promise<TranslationFields> {

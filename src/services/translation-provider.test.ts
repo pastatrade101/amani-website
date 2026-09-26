@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, describe, it } from 'node:test';
-import { batchFields, getTranslationProvider, parseReply } from './translation-provider';
+import { batchFields, getTranslationProvider, parseReply, splitLongHtml } from './translation-provider';
 import type { TranslationFields } from '../utils/translations';
 
 /**
@@ -114,5 +114,43 @@ describe('AI translation', () => {
   it('drops keys that were never sent', async () => {
     answer = () => ({ text: '{"name":"A","injected":"x"}' });
     assert.deepEqual(await getTranslationProvider().translate({ name: 'a' }, context), { name: 'A' });
+  });
+});
+
+describe('long HTML fields', () => {
+  const section = (n: number) => `<h2>Section ${n}</h2><p>${'word '.repeat(300)}</p><ul><li>one</li><li>two</li></ul>`;
+  const page = Array.from({ length: 8 }, (_, i) => section(i)).join('');
+
+  it('cuts before headings and joins back to the exact original', () => {
+    const pieces = splitLongHtml(page, 4000);
+    assert.ok(pieces.length > 1);
+    assert.equal(pieces.join(''), page);
+    for (const piece of pieces.slice(1)) assert.ok(piece.startsWith('<h2>'));
+  });
+
+  it('cuts an over-long section between blocks, never inside one', () => {
+    const body = `<h2>One</h2>${Array.from({ length: 12 }, () => `<p>${'word '.repeat(150)}</p>`).join('')}`;
+    const pieces = splitLongHtml(body, 2000);
+    assert.ok(pieces.length > 1);
+    assert.equal(pieces.join(''), body);
+    for (const piece of pieces) assert.ok(piece.endsWith('</p>'));
+  });
+
+  it('leaves a short field whole', () => {
+    assert.deepEqual(splitLongHtml('<p>Short.</p>'), ['<p>Short.</p>']);
+  });
+
+  it('translates a long page in pieces and returns one field', async () => {
+    const out = await getTranslationProvider().translate({ title: 'Privacy', body: page }, context);
+    assert.ok(calls.length > 1);
+    assert.ok(calls.every((sent) => Object.keys(sent).every((key) => key === 'title' || key.startsWith('body§'))));
+    assert.deepEqual(Object.keys(out).sort(), ['body', 'title']);
+    assert.equal(out.body, page.toUpperCase());
+  });
+
+  it('drops a long field entirely if one piece is missing', async () => {
+    answer = (sent) => translateAll(Object.fromEntries(Object.entries(sent).filter(([key]) => key !== 'body§1')));
+    const out = await getTranslationProvider().translate({ title: 'Privacy', body: page }, context);
+    assert.deepEqual(Object.keys(out), ['title']);
   });
 });
