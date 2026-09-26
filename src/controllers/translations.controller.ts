@@ -103,13 +103,14 @@ export const updateLanguage = asyncHandler(async (req, res) => {
 const decorate = (
   entityType: string,
   row: Record<string, unknown> | null,
-  currentHash: string
+  currentHash: string,
+  source: TranslationFields
 ): Record<string, unknown> => {
   const fields = (row?.fields ?? {}) as TranslationFields;
   return {
     ...(row ?? { translation_status: 'not_started', fields: {} }),
-    completeness: completenessFor(entityType, fields),
-    missing_required: missingRequiredFields(entityType, fields),
+    completeness: completenessFor(entityType, fields, source),
+    missing_required: missingRequiredFields(entityType, fields, source),
     // A translation saved against an older source hash may no longer match
     // what the default language now says.
     outdated: Boolean(row?.source_hash && row.source_hash !== currentHash)
@@ -129,9 +130,10 @@ export const listEntityTranslations = asyncHandler(async (req, res) => {
   ]);
 
   const byCode = new Map((rows ?? []).map((row) => [String(row.language_code), row as Record<string, unknown>]));
+  const source = sourceFieldsFor(entityType, entity);
   const translations: Record<string, unknown> = {};
   for (const language of languages ?? []) {
-    translations[language.code] = decorate(entityType, byCode.get(language.code) ?? null, currentHash);
+    translations[language.code] = decorate(entityType, byCode.get(language.code) ?? null, currentHash, source);
   }
 
   return sendSuccess(res, 'Translations fetched successfully.', {
@@ -139,7 +141,7 @@ export const listEntityTranslations = asyncHandler(async (req, res) => {
     languages: languages ?? [],
     // The record's own list: for a safari package that includes every block.
     fields: fieldsFor(entityType, entity),
-    source: sourceFieldsFor(entityType, entity),
+    source,
     source_hash: currentHash,
     translations
   });
@@ -156,8 +158,9 @@ const saveTranslation = async (
   const entity = await loadEntity(entityType, entityId);
   const existing = await loadTranslation(entityType, entityId, code);
 
+  const source = sourceFieldsFor(entityType, entity);
   if (status === 'published') {
-    const missing = missingRequiredFields(entityType, fields);
+    const missing = missingRequiredFields(entityType, fields, source);
     if (missing.length) {
       throw new AppError(`Cannot publish: required fields are missing (${missing.join(', ')}).`, 422);
     }
@@ -198,7 +201,7 @@ const saveTranslation = async (
     .single();
   if (error) throw new AppError('Unable to save the translation.', 500, [error]);
   await safeAudit({ action: existing ? 'update' : 'create', entityId: String(data.id), entityType: 'content_translations', newData: data, oldData: existing ?? undefined, req });
-  return decorate(entityType, data as Record<string, unknown>, String(payload.source_hash));
+  return decorate(entityType, data as Record<string, unknown>, String(payload.source_hash), source);
 };
 
 export const upsertTranslation = asyncHandler(async (req, res) => {

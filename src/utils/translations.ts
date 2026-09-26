@@ -538,16 +538,31 @@ const filled = (value: unknown): boolean =>
     : toPlainText(value).trim().length > 0;
 
 /** Percent complete over REQUIRED fields only — optional gaps don't penalise. */
-export const completenessFor = (entityType: string, fields: TranslationFields): number => {
-  const required = (TRANSLATABLE_ENTITIES[entityType] ?? []).filter((field) => field.required);
+/**
+ * The required fields that actually apply. A field is only required when the
+ * default language has text in it — twelve safari styles have no English short
+ * description, and demanding a translation of nothing left them unpublishable.
+ * Without `source`, every required field counts.
+ */
+const requiredFor = (entityType: string, source?: TranslationFields): TranslatableField[] =>
+  (TRANSLATABLE_ENTITIES[entityType] ?? []).filter(
+    (field) => field.required && (!source || filled(source[field.key]))
+  );
+
+export const completenessFor = (entityType: string, fields: TranslationFields, source?: TranslationFields): number => {
+  const required = requiredFor(entityType, source);
   if (!required.length) return 0;
   const done = required.filter((field) => filled(fields[field.key])).length;
   return Math.round((done / required.length) * 100);
 };
 
-export const missingRequiredFields = (entityType: string, fields: TranslationFields): string[] =>
-  (TRANSLATABLE_ENTITIES[entityType] ?? [])
-    .filter((field) => field.required && !filled(fields[field.key]))
+export const missingRequiredFields = (
+  entityType: string,
+  fields: TranslationFields,
+  source?: TranslationFields
+): string[] =>
+  requiredFor(entityType, source)
+    .filter((field) => !filled(fields[field.key]))
     .map((field) => field.label);
 
 /**

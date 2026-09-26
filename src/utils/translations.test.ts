@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { cleanTranslationFields, ensurePackageIds, fieldsFor, readPath, sourceFieldsFor, writePath } from './translations';
+import {
+  cleanTranslationFields,
+  completenessFor,
+  ensurePackageIds,
+  fieldsFor,
+  missingRequiredFields,
+  readPath,
+  sourceFieldsFor,
+  writePath
+} from './translations';
 
 /**
  * Translatable fields may be a column or a dotted path into a jsonb column.
@@ -169,5 +178,28 @@ describe('safari package fields', () => {
       'sections.#b1.title'
     ]);
     assert.deepEqual(Object.keys(cleanTranslationFields('safari_packages', input)), ['name']);
+  });
+});
+
+describe('required translation fields', () => {
+  // Twelve safari styles have no English short description. Requiring a
+  // translation of nothing made them impossible to publish.
+  const category = { name: 'Private Tanzania Safaris', short_description: '', description: 'Tailor-made trips.' };
+
+  it('does not require a field the English leaves empty', () => {
+    const source = sourceFieldsFor('tour_categories', category);
+    const draft = { name: 'Safari za Binafsi', description: 'Safari za kipekee.' };
+    assert.deepEqual(missingRequiredFields('tour_categories', draft, source), []);
+    assert.equal(completenessFor('tour_categories', draft, source), 100);
+  });
+
+  it('still requires a field the English fills', () => {
+    const source = sourceFieldsFor('tour_categories', { ...category, short_description: 'Just you.' });
+    const draft = { name: 'Safari za Binafsi', description: 'Safari za kipekee.' };
+    assert.deepEqual(missingRequiredFields('tour_categories', draft, source), ['Short description']);
+  });
+
+  it('keeps the strict rule when no source is given', () => {
+    assert.deepEqual(missingRequiredFields('tour_categories', { name: 'x', description: 'y' }), ['Short description']);
   });
 });
