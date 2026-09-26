@@ -3,6 +3,7 @@ import sharp from 'sharp';
 import { encode as encodeBlurhash } from 'blurhash';
 import { env } from '../config/env';
 import { supabase } from '../config/supabase';
+import { clearPublicCache } from '../middleware/public-cache.middleware';
 import { AppError } from '../utils/api-response';
 import { deleteR2Object, putR2Object, r2Enabled } from './r2.service';
 
@@ -290,6 +291,10 @@ export const generateResponsiveVariants = async (
           () => undefined,
           () => undefined
         );
+      // This lands after the upload has responded, so the write that cleared the
+      // public cache is long gone. Clear it again or pages keep serving the
+      // original instead of the new sizes until the cache expires.
+      clearPublicCache();
     }
   } catch {
     /* whole-image best-effort — never throw from a background job */

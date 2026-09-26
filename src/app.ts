@@ -61,6 +61,7 @@ import pageSeoRoutes from './routes/page-seo.routes';
 import exchangeRatesRoutes from './routes/exchange-rates.routes';
 import { errorMiddleware } from './middleware/error.middleware';
 import { notFoundMiddleware } from './middleware/not-found.middleware';
+import { publicCache } from './middleware/public-cache.middleware';
 import { sendSuccess } from './utils/api-response';
 
 const app = express();
@@ -116,6 +117,9 @@ app.use(
   })
 );
 app.use(express.urlencoded({ extended: true }));
+// Anonymous content reads are shared from memory; every successful write clears
+// them. See the middleware for exactly what is and is not cached.
+app.use(publicCache);
 
 app.get('/api/health', (_req, res) => {
   return sendSuccess(res, 'API is healthy.', {

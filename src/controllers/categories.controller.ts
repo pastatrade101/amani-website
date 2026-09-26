@@ -11,6 +11,9 @@ export const listCategories = asyncHandler(async (req, res) => {
     defaultStatus: 'published',
     orderBy: 'sort_order',
     ascending: true,
+    // The style landing page is ~80% of every row and only the single-style
+    // page renders it, from GET /categories/:slug. Menus and cards never do.
+    publicOmit: ['landing_page_content'],
     // Published translations for the requested locale are merged over the
     // batch in a single query — never one per row. Untranslated fields keep
     // their default-language values (per-field fallback).

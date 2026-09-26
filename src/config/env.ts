@@ -19,6 +19,10 @@ const envSchema = z.object({
   // limiters (contact, bookings, AI chat, trip access).
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(3000),
+  // How long an anonymous public GET is served from memory before Supabase is
+  // asked again (middleware/public-cache). Any CMS save empties the cache at
+  // once, so this only bounds changes made outside the app. 0 turns it off.
+  PUBLIC_CACHE_TTL_SECONDS: z.coerce.number().int().min(0).default(600),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
   SUPABASE_URL: z.string().url().optional().or(z.literal('')),

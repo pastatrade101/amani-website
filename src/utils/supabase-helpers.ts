@@ -19,6 +19,37 @@ type ListOptions = {
   filters?: string[];
   /** Runs after the rows are fetched, before they are sent. */
   afterFetch?: (items: Array<Record<string, unknown>>) => Promise<void>;
+  /**
+   * Heavy columns left out of anonymous list reads. Only for columns no public
+   * list page renders — the detail endpoint still returns them, and the CMS
+   * (which always sends its token) still gets every column.
+   */
+  publicOmit?: string[];
+};
+
+// Real column names per table, read once per process so a list can select
+// "everything except" — PostgREST has no exclusion syntax. A column added later
+// is picked up on the next deploy, which is also when code starts using it.
+const tableColumns = new Map<string, string[]>();
+
+const columnsOf = async (table: string): Promise<string[] | null> => {
+  const known = tableColumns.get(table);
+  if (known) return known;
+  const { data, error } = await supabase.from(table).select('*').limit(1);
+  const row = (data as Array<Record<string, unknown>> | null)?.[0];
+  if (error || !row) return null;
+  const columns = Object.keys(row);
+  tableColumns.set(table, columns);
+  return columns;
+};
+
+/** `select` with the omitted columns taken out of its leading `*`, or unchanged. */
+const selectWithout = async (table: string, select: string, omit: string[]): Promise<string> => {
+  if (!select.startsWith('*')) return select;
+  const columns = await columnsOf(table);
+  if (!columns) return select;
+  const kept = columns.filter((column) => !omit.includes(column));
+  return `${kept.join(',')}${select.slice(1)}`;
 };
 
 // Image columns (per table) whose URLs may have a web-optimized thumbnail in
@@ -115,10 +146,14 @@ export const listRecords = async (req: Request, res: Response, options: ListOpti
   const { page, limit, from, to } = getPagination(req.query);
   const search = cleanSearch(getQueryString(req.query, 'search'));
   const status = getQueryString(req.query, 'status');
+  const omit = !req.headers.authorization && options.publicOmit?.length ? options.publicOmit : [];
+  const select = omit.length
+    ? await selectWithout(options.table, options.select ?? '*', omit)
+    : options.select ?? '*';
 
   let query = supabase
     .from(options.table)
-    .select(options.select ?? '*', { count: 'exact' })
+    .select(select, { count: 'exact' })
     .order(options.orderBy ?? 'created_at', { ascending: options.ascending ?? false });
 
   if (options.softDelete ?? true) query = query.is('deleted_at', null);
@@ -145,6 +180,10 @@ export const listRecords = async (req: Request, res: Response, options: ListOpti
   const items = (data ?? []) as unknown as Array<Record<string, unknown>>;
   await attachThumbnails(options.table, items);
   if (options.afterFetch) await options.afterFetch(items);
+  // A published translation can write an omitted field back in; keep it out.
+  for (const item of omit.length ? items : []) {
+    for (const column of omit) delete item[column];
+  }
 
   return sendSuccess(res, 'Records fetched successfully.', {
     items,

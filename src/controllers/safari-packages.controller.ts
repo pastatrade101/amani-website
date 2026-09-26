@@ -46,6 +46,9 @@ export const listSafariPackages = asyncHandler(async (req, res) => {
     statusColumn: 'status',
     defaultStatus: 'published',
     filters: ['tour_id', 'category_id', 'is_featured', 'indexable'],
+    // A page's blocks are almost all of its row; listings, the footer and the
+    // sitemap show only the name and hero. The page reads them by slug.
+    publicOmit: ['sections'],
     orderBy: 'sort_order',
     ascending: true
   });
