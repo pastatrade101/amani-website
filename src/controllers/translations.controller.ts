@@ -17,6 +17,7 @@ import {
   type TranslationFields
 } from '../utils/translations';
 import { getTranslationProvider } from '../services/translation-provider';
+import { legalDocForId, loadLegalRecord } from '../data/legal-pages';
 
 const STATUSES = ['not_started', 'draft', 'translated', 'needs_review', 'published'] as const;
 type TranslationStatus = (typeof STATUSES)[number];
@@ -37,6 +38,13 @@ const assertEntityPermission = (req: Request, entityType: string) => {
 };
 
 const loadEntity = async (entityType: string, entityId: string) => {
+  // Legal pages are not rows: their English is built-in wording plus edits
+  // in Settings, keyed by a fixed id per page.
+  if (entityType === 'legal_pages') {
+    const doc = legalDocForId(entityId);
+    if (!doc) throw new AppError('Record not found.', 404);
+    return loadLegalRecord(doc);
+  }
   const { data, error } = await supabase.from(entityType).select('*').eq('id', entityId).maybeSingle();
   if (error) throw new AppError('Unable to load the source record.', 500, [error]);
   if (!data) throw new AppError('Record not found.', 404);

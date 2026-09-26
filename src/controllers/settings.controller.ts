@@ -5,9 +5,19 @@ import { AppError, sendSuccess } from '../utils/api-response';
 import { cleanSearch, getQueryString } from '../utils/query';
 import { isForbiddenKey } from '../schemas/settings.schema';
 import { CURRENCY_SETTINGS_KEY, validateCurrencyConfigList } from '../config/currencies';
+import { sanitizeRichText } from '../utils/rich-text';
 
 // Keys managed by dedicated modules — not editable/deletable via generic settings.
 const RESERVED_KEYS = ['branding'];
+
+// Legal page text edited in Settings (data/legal-pages.ts). Private settings:
+// the website reads one page at a time from /api/public/legal/:doc instead of
+// shipping four long documents inside the settings every page loads.
+const LEGAL_BODY_KEY = /^legal_(privacy|terms|cancellation|data_retention)_body$/;
+
+/** Page text is CMS HTML like any other rich field: it goes through the same sanitiser. */
+export const cleanSettingValue = (key: string, value: unknown): unknown =>
+  LEGAL_BODY_KEY.test(key) && typeof value === 'string' ? sanitizeRichText(value) : value;
 
 const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -115,7 +125,12 @@ export const createSetting = asyncHandler(async (req, res) => {
 
   validateSettingValue(key, body.setting_type as string, body.setting_value);
 
-  const payload = { ...body, setting_value: body.setting_value ?? null, updated_by: req.user?.sub ?? null, deleted_at: null };
+  const payload = {
+    ...body,
+    setting_value: cleanSettingValue(key, body.setting_value) ?? null,
+    updated_by: req.user?.sub ?? null,
+    deleted_at: null
+  };
 
   const { data, error } = await supabase
     .from('website_settings')
@@ -149,6 +164,7 @@ export const updateSetting = asyncHandler(async (req, res) => {
   const payload = {
     setting_key: key,
     ...body,
+    ...('setting_value' in body ? { setting_value: cleanSettingValue(key, body.setting_value) } : {}),
     updated_by: req.user?.sub ?? null,
     deleted_at: null
   };

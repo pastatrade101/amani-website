@@ -7,6 +7,7 @@ import {
   listSettings,
   updateSetting
 } from '../controllers/settings.controller';
+import { getLegalDefaults } from '../controllers/legal.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/permission.middleware';
 import { validate } from '../middleware/validate.middleware';
@@ -16,6 +17,8 @@ const router = Router();
 
 router.use(authenticate);
 router.get('/', requirePermission('settings.view'), listSettings);
+// Before '/:key', or it would be read as a setting called legal-defaults.
+router.get('/legal-defaults', requirePermission('settings.view'), getLegalDefaults);
 router.get('/group/:group', requirePermission('settings.view'), getSettingsByGroup);
 router.get('/:key', requirePermission('settings.view'), getSetting);
 router.post('/', requirePermission('settings.update'), validate({ body: settingCreateSchema }), createSetting);

@@ -212,6 +212,18 @@ export const TRANSLATABLE_ENTITIES: Record<string, TranslatableField[]> = {
     { key: 'meta_title', label: 'SEO title', kind: 'text', group: 'Search engines' },
     { key: 'seo_title', label: 'SEO title (alternative)', kind: 'text', group: 'Search engines' },
     { key: 'meta_description', label: 'SEO description', kind: 'textarea', group: 'Search engines' }
+  ],
+  /**
+   * Privacy Policy, Terms, Cancellation Policy and Data Retention. Not a table:
+   * each page is a fixed id whose English is its built-in wording plus any
+   * edits in Settings (data/legal-pages.ts).
+   */
+  legal_pages: [
+    { key: 'title', label: 'Page title', kind: 'text', required: true },
+    { key: 'updated', label: 'Last updated', kind: 'text' },
+    { key: 'intro', label: 'Introduction', kind: 'textarea' },
+    { key: 'body', label: 'Page text', kind: 'rich', required: true },
+    { key: 'meta_description', label: 'Search description', kind: 'textarea' }
   ]
 };
 
@@ -227,7 +239,9 @@ export const ENTITY_PERMISSIONS: Record<string, string> = {
   activities: 'activities.update',
   // A day belongs to its tour, so editing one is editing that tour.
   itinerary_days: 'tours.update',
-  safari_packages: 'safari_packages.update'
+  safari_packages: 'safari_packages.update',
+  // The legal pages are edited in Settings, so translating them is too.
+  legal_pages: 'settings.update'
 };
 
 // ── Safari packages: fields that live in blocks ──────────────────────────────
