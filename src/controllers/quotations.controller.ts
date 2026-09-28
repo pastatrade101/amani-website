@@ -5,6 +5,7 @@ import { AppError, sendSuccess } from '../utils/api-response';
 import { supabase } from '../config/supabase';
 import { safeAudit } from '../services/audit.service';
 import { deliveredVia, emitNotification } from '../services/notification-events.service';
+import { contactRows, sendStaffAlert } from '../services/notification.service';
 import {
   CAN_REQUEST_CHANGES,
   isSettled,
@@ -747,7 +748,7 @@ export const declinePublicQuotation = asyncHandler(async (req, res) => {
 
   const { data: quotation } = await supabase
     .from('quotations')
-    .select('id, quote_code, title, status, declined_at, conversation_id')
+    .select('id, quote_code, title, status, declined_at, conversation_id, customer_name, customer_email, customer_phone, total_amount, currency')
     .eq('public_token', token)
     .is('deleted_at', null)
     .maybeSingle();
@@ -785,6 +786,24 @@ export const declinePublicQuotation = asyncHandler(async (req, res) => {
     quotation.conversation_id,
     `Quotation ${quotation.quote_code} declined by the traveller — ${quotation.title}.` + (reason ? `\nReason given: ${reason}` : '')
   );
+
+  // Accepting and asking for changes already reach the team by email; a
+  // decline only reached a conversation note, which nobody may be reading.
+  const customerEmail = String(quotation.customer_email ?? '');
+  void sendStaffAlert({
+    source: 'quotation',
+    subject: `Quotation declined — ${quotation.quote_code}`,
+    heading: `Quotation ${quotation.quote_code} was declined`,
+    intro: `${quotation.customer_name || 'The traveller'} declined "${quotation.title}".`,
+    contact: contactRows(String(quotation.customer_name ?? ''), customerEmail, String(quotation.customer_phone ?? '')),
+    details: [
+      { label: 'Quotation', value: `${quotation.quote_code} — ${quotation.title}` },
+      { label: 'Total', value: quotation.total_amount != null ? `${quotation.currency ?? 'USD'} ${quotation.total_amount}` : '' },
+      { label: 'Reason given', value: reason || 'No reason given' }
+    ],
+    replyTo: customerEmail || undefined,
+    cmsPath: '/admin/quotations'
+  });
 
   return sendSuccess(res, 'Thank you for letting us know.', { status: 'declined', declined_at: declinedAt });
 });

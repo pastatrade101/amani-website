@@ -1,35 +1,48 @@
 import { env } from '../config/env';
 import { supabase } from '../config/supabase';
-import { emailLayout, escapeHtml, sendEmail } from './email.service';
+import {
+  EMAIL_COLORS,
+  emailCaption,
+  emailDetails,
+  emailLayout,
+  escapeHtml,
+  loadEmailBrand,
+  sendEmail,
+  type EmailDetail
+} from './email.service';
 import { syncToHubSpot } from './hubspot.service';
 
 /**
  * Where a staff notification goes, resolved per form type so tour enquiries and
  * general trip planning can reach different inboxes.
  *
- * Settings first (editable in the CMS without a redeploy), then the env var.
- * Keys are stored with is_public false, so they never reach the unauthenticated
- * public settings endpoint.
+ * Settings first (editable in the CMS without a redeploy), then the env var,
+ * then the contact email the website shows. That last step matters: with no
+ * enquiry inbox configured every alert used to be skipped, so enquiries only
+ * ever appeared in the CMS. Enquiry keys are stored with is_public false, so
+ * they never reach the unauthenticated public settings endpoint.
  */
 export const recipientFor = async (source: string): Promise<string> => {
   const keys = [`enquiry_email_${source}`, 'enquiry_email_default'];
+  let contactEmail = '';
 
   try {
     const { data } = await supabase
       .from('website_settings')
       .select('setting_key,setting_value')
-      .in('setting_key', keys);
+      .in('setting_key', [...keys, 'contact_email']);
 
     const map = new Map((data ?? []).map((row: { setting_key: string; setting_value: unknown }) => [row.setting_key, row.setting_value]));
     for (const key of keys) {
       const value = String(map.get(key) ?? '').replace(/^"|"$/g, '').trim();
       if (value.includes('@')) return value;
     }
+    contactEmail = String(map.get('contact_email') ?? '').replace(/^"|"$/g, '').trim();
   } catch {
     // Settings unavailable — fall through to the env default.
   }
 
-  return env.SPECIALIST_EMAIL || '';
+  return env.SPECIALIST_EMAIL || (contactEmail.includes('@') ? contactEmail : '');
 };
 
 /** Human label for the form an enquiry came from. */
@@ -40,7 +53,119 @@ const FORM_LABELS: Record<string, string> = {
   website_booking_form: 'Booking form',
   plan_my_trip: 'Plan my trip',
   email_itinerary: 'Itinerary by email',
-  ai_handoff: 'AI advisor handoff'
+  ai_handoff: 'AI advisor handoff',
+  ai_travel_advisor: 'AI Travel Advisor',
+  contact_form: 'Contact form',
+  quotation: 'Quotation'
+};
+
+// ── Shared senders ─────────────────────────────────────────────────────────────
+// Every form reaches the team the same way: who it is from, everything they
+// filled in as a table, a button to the record in the CMS, and Reply-To set to
+// the visitor. Travellers get a branded acknowledgement of what they sent.
+
+const phoneHref = (phone: string) => (phone ? `tel:${phone.replace(/[^\d+]/g, '')}` : undefined);
+
+/** Who a message is from, as rows for the details table. */
+export const contactRows = (name: string, email: string, phone: string, country = ''): EmailDetail[] => [
+  { label: 'Name', value: name },
+  { label: 'Email', value: email, href: email ? `mailto:${email}` : undefined },
+  { label: 'Phone', value: phone, href: phoneHref(phone) },
+  { label: 'Country', value: country }
+];
+
+/** "Label: value" lines as table rows; a line without a label keeps its text. */
+export const summaryRows = (summary: string): EmailDetail[] =>
+  summary
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const at = line.indexOf(': ');
+      return at > 0 && at <= 40 ? { label: line.slice(0, at), value: line.slice(at + 2) } : { label: 'Request', value: line };
+    });
+
+const detailsText = (rows: EmailDetail[]) =>
+  rows.filter((row) => row.value.trim()).map((row) => `${row.label}: ${row.value.trim()}`).join('\n');
+
+export type StaffAlert = {
+  /** Form key: picks the inbox (enquiry_email_<source>) and the label. */
+  source: string;
+  subject: string;
+  heading: string;
+  /** One plain-text sentence above the tables. */
+  intro?: string;
+  contact: EmailDetail[];
+  details: EmailDetail[];
+  detailsTitle?: string;
+  /** The visitor's address, so a reply goes straight to them. */
+  replyTo?: string;
+  /** Path of the record in the CMS, e.g. /admin/bookings. */
+  cmsPath?: string;
+  preheader?: string;
+};
+
+/** Emails the team about a submission. Never throws; false when nothing was sent. */
+export const sendStaffAlert = async (alert: StaffAlert): Promise<boolean> => {
+  try {
+    const recipient = await recipientFor(alert.source);
+    if (!recipient) {
+      console.warn(`[notification] No staff inbox configured — "${alert.subject}" was not emailed.`);
+      return false;
+    }
+    const { siteUrl } = await loadEmailBrand();
+    const cta = alert.cmsPath && siteUrl ? { label: 'Open in the CMS', url: escapeHtml(`${siteUrl}${alert.cmsPath}`) } : undefined;
+    const body = `${alert.intro ? `<p style="margin:0 0 6px">${escapeHtml(alert.intro)}</p>` : ''}
+      ${alert.replyTo ? `<p style="margin:0;font-size:13px;color:${EMAIL_COLORS.muted}">Reply to this email to answer them directly.</p>` : ''}
+      ${emailCaption('From')}${emailDetails(alert.contact)}
+      ${emailCaption(alert.detailsTitle ?? 'Details')}${emailDetails(alert.details)}`;
+    return await sendEmail({
+      to: recipient,
+      replyTo: alert.replyTo || undefined,
+      subject: alert.subject,
+      html: await emailLayout(escapeHtml(alert.heading), body, cta, { audience: 'staff', preheader: alert.preheader ?? alert.intro }),
+      text: `${alert.heading}\n\n${detailsText(alert.contact)}\n\n${detailsText(alert.details)}`
+    });
+  } catch (error) {
+    console.error('[notification] Staff alert failed:', error instanceof Error ? error.message : error);
+    return false;
+  }
+};
+
+export type TravellerAcknowledgement = {
+  to: string;
+  subject: string;
+  heading: string;
+  /** Paragraphs of HTML the caller has already escaped. */
+  paragraphs: string[];
+  reference?: string;
+  details?: EmailDetail[];
+  detailsTitle?: string;
+  preheader?: string;
+  text: string;
+};
+
+/** Tells a visitor we have what they sent, in the branded layout. Never throws. */
+export const sendTravellerAcknowledgement = async (ack: TravellerAcknowledgement): Promise<boolean> => {
+  try {
+    if (!ack.to.includes('@')) return false;
+    const body = `${ack.paragraphs.map((p) => `<p style="margin:0 0 14px">${p}</p>`).join('')}
+      ${
+        ack.reference
+          ? `<p style="margin:0 0 6px;font-size:13px;color:${EMAIL_COLORS.muted}">Your reference: <strong style="display:inline-block;margin-left:4px;padding:3px 10px;border-radius:999px;background:${EMAIL_COLORS.cream};color:${EMAIL_COLORS.forest};font-size:13px;letter-spacing:.5px">${escapeHtml(ack.reference)}</strong></p>`
+          : ''
+      }
+      ${ack.details?.length ? `${emailCaption(ack.detailsTitle ?? 'What you sent us')}${emailDetails(ack.details)}` : ''}`;
+    return await sendEmail({
+      to: ack.to,
+      subject: ack.subject,
+      html: await emailLayout(escapeHtml(ack.heading), body, undefined, { audience: 'traveller', preheader: ack.preheader }),
+      text: ack.text
+    });
+  } catch (error) {
+    console.error('[notification] Acknowledgement failed:', error instanceof Error ? error.message : error);
+    return false;
+  }
 };
 
 type BookingLike = Record<string, unknown>;
@@ -93,7 +218,9 @@ export const buildLeadFromBooking = (booking: BookingLike): CrmLead => {
   const answers = (lc.answers as Record<string, unknown> | null) ?? {};
   const ctxCategory = (lc.category as Record<string, unknown> | null) ?? {};
   const ctxTour = (lc.tour as Record<string, unknown> | null) ?? {};
-  const pick = (key: string): string => str(answers[key]) || str(lc[key]);
+  // Multi-choice answers arrive as arrays; String(array) would print "Beach,Culture".
+  const asText = (value: unknown): string => (Array.isArray(value) ? value.map(str).filter(Boolean).join(', ') : str(value));
+  const pick = (key: string): string => asText(answers[key]) || asText(lc[key]);
 
   const fullName = str(booking.full_name);
   const nameParts = fullName.split(/\s+/).filter(Boolean);
@@ -206,24 +333,19 @@ export const sendBookingNotification = async (booking: BookingLike): Promise<voi
     const formLabel = FORM_LABELS[source] ?? source;
 
     // ── Staff notification ────────────────────────────────────────────────────
-    // Every interpolated value is escaped: the summary carries the visitor's own
-    // message and special requests.
-    const recipient = await recipientFor(source);
-    if (recipient) {
-      await sendEmail({
-        to: recipient,
-        replyTo: lead.email || undefined,
-        subject: `${formLabel} — ${lead.tripTitle || lead.destinationInterest || lead.country || lead.fullName || 'new enquiry'}`,
-        html: emailLayout(
-          `${escapeHtml(formLabel)} · ${escapeHtml(lead.bookingCode)}`,
-          `<p><strong>${escapeHtml(lead.fullName || 'A traveller')}</strong> &lt;${escapeHtml(lead.email || 'no email')}&gt;${
-            lead.phone ? ` · ${escapeHtml(lead.phone)}` : ''
-          }</p>
-           <pre style="white-space:pre-wrap;font-family:inherit;font-size:14px;color:#384540">${escapeHtml(lead.summary)}</pre>`
-        ),
-        text: `${formLabel} ${lead.bookingCode}\n${lead.fullName} <${lead.email}>\n\n${lead.summary}`
-      });
-    }
+    // Everything the visitor filled in, as a table; Reply-To is the visitor.
+    const request = summaryRows(lead.summary);
+    await sendStaffAlert({
+      source,
+      subject: `${formLabel} — ${lead.tripTitle || lead.destinationInterest || lead.country || lead.fullName || 'new enquiry'}`,
+      heading: `${formLabel}${lead.bookingCode ? ` · ${lead.bookingCode}` : ''}`,
+      intro: `New ${formLabel.toLowerCase()} from ${lead.fullName || 'a traveller'}${lead.tripTitle ? ` about ${lead.tripTitle}` : ''}.`,
+      contact: [...contactRows(lead.fullName, lead.email, lead.phone, lead.country), { label: 'Reference', value: lead.bookingCode }],
+      details: request,
+      detailsTitle: 'Their request',
+      replyTo: lead.email || undefined,
+      cmsPath: '/admin/bookings'
+    });
 
     // ── Traveller confirmation ────────────────────────────────────────────────
     // Sent after the staff alert so a failure here cannot stop the team hearing
@@ -234,19 +356,18 @@ export const sendBookingNotification = async (booking: BookingLike): Promise<voi
         ? `your enquiry about <strong>${escapeHtml(lead.tripTitle)}</strong>`
         : 'your trip enquiry';
 
-      await sendEmail({
+      await sendTravellerAcknowledgement({
         to: lead.email,
         subject: lead.tripTitle ? `We've got your enquiry — ${lead.tripTitle}` : "We've got your trip enquiry",
-        html: emailLayout(
-          `Thank you, ${escapeHtml(firstName)}`,
-          `<p>We have received ${what}. A local specialist will confirm availability and send you a personalised quotation within one business day.</p>
-           <p style="color:#8a948f;font-size:13px">No payment is required at this stage.</p>
-           ${lead.bookingCode ? `<p style="font-size:13px">Your reference: <strong>${escapeHtml(lead.bookingCode)}</strong></p>` : ''}
-           <p style="margin-top:18px;font-size:13px;color:#8a948f">What you told us:</p>
-           <pre style="white-space:pre-wrap;font-family:inherit;font-size:13px;color:#384540;background:#f4f6f4;padding:12px;border-radius:8px">${escapeHtml(
-             lead.summary
-           )}</pre>`
-        ),
+        heading: `Thank you, ${firstName}`,
+        paragraphs: [
+          `We have received ${what}. A local specialist will confirm availability and send you a personalised quotation within one business day.`,
+          `<span style="color:${EMAIL_COLORS.muted};font-size:13px">No payment is required at this stage.</span>`
+        ],
+        reference: lead.bookingCode,
+        details: request,
+        detailsTitle: 'What you told us',
+        preheader: 'We have your enquiry — a local specialist will reply within one business day.',
         text: `Thank you, ${firstName}.\n\nWe have received your enquiry. A local specialist will confirm availability and send a personalised quotation within one business day. No payment is required at this stage.\n${
           lead.bookingCode ? `\nYour reference: ${lead.bookingCode}\n` : ''
         }\nWhat you told us:\n${lead.summary}`
@@ -256,6 +377,97 @@ export const sendBookingNotification = async (booking: BookingLike): Promise<voi
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[notification] Failed to send booking notification', error);
+  }
+};
+
+/**
+ * The contact form. It used to be saved for the CMS and nothing else, so a
+ * message only surfaced when someone happened to open the inbox page.
+ */
+export const notifyContactMessage = async (message: Record<string, unknown>): Promise<void> => {
+  const name = str(message.full_name);
+  const email = str(message.email);
+  const subject = str(message.subject);
+  const text = str(message.message);
+  const firstName = name.split(/\s+/)[0] || 'there';
+  const sent: EmailDetail[] = [
+    { label: 'Subject', value: subject },
+    { label: 'Message', value: text }
+  ];
+
+  await sendStaffAlert({
+    source: 'contact_form',
+    subject: `Contact form — ${subject || name || 'new message'}`,
+    heading: `New message from ${name || 'the website'}`,
+    intro: `${name || 'Someone'} sent a message through the contact form.`,
+    contact: contactRows(name, email, str(message.phone)),
+    details: sent,
+    detailsTitle: 'Message',
+    replyTo: email || undefined,
+    cmsPath: '/admin/messages'
+  });
+
+  if (email) {
+    await sendTravellerAcknowledgement({
+      to: email,
+      subject: 'We have received your message',
+      heading: `Thank you, ${firstName}`,
+      paragraphs: ['We have received your message. A member of our team will read it and get back to you soon.'],
+      details: sent,
+      detailsTitle: 'What you sent us',
+      preheader: 'Thanks for getting in touch — we have your message.',
+      text: `Thank you, ${firstName}.\n\nWe have received your message and will get back to you soon.\n\n${subject ? `Subject: ${subject}\n` : ''}${text}`
+    });
+  }
+};
+
+/**
+ * A booking request made in the AI Travel Advisor chat. Stored in
+ * booking_requests, a table no email ever read from.
+ */
+export const notifyAiBookingRequest = async (request: Record<string, unknown>): Promise<void> => {
+  const lc = (request.lead_context as Record<string, unknown> | null) ?? {};
+  const list = (value: unknown) => (Array.isArray(value) ? value.map((item) => str(item)).filter(Boolean).join(', ') : str(value));
+  const name = str(request.full_name);
+  const rawEmail = str(request.email);
+  // The advisor stores a placeholder when the traveller only gave a phone.
+  const email = rawEmail.endsWith('.local') ? '' : rawEmail;
+  const adults = Number(request.number_of_adults ?? 0) || 0;
+  const children = Number(request.number_of_children ?? 0) || 0;
+  const details: EmailDetail[] = [
+    { label: 'Travel date', value: str(request.travel_date) },
+    { label: 'Travellers', value: adults || children ? `${adults} adults, ${children} children` : '' },
+    { label: 'Interests', value: list(lc.experience_interest) },
+    { label: 'Destinations', value: list(lc.destination_interest ?? lc.destinations) },
+    { label: 'Budget', value: str(lc.budget_range ?? lc.budget) },
+    { label: 'Special interests', value: str(request.special_requests) },
+    { label: 'Summary', value: str(request.message) }
+  ];
+
+  await sendStaffAlert({
+    source: 'ai_travel_advisor',
+    subject: `AI Travel Advisor booking request — ${name || 'new traveller'}`,
+    heading: 'Booking request from the AI Travel Advisor',
+    intro: `${name || 'A traveller'} asked for a booking in the AI Travel Advisor chat.`,
+    contact: contactRows(name, email, str(request.phone), str(request.country)),
+    details,
+    detailsTitle: 'Their request',
+    replyTo: email || undefined,
+    cmsPath: '/admin/ai-conversations'
+  });
+
+  if (email) {
+    const firstName = name.split(/\s+/)[0] || 'there';
+    await sendTravellerAcknowledgement({
+      to: email,
+      subject: "We've got your booking request",
+      heading: `Thank you, ${firstName}`,
+      paragraphs: ['We have received your booking request from our AI Travel Advisor. A local specialist will review it and get back to you with availability and a personalised quotation.'],
+      details,
+      detailsTitle: 'What you told us',
+      preheader: 'A local specialist will review your request.',
+      text: `Thank you, ${firstName}.\n\nWe have received your booking request. A local specialist will review it and get back to you.\n\n${detailsText(details)}`
+    });
   }
 };
 

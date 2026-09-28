@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { buildLeadFromBooking } from './notification.service';
+import { buildLeadFromBooking, contactRows, summaryRows } from './notification.service';
 
 /**
  * The lead builder feeds the staff email, the traveller confirmation and the
@@ -144,5 +144,33 @@ describe('buildLeadFromBooking — degenerate input', () => {
     });
     assert.ok(!summary.includes('Pool required:'), 'blank answer should not appear');
     assert.match(summary, /Child seats: Yes/);
+  });
+});
+
+/**
+ * Every form's details reach the team as a table. What matters: each
+ * "Label: value" line keeps its label, a line without one is not lost, and a
+ * contact detail that was not given is simply absent.
+ */
+describe('form details for email', () => {
+  it('turns a summary into labelled rows, keeping unlabelled lines', () => {
+    const rows = summaryRows('General trip request\nTravellers: 2 adults, 0 children\nNotes: Crater: yes please\n\n');
+    assert.deepEqual(rows, [
+      { label: 'Request', value: 'General trip request' },
+      { label: 'Travellers', value: '2 adults, 0 children' },
+      { label: 'Notes', value: 'Crater: yes please' }
+    ]);
+  });
+
+  it('does not mistake a long sentence with a colon for a label', () => {
+    const line = 'We would love to know whether the best time to visit the crater is: June';
+    assert.deepEqual(summaryRows(line), [{ label: 'Request', value: line }]);
+  });
+
+  it('links email and phone, and leaves out what was not given', () => {
+    const rows = contactRows('Asha Mwangi', 'asha@example.com', '+255 700 000 000');
+    assert.equal(rows.find((r) => r.label === 'Email')?.href, 'mailto:asha@example.com');
+    assert.equal(rows.find((r) => r.label === 'Phone')?.href, 'tel:+255700000000');
+    assert.equal(rows.find((r) => r.label === 'Country')?.value, '');
   });
 });

@@ -4,7 +4,7 @@ import { env } from '../config/env';
 import { supabase } from '../config/supabase';
 import { AppError } from '../utils/api-response';
 import { attachThumbnails } from '../utils/supabase-helpers';
-import { emailLayout, sendEmail } from './email.service';
+import { EMAIL_COLORS, emailLayout, escapeHtml, sendEmail } from './email.service';
 
 // How long a generated magic link stays valid (covers the whole pre-trip
 // window: deposits, balance payments, document exchange).
@@ -95,11 +95,13 @@ export const sendTripLinkEmail = async (bookingId: string, adminId: string | nul
     emailed = await sendEmail({
       to,
       subject: `Your Goldfinch trip portal — ${String(b.booking_code ?? '')}`,
-      html: emailLayout(
-        `Hi ${name}, here's your trip portal`,
-        `<p>You can view <strong>${tripTitle}</strong>, see your itinerary and payment balance, and message your specialist any time — no password needed.</p>
-         <p style="font-size:13px;color:#8a948f">This secure link is just for you. Please don't forward it.</p>`,
-        { label: 'Open my trip', url }
+      // The name comes from the traveller's own form entry: escaped like everything else.
+      html: await emailLayout(
+        `Hi ${escapeHtml(name)}, here's your trip portal`,
+        `<p style="margin:0 0 14px">You can view <strong>${escapeHtml(tripTitle)}</strong>, see your itinerary and payment balance, and message your specialist any time — no password needed.</p>
+         <p style="margin:0;font-size:13px;color:${EMAIL_COLORS.muted}">This secure link is just for you. Please don't forward it.</p>`,
+        { label: 'Open my trip', url: escapeHtml(url) },
+        { audience: 'traveller', preheader: `Your itinerary, balance and specialist for ${tripTitle} — in one place.` }
       ),
       text: `Hi ${name}, open your Goldfinch trip portal here: ${url}`
     });

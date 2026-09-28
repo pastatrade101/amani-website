@@ -100,24 +100,7 @@ export const escapeHtml = (value: unknown): string =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-// A minimal, on-brand HTML shell so transactional emails look consistent.
-export const emailLayout = (heading: string, bodyHtml: string, cta?: { label: string; url: string }): string => `
-  <div style="margin:0;background:#f4f6f4;padding:24px;font-family:Inter,Arial,sans-serif;color:#18211f">
-    <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e6ebe7">
-      <div style="background:#0f2f24;padding:20px 28px">
-        <span style="color:#d9a441;font-weight:800;font-size:18px;letter-spacing:.3px">Goldfinch Adventures</span>
-      </div>
-      <div style="padding:28px">
-        <h1 style="margin:0 0 12px;font-size:20px;color:#0f2f24">${heading}</h1>
-        <div style="font-size:15px;line-height:1.6;color:#384540">${bodyHtml}</div>
-        ${
-          cta
-            ? `<a href="${cta.url}" style="display:inline-block;margin-top:20px;background:#0f2f24;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:10px">${cta.label}</a>`
-            : ''
-        }
-      </div>
-      <div style="padding:16px 28px;border-top:1px solid #e6ebe7;font-size:12px;color:#8a948f">
-        Goldfinch Adventures · East Africa travel specialists
-      </div>
-    </div>
-  </div>`;
+// The branded shell lives in email-layout.ts; re-exported so every sender keeps
+// importing it from here.
+export { emailCaption, emailDetails, emailLayout, loadEmailBrand, EMAIL_COLORS } from './email-layout';
+export type { EmailAudience, EmailDetail, EmailLayoutOptions } from './email-layout';

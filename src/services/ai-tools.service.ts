@@ -336,6 +336,11 @@ export const createBookingRequest = async (input: Record<string, unknown>, ctx: 
     .update({ booking_request_id: (created as { id: string }).id, lead_status: 'qualified', status: 'booking_request_created' })
     .eq('id', conversationId);
 
+  // Fire-and-forget, like every other form: the request is saved either way.
+  void import('./notification.service')
+    .then(({ notifyAiBookingRequest }) => notifyAiBookingRequest(insertPayload))
+    .catch(() => undefined);
+
   return { success: true, output: { booking_request_id: (created as { id: string }).id, status: 'pending_review' } };
 };
 

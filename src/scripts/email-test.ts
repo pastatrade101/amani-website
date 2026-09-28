@@ -28,7 +28,7 @@ const run = async () => {
   const ok = await sendEmail({
     to,
     subject: 'Goldfinch email test ✅',
-    html: emailLayout('Email is working', '<p>Your Goldfinch transactional email is configured correctly.</p>'),
+    html: await emailLayout('Email is working', '<p style="margin:0">Your Goldfinch transactional email is configured correctly. This is how travellers see every message from the website.</p>'),
     text: 'Your Goldfinch transactional email is configured correctly.'
   });
 

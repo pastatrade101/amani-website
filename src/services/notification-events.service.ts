@@ -13,7 +13,7 @@ import {
   resolveConversation,
   upsertContact
 } from './whatsapp-inbox.service';
-import { emailLayout, escapeHtml, isEmailConfigured, sendEmail } from './email.service';
+import { emailLayout, escapeHtml, isEmailConfigured, sendEmail, type EmailAudience } from './email.service';
 import { recipientFor } from './notification.service';
 
 /**
@@ -399,7 +399,11 @@ const deliverWhatsApp = async (event: NotificationEvent): Promise<Outcome> => {
  * Deliver over email, through the Resend/SMTP transport the platform already
  * uses. Everything the caller supplied is plain text and is escaped here.
  */
-const deliverEmail = async (to: string | null | undefined, content: EmailContent | undefined): Promise<Outcome> => {
+const deliverEmail = async (
+  to: string | null | undefined,
+  content: EmailContent | undefined,
+  audience: EmailAudience = 'traveller'
+): Promise<Outcome> => {
   if (!content) return { status: 'skipped', detail: 'No email content supplied for this event.' };
   if (!isEmailConfigured()) return { status: 'skipped', detail: 'Email is not configured.' };
   if (!to || !to.includes('@')) return { status: 'skipped', detail: 'No email address for this recipient.' };
@@ -416,7 +420,7 @@ const deliverEmail = async (to: string | null | undefined, content: EmailContent
       to,
       replyTo: content.replyTo,
       subject: content.subject,
-      html: emailLayout(escapeHtml(content.heading), body, cta),
+      html: await emailLayout(escapeHtml(content.heading), body, cta, { audience }),
       text: `${content.heading}\n\n${content.lines.join('\n\n')}${content.cta ? `\n\n${content.cta.label}: ${content.cta.url}` : ''}`
     });
 
@@ -432,13 +436,13 @@ const deliver = async (event: NotificationEvent, channel: Channel): Promise<Outc
     // Marketing by email needs a consent record the platform does not keep yet,
     // so it is refused rather than assumed.
     if (event.marketing) return { status: 'skipped', detail: 'Email marketing consent is not tracked yet.' };
-    return deliverEmail(event.email, event.emailContent);
+    return deliverEmail(event.email, event.emailContent, 'traveller');
   }
 
   // The team's copy. Routed through the same setting that already decides
   // where enquiries land, so there is one inbox to configure, not two.
   const recipient = await recipientFor(event.type.toLowerCase());
-  return deliverEmail(recipient, event.staffEmailContent);
+  return deliverEmail(recipient, event.staffEmailContent, 'staff');
 };
 
 /**
