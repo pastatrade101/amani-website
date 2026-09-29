@@ -16,6 +16,7 @@ export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
 		apiGet<Paginated<Tour>>(`tours?${query}`, fetch)
 	]);
 	return {
+		siteOrigin: url.origin,
 		sections: mergeSections(homepage.status === 'fulfilled' && Array.isArray(homepage.value) ? homepage.value : []),
 		destinations: destinations.status === 'fulfilled' ? destinations.value.items.filter((item) => !item.country || item.country.toLowerCase() === 'tanzania') : referenceDestinations,
 		activities: activities.status === 'fulfilled' ? activities.value.items : referenceActivities,

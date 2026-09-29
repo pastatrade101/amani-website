@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Menu, ArrowRight, ArrowUpRight, Search, Compass, Map, CalendarDays, Route, MessageCircle, Palmtree } from '@lucide/svelte';
+	import { siteInfo } from '$lib/site-info';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import * as NavigationMenu from '$lib/components/ui/navigation-menu/index.js';
@@ -35,7 +36,7 @@
 		...(visible.includes('safari_packages') ? [{ label: 'Explore safari packages', description: 'Find an itinerary to make your own.', href: '#tanzania-safari-packages', icon: Route }] : []),
 		...(visible.includes('when_to_go') ? [{ label: 'When to visit', description: 'Find the season that suits your journey.', href: '#when-to-go', icon: CalendarDays }] : []),
 		...(visible.includes('destinations') ? [{ label: 'Where to go', description: 'Get to know Tanzania’s wild places.', href: '#destinations', icon: Map }] : []),
-		...(visible.includes('enquiry') ? [{ label: 'Talk to our local team', description: 'Let’s start with your safari ideas.', href: '#request-quote', icon: MessageCircle, Palmtree }] : [])
+		...(visible.includes('enquiry') ? [{ label: 'Talk to our local team', description: 'Let’s start with your safari ideas.', href: '#request-quote', icon: MessageCircle }] : [])
 	]);
 	let navigation = $derived(navItems.filter((item) => item.id === 'plan' ? links.length > 0 : item.id === 'zanzibar' ? visible.includes('enquiry') : visible.includes(item.id)));
 	let enquiryHref = $derived(visible.includes('enquiry') ? '#request-quote' : visible.includes('experiences') ? '#experiences' : '#destinations');
@@ -45,9 +46,9 @@
 
 <header class="site-header">
 	<div class="header-shell">
-		<a href="/" class="flex shrink-0 items-center gap-3 text-primary" aria-label="Amani Safaris home">
+		<a href="/" class="flex shrink-0 items-center gap-3 text-primary" aria-label={`${siteInfo.brand} home`}>
 			<span class="grid size-10 place-items-center rounded-full border-2 border-sun"><Compass class="size-5" strokeWidth={1.5} /></span>
-			<span class="leading-none"><span class="block text-[17px] font-bold">Amani</span><span class="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-primary/65">Safaris</span></span>
+			<span class="leading-none"><span class="block text-[17px] font-bold">Key2africa</span><span class="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-primary/65">Safaris</span></span>
 		</a>
 		<NavigationMenu.Root value={menu} onValueChange={(value) => menu = value} viewport={false} class="desktop-navigation" aria-label="Main navigation">
 			<NavigationMenu.List class="gap-1">
@@ -65,7 +66,7 @@
 										<div class="menu-heading"><p class="menu-eyebrow">EXPERIENCE TANZANIA</p><h2>What moves you?</h2></div>
 										<div class="experience-links">
 											{#each experienceGroups as group}
-												<NavigationMenu.Link href={enquiryHref} onclick={() => choose(group.title)} class="experience-link">
+												<NavigationMenu.Link data-motion-hover="card" href={enquiryHref} onclick={() => choose(group.title)} class="experience-link">
 													<img src={group.image} alt="" /><span><strong>{group.title}</strong><small>{group.description}</small></span><ArrowUpRight class="menu-arrow size-4" />
 												</NavigationMenu.Link>
 											{/each}
@@ -104,7 +105,7 @@
 			<Sheet.Trigger class="mobile-navigation rounded-md p-2" aria-label="Open navigation"><Menu class="size-6" /></Sheet.Trigger>
             <Sheet.Content side="right" class="mobile-menu-panel">
                 <Sheet.Header class="mobile-menu-header">
-                    <div class="mobile-brand"><span><Compass class="size-5" strokeWidth={1.5} /></span><div><Sheet.Title class="text-base font-semibold">Amani Safaris</Sheet.Title><Sheet.Description class="mt-1 text-[11px]">Your Tanzania. Your way.</Sheet.Description></div></div>
+                    <div class="mobile-brand"><span><Compass class="size-5" strokeWidth={1.5} /></span><div><Sheet.Title class="text-base font-semibold">{siteInfo.brand}</Sheet.Title><Sheet.Description class="mt-1 text-[11px]">Your Tanzania. Your way.</Sheet.Description></div></div>
                 </Sheet.Header>
                 <div class="mobile-menu-scroll">
                     <p class="mobile-menu-eyebrow">LET THE EXPLORING BEGIN</p>
@@ -115,10 +116,10 @@
                                 <Accordion.Content class="mobile-section-content">
                                     <div class="mobile-menu-links">
                                         {#if item.id === 'experiences'}
-                                            {#each activities as activity}<a class="mobile-menu-link" href={enquiryHref} onclick={() => choose(activity.name)}><img src={safeUrl(activity.image_url_thumbnail || activity.image_url || activity.hero_image_url, '/images/safari-hero.jpg')} alt="" /><span>{activity.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
+                                            {#each activities as activity}<a data-motion="reveal" class="mobile-menu-link" href={enquiryHref} onclick={() => choose(activity.name)}><img src={safeUrl(activity.image_url_thumbnail || activity.image_url || activity.hero_image_url, '/images/safari-hero.jpg')} alt="" /><span>{activity.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
                                             <a class="mobile-menu-link mobile-view-all" href="#experiences" onclick={closeMenu}>View all experiences <ArrowRight class="size-4" /></a>
                                         {:else if item.id === 'destinations'}
-                                            {#each destinations.slice(0, 8) as destination}<a class="mobile-menu-link" href={enquiryHref} onclick={() => choose(destination.name)}><img src={safeUrl(destination.main_image_url_thumbnail || destination.image_url_thumbnail || destination.main_image_url || destination.image_url, '/images/serengeti.jpg')} alt="" /><span>{destination.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
+                                            {#each destinations.slice(0, 8) as destination}<a data-motion="reveal" class="mobile-menu-link" href={enquiryHref} onclick={() => choose(destination.name)}><img src={safeUrl(destination.main_image_url_thumbnail || destination.image_url_thumbnail || destination.main_image_url || destination.image_url, '/images/serengeti.jpg')} alt="" /><span>{destination.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
                                             <a class="mobile-menu-link mobile-view-all" href="#destinations" onclick={closeMenu}>Explore all destinations <ArrowRight class="size-4" /></a>
                                         {:else if item.id === 'zanzibar'}
                                             {#each islandIdeas as idea}<a class="mobile-menu-link mobile-idea-link" href={enquiryHref} onclick={() => choose(idea.title)}><span>{idea.title}<small>{idea.description}</small></span><ArrowUpRight class="size-3.5" /></a>{/each}

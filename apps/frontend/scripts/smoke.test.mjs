@@ -62,6 +62,16 @@ test('built frontend matches the Express contracts and fails safely', { timeout:
     assert.ok(ready, logs);
     const html = await (await fetch(origin)).text();
     assert.ok(html.includes('Live Tanzania Adventures'));
+    assert.ok(html.includes('<title>Live Tanzania Adventures | Key2africa Tours and Safaris ltd</title>'));
+    assert.ok(html.includes('Key2africa Safaris home'));
+    assert.ok(!html.includes('Amani Safaris'));
+    const schemaMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+    assert.ok(schemaMatch, 'Search metadata is server-rendered');
+    const schema = JSON.parse(schemaMatch[1]);
+    assert.equal(schema['@graph'][0].name, 'Key2africa Tours and Safaris ltd');
+    assert.equal(schema['@graph'][0].url, `${origin}/`);
+    assert.equal(schema['@graph'][1].legalName, 'Key2africa Tours and Safaris ltd');
+    assert.ok(!/<[^>]*data-motion=[^>]*style="[^"]*opacity:\s*0/.test(html), 'Content remains visible without JavaScript');
     assert.ok(html.includes('Live API Safari'));
     assert.ok(html.includes('$900'));
     assert.ok(!html.includes('id="when-to-go"'), 'Disabled CMS section stays hidden');

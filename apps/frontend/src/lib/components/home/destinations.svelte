@@ -8,7 +8,7 @@
 	let available = $derived(circuits.filter((circuit) => circuit.id !== 'other' || items.some((item) => circuitFor(item) === 'other')));
 </script>
 <section id="destinations" class="page-container py-14 md:py-20">
-	<div class="mx-auto max-w-2xl text-center"><p class="text-xs font-semibold uppercase tracking-[.2em] text-[#111111]">{section.subtitle}</p><h2 class="section-heading mt-3">{section.title}</h2><p class="mt-4 text-sm leading-relaxed text-muted-foreground md:text-base">{textContent(section.content)}</p></div>
+	<div data-motion="reveal" class="mx-auto max-w-2xl text-center"><p class="text-xs font-semibold uppercase tracking-[.2em] text-[#111111]">{section.subtitle}</p><h2 class="section-heading mt-3">{section.title}</h2><p class="mt-4 text-sm leading-relaxed text-muted-foreground md:text-base">{textContent(section.content)}</p></div>
 	<Tabs.Root value="northern" class="mt-8">
 		<div class="circuit-tabs-scroll"><Tabs.List class="circuit-tabs" aria-label="Tanzania safari regions">
 			{#each available as circuit}<Tabs.Trigger value={circuit.id} class="circuit-tab">{circuit.label}</Tabs.Trigger>{/each}
@@ -18,7 +18,7 @@
 				<div class="destination-grid">
 					{#each items.filter((item) => circuitFor(item) === circuit.id).slice(0, 6) as item, index}
 						{@const href = !reference && showPackages ? `/?destination_id=${encodeURIComponent(item.id)}#tanzania-safari-packages` : canEnquire ? '#request-quote' : '#destinations'}
-						<a {href} onclick={() => { if (reference) onInterest(item.name); }} class={`destination-cell cell-${index} group relative block min-h-60 overflow-hidden rounded-2xl bg-navy`}>
+						<a data-motion="card" data-motion-hover="card" {href} onclick={() => { if (reference) onInterest(item.name); }} class={`destination-cell cell-${index} group relative block min-h-60 overflow-hidden rounded-2xl bg-navy`}>
 							<img src={safeUrl(item.main_image_url_thumbnail || item.image_url_thumbnail || item.main_image_url || item.image_url || item.banner_image_url, '/images/safari-hero.jpg')} alt={item.name} loading="lazy" class="absolute inset-0 size-full object-cover transition-transform duration-[350ms] ease-out group-hover:scale-[1.04] motion-reduce:transition-none" />
 							<div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/10 to-transparent"></div>
 							<div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 text-white"><div><div class="gold-line w-8"></div><h3 class="mt-3 text-lg font-bold">{item.name}</h3><p class="mt-1.5 line-clamp-2 text-xs leading-5 text-white/85">{textContent(item.short_description || item.description)}</p></div><span class="grid size-8 shrink-0 place-items-center rounded-full bg-sun text-navy"><ArrowUpRight class="size-4" /></span></div>

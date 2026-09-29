@@ -1,4 +1,4 @@
-# Amani frontend
+# Key2africa Safaris frontend
 
 SvelteKit with TypeScript, Svelte 5, Tailwind CSS 4, shadcn-svelte, and the Node adapter. The start page adapts the supplied Tanzania safari UI and local photo assets to the existing Express API.
 

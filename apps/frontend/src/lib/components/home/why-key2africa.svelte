@@ -10,17 +10,17 @@
 		{ icon: Route, title: 'Room for a little more', text: 'From the Serengeti plains to the shores of Zanzibar, make the journey your own.' }
 	];
 </script>
-<section id="why-amani" class="why-section">
+<section id="why-key2africa" class="why-section">
 	<div class="page-container why-grid">
-		<div class="why-photos">
+		<div data-motion="image" class="why-photos">
 			<img class="main-photo" src={safeUrl(section.image_url, '/images/activity-bush-lunch.jpg')} alt="A table set for an intimate lunch in the Tanzanian wilderness" loading="lazy" />
 			<img class="detail-photo" src="/images/itinerary-elephants.jpg" alt="Elephants in Tanzania’s wild landscape" loading="lazy" />
 			<div class="photo-note"><Compass class="size-6" strokeWidth={1.4} /><span>A little closer<br /><strong>to the extraordinary.</strong></span></div>
 		</div>
 		<div class="why-copy">
-			<p class="eyebrow">{section.subtitle}</p><h2 class="section-heading mt-4">{section.title}</h2>
-			<p class="section-description mt-5">{textContent(section.content)}</p>
-			<div class="reason-list">{#each reasons as reason}<div class="reason"><span class="reason-icon"><reason.icon class="size-5" strokeWidth={1.6} /></span><div><h3>{reason.title}</h3><p>{reason.text}</p></div></div>{/each}</div>
+			<p class="eyebrow">{section.subtitle}</p><h2 data-motion="reveal" class="section-heading mt-4">{section.title}</h2>
+			<p data-motion="reveal" data-motion-delay="0.08" class="section-description mt-5">{textContent(section.content)}</p>
+			<div class="reason-list">{#each reasons as reason}<div data-motion="reveal" class="reason"><span class="reason-icon"><reason.icon class="size-5" strokeWidth={1.6} /></span><div><h3>{reason.title}</h3><p>{reason.text}</p></div></div>{/each}</div>
 			{#if canEnquire}<Button variant="safari" href={safeUrl(section.button_url)} class="mt-7 h-12 px-6">{section.button_text || 'Plan my safari'} <ArrowRight class="size-4" /></Button>{/if}
 		</div>
 	</div>

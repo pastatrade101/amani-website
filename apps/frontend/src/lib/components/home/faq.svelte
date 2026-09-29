@@ -12,8 +12,8 @@
 	];
 </script>
 <section id="safari-questions" class="page-container faq-section">
-	<div><p class="eyebrow text-muted-foreground">{section.subtitle}</p><h2 class="section-heading mt-4">{section.title}</h2><p class="section-description mt-5">{textContent(section.content)}</p>{#if canEnquire}<a href="#request-quote" class="mt-6 inline-flex items-center gap-2 text-sm font-semibold">Ask our local team <ArrowUpRight class="size-4" /></a>{/if}</div>
-	<Accordion.Root type="single" class="faq-list">{#each questions as item, i}<Accordion.Item value={`question-${i}`}><Accordion.Trigger class="py-6 text-left text-sm font-semibold hover:no-underline">{item.question}</Accordion.Trigger><Accordion.Content class="pr-8 pb-6 text-[13px] leading-7 text-muted-foreground">{item.answer}</Accordion.Content></Accordion.Item>{/each}</Accordion.Root>
+	<div data-motion="reveal"><p class="eyebrow text-muted-foreground">{section.subtitle}</p><h2 class="section-heading mt-4">{section.title}</h2><p class="section-description mt-5">{textContent(section.content)}</p>{#if canEnquire}<a href="#request-quote" class="mt-6 inline-flex items-center gap-2 text-sm font-semibold">Ask our local team <ArrowUpRight class="size-4" /></a>{/if}</div>
+	<Accordion.Root data-motion="reveal" type="single" class="faq-list">{#each questions as item, i}<Accordion.Item value={`question-${i}`}><Accordion.Trigger class="py-6 text-left text-sm font-semibold hover:no-underline">{item.question}</Accordion.Trigger><Accordion.Content class="pr-8 pb-6 text-[13px] leading-7 text-muted-foreground">{item.answer}</Accordion.Content></Accordion.Item>{/each}</Accordion.Root>
 </section>
 <style>
 	.faq-section { display: grid; grid-template-columns: .8fr 1.2fr; align-items: start; gap: 100px; padding-block: 85px; }

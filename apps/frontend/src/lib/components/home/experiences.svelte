@@ -12,10 +12,10 @@
 </script>
 <section id="experiences" class="experience-section">
 	<div class="page-container">
-		<div class="experience-heading"><div><p class="eyebrow text-muted-foreground">{section.subtitle}</p><h2 class="section-heading mt-4">{section.title}</h2></div><div class="experience-intro"><p class="section-description">{textContent(section.content)}</p>{#if pageCount > 1}<div class="mt-5 flex gap-2"><Button variant="outline" size="icon" onclick={() => step(-1)} aria-label="Previous experiences" class="size-10 rounded-full bg-transparent"><ChevronLeft class="size-4" /></Button><Button variant="outline" size="icon" onclick={() => step(1)} aria-label="Next experiences" class="size-10 rounded-full bg-transparent"><ChevronRight class="size-4" /></Button></div>{/if}</div></div>
+		<div data-motion="reveal" class="experience-heading"><div><p class="eyebrow text-muted-foreground">{section.subtitle}</p><h2 class="section-heading mt-4">{section.title}</h2></div><div class="experience-intro"><p class="section-description">{textContent(section.content)}</p>{#if pageCount > 1}<div class="mt-5 flex gap-2"><Button variant="outline" size="icon" onclick={() => step(-1)} aria-label="Previous experiences" class="size-10 rounded-full bg-transparent"><ChevronLeft class="size-4" /></Button><Button variant="outline" size="icon" onclick={() => step(1)} aria-label="Next experiences" class="size-10 rounded-full bg-transparent"><ChevronRight class="size-4" /></Button></div>{/if}</div></div>
 		<div class="experience-grid">
 			{#each shown as item (item.id)}
-				<article class="experience-card group">
+				<article data-motion="card" data-motion-hover="card" class="experience-card group">
 					<img src={safeUrl(item.image_url_thumbnail || item.hero_image_url_thumbnail || item.image_url || item.hero_image_url, '/images/safari-hero.jpg')} alt={item.name} loading="lazy" />
 					<div class="experience-copy"><span class="experience-line"></span><h3>{item.name}</h3><p>{textContent(item.description)}</p>{#if canEnquire}<a href="#request-quote" onclick={() => onInterest(item.name)} aria-label={`Explore ${item.name}`} class="experience-cta">Explore this experience <span><ArrowUpRight class="size-4" /></span></a>{/if}</div>
 				</article>

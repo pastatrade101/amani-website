@@ -1,4 +1,4 @@
-# Amani frontend integration
+# Key2africa frontend integration
 
 The Svelte start page at `/` adapts `TanzaniaSafariPage.tsx` and the photos from the supplied `tanzania-safari-pages.zip`. `/tanzania-safari` redirects to `/`, preserving search parameters. The supplied tour detail design is a reference for future detail pages; this change implements the start page.
 
@@ -25,7 +25,7 @@ The SvelteKit enquiry action validates input and forwards only the contact schem
 
 `hero`, `why_us`, `experiences`, `destinations`, `safari_packages`, `when_to_go`, `how_it_works`, `faq`, and `enquiry` map to the page sections. Existing `sort_order` controls their order. An `is_active: false` marker hides its section and related navigation. Unknown section keys remain untouched by this frontend.
 
-Hero and section copy fall back to the reference design where a section has no CMS record. The seasonal cards are editorial reference content in `src/lib/data/reference.ts`; the `when_to_go` section controls their heading, introductory text, order and visibility. The Amani brand label is currently frontend copy.
+Hero and section copy fall back to the reference design where a section has no CMS record. The seasonal cards are editorial reference content in `src/lib/data/reference.ts`; the `when_to_go` section controls their heading, introductory text, order and visibility. Brand and company names live in `src/lib/site-info.ts`. The footer, title, description, Open Graph metadata and WebSite/Organization structured data identify Key2africa Tours and Safaris ltd. Website URLs derive from the request origin; configure the production `ORIGIN` correctly when deploying.
 
 When a content endpoint is unreachable, destination and activity imagery fall back to the supplied ZIP's reference copy. A **successful empty response stays empty**, so unpublished content is not repopulated with fixtures. Tours have no sample prices or fabricated live inventory. The page offers an enquiry when tours cannot be loaded. Backend credentials are required for live content and enquiry storage.
 
@@ -35,9 +35,17 @@ When a content endpoint is unreachable, destination and activity imagery fall ba
 - `src/lib/server/api.ts`: private API client with timeouts and failure handling.
 - `src/lib/home-content.ts`: CMS merging, safe links, circuit grouping and validated search filters.
 - `src/lib/data/reference.ts`: supplied editorial data, with backend-shaped fallback records.
-- `src/lib/components/home/`: header/mega menu, hero, search, Amani approach, experiences, destinations, seasons, planning steps, FAQ, enquiry form, and footer.
+- `src/lib/components/home/`: header/mega menu, hero, search, Key2africa approach, experiences, destinations, seasons, planning steps, FAQ, enquiry form, and footer.
 - `src/lib/components/ui/`: generated shadcn-svelte components.
 - `src/routes/layout.css`: reference navy/yellow theme and locally bundled Poppins fonts.
 - `static/images/`: photos supplied in the ZIP.
 
 The planning steps and FAQ answers are local editorial copy. Their section headings, order and visibility use the existing homepage CMS contract; no backend migration is needed. The footer only links to implemented sections and does not invent contact details or social accounts.
+
+## Motion and search identity
+
+`src/lib/motion/site-motion.ts` uses Framer Motion's framework-independent `framer-motion/dom` entry point, without React. The root layout owns its lifecycle. Add `data-motion="reveal"`, `"card"`, `"image"`, or `"line"` to opt into scroll reveals; `data-motion-hover="card"` and `"button"` add hover/focus feedback. Hero words and slide crossfades have dedicated presets. Timing and easing are centralized in `motionTokens`.
+
+Reveals run once per mounted element, including newly mounted destination tabs and menu content. Reduced-motion preferences, keyboard focus, print, and no-JavaScript rendering keep content visible. Observers and animations are disposed when their elements or layout unmount.
+
+The full company name is provided in the footer, document title, description, Open Graph site name, and WebSite/Organization JSON-LD. Google chooses its displayed site name after crawling a deployed public site; a Git push does not update search results by itself. See [Google's site-name guidance](https://developers.google.com/search/docs/appearance/site-names) and [Motion's JavaScript API](https://motion.dev/docs/animate).

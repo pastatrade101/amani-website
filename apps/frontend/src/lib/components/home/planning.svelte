@@ -12,9 +12,9 @@
 </script>
 <section id="how-it-works" class="planning-section">
 	<div class="page-container">
-		<div class="planning-heading"><div><p class="eyebrow text-muted-foreground">{section.subtitle}</p><h2 class="section-heading mt-4">{section.title}</h2></div><p class="section-description">{textContent(section.content)}</p></div>
-		<div class="steps">{#each steps as step}<article><div class="step-top"><span class="step-icon"><step.icon class="size-6" strokeWidth={1.5} /></span><span class="step-number">{step.number}</span></div><h3>{step.title}</h3><p>{step.description}</p></article>{/each}</div>
-		{#if canEnquire}<div class="planning-cta"><span>Your next great story starts with a conversation.</span><Button variant="safari" href={safeUrl(section.button_url)} class="h-12 px-6">{section.button_text || 'Start planning my safari'} <ArrowRight class="size-4" /></Button></div>{/if}
+		<div data-motion="reveal" class="planning-heading"><div><p class="eyebrow text-muted-foreground">{section.subtitle}</p><h2 class="section-heading mt-4">{section.title}</h2></div><p class="section-description">{textContent(section.content)}</p></div>
+		<div class="steps">{#each steps as step}<article data-motion="card" data-motion-hover="card"><div class="step-top"><span class="step-icon"><step.icon class="size-6" strokeWidth={1.5} /></span><span class="step-number">{step.number}</span></div><h3>{step.title}</h3><p>{step.description}</p></article>{/each}</div>
+		{#if canEnquire}<div data-motion="reveal" class="planning-cta"><span>Your next great story starts with a conversation.</span><Button variant="safari" href={safeUrl(section.button_url)} class="h-12 px-6">{section.button_text || 'Start planning my safari'} <ArrowRight class="size-4" /></Button></div>{/if}
 	</div>
 </section>
 <style>

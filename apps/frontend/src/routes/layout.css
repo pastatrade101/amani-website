@@ -175,3 +175,17 @@
 }
 @media (min-width: 768px) { .page-container { padding-inline: 2rem; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+
+/* Motion is progressive enhancement: content is visible before JavaScript and in print. */
+[data-motion="line"] { transform-origin: left center; }
+[data-motion-hover="card"] { transition: box-shadow 250ms ease-out; }
+[data-motion-hover="card"]:hover { box-shadow: 0 18px 35px -22px rgb(15 35 55 / .3); }
+[data-slot="button"] svg { transition: translate 180ms ease-out; }
+a[data-slot="button"]:hover svg:last-child { translate: 2px 0; }
+@media (prefers-reduced-motion: reduce) {
+  [data-motion]:not([data-motion="hero-image"]), [data-motion-word] { opacity: 1 !important; transform: none !important; }
+  [data-motion-hover], [data-slot="button"] svg { transform: none !important; translate: none !important; }
+}
+@media print {
+  [data-motion]:not([data-motion="hero-image"]), [data-motion-word] { opacity: 1 !important; transform: none !important; }
+}
