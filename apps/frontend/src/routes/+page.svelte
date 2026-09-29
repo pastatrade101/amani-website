@@ -94,7 +94,7 @@
 				</div>
 			</section>
 		{:else if section.section_key === 'when_to_go'}
-			<Seasons {section} />
+			<Seasons {section} seasons={data.seasons} />
 		{:else if section.section_key === 'enquiry'}
 			<Enquiry {section} {form} {interest} />
 		{/if}

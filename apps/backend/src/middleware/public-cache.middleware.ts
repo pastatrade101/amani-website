@@ -45,6 +45,7 @@ const PUBLIC_PREFIXES = [
   '/api/specialists',
   '/api/faqs',
   '/api/homepage',
+  '/api/seasons',
   '/api/public',
   '/api/branding',
   '/api/reviews',

@@ -31,6 +31,7 @@
     '/admin/testimonials': 'Testimonials',
     '/admin/faqs': 'FAQs',
     '/admin/homepage': 'Homepage',
+    '/admin/seasons': 'Seasons',
     '/admin/messages': 'Messages',
     '/admin/branding': 'Branding',
     '/admin/settings': 'Settings',

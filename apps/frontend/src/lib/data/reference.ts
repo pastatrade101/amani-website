@@ -67,29 +67,6 @@ export const circuits = [
 
 export const referenceDestinations: Destination[] = circuits.flatMap((circuit) => circuit.items.map((item) => ({ id: `reference-${slug(item.title)}`, name: item.title, slug: slug(item.title), country: "Tanzania", region: circuit.label, short_description: item.text, image_url: item.image })));
 
-export const seasons = [
-  { title: "GREEN SEASON", dates: "January – March", icon: "Leaf", bg: "bg-[#F3F9F4]", iconCls: "text-[#4F8A5B]",
-    text: "The landscape is lush and green with beautiful scenery. It's a quieter time to travel with fewer crowds and excellent photography opportunities.",
-    pros: ["Lush green landscapes","Beautiful scenery","Fewer crowds","Great photography opportunities","Lower prices"],
-    cons: ["More rain, especially in March","Some lodges may be closed","Wildlife can be more dispersed","Some roads can be challenging"],
-    best: "Green landscapes, photography and fewer crowds" },
-  { title: "LONG RAINS", dates: "April – May", icon: "CloudRain", bg: "bg-[#F1F6FC]", iconCls: "text-[#3B78B5]",
-    text: "This is the long rainy season with heavier and more frequent rains. The landscapes are at their greenest, with dramatic skies and fewer tourists.",
-    pros: ["Lush, beautiful landscapes","Very few tourists","Lower prices","Excellent bird watching"],
-    cons: ["Heavier and more frequent rains","Some lodges may be closed","Game viewing can be more challenging","Some roads may be difficult"],
-    best: "Budget travelers, bird watching and lush scenery" },
-  { title: "DRY SEASON (PEAK)", dates: "June – October", icon: "Sun", bg: "bg-[#FFFAE8]", iconCls: "text-[#D9A900]",
-    text: "This is a popular time for safari, with dry weather, excellent wildlife viewing and opportunities to follow the Great Migration in the northern Serengeti.",
-    pros: ["Excellent wildlife viewing","Great Migration opportunities","Little to no rain","Clear skies and beautiful weather"],
-    cons: ["More tourists","Higher prices","Popular lodges can be fully booked","Parks can be busier"],
-    best: "Great Migration, river crossings and excellent game viewing" },
-  { title: "SHORT RAINS", dates: "November – December", icon: "Leaf", bg: "bg-[#F3F9F4]", iconCls: "text-[#4F8A5B]",
-    text: "Short rains bring a fresh, green landscape and fewer crowds. Wildlife viewing remains good, and it's a great time to combine a safari with a beach holiday in Zanzibar.",
-    pros: ["Landscapes turn green again","Fewer crowds","Great bird watching","Good wildlife viewing","Perfect for combining safari and beach"],
-    cons: ["Short rains, usually in the afternoons","Some roads can be muddy","Wildlife can be more spread out"],
-    best: "Fewer crowds, green landscapes and bird watching" },
-];
-
 export const heroSlides = [
 { src: "/images/tanzania-safari-hero.jpg", alt: "Elephants on the savannah beside a safari vehicle" },
 { src: "/images/tanzania-hero-2.jpg", alt: "Lions on a rocky kopje in the Serengeti" },

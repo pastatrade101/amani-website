@@ -3,17 +3,19 @@ import { apiGet, apiRequest, ApiError } from '$lib/server/api';
 import { mergeSections, tourFilters } from '$lib/home-content';
 import { referenceActivities, referenceDestinations } from '$lib/data/reference';
 import type { Activity, Category, Destination, HomepageSection, Paginated, Tour } from '$lib/types/api';
+import { fallbackSeasons, type Season } from '$lib/seasons';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
 	setHeaders({ 'cache-control': 'no-store' });
 	const { filters, query } = tourFilters(url.searchParams);
-	const [homepage, destinations, activities, categories, tours] = await Promise.allSettled([
+	const [homepage, destinations, activities, categories, tours, seasons] = await Promise.allSettled([
 		apiGet<HomepageSection[]>('homepage', fetch),
 		apiGet<Paginated<Destination>>('destinations?status=published&limit=100', fetch),
 		apiGet<Paginated<Activity>>('activities?status=published&limit=12', fetch),
 		apiGet<Paginated<Category>>('categories?status=published&limit=100', fetch),
-		apiGet<Paginated<Tour>>(`tours?${query}`, fetch)
+		apiGet<Paginated<Tour>>(`tours?${query}`, fetch),
+		apiGet<Paginated<Season>>('seasons?status=published&limit=24', fetch)
 	]);
 	return {
 		siteOrigin: url.origin,
@@ -22,6 +24,8 @@ export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
 		activities: activities.status === 'fulfilled' ? activities.value.items : referenceActivities,
 		categories: categories.status === 'fulfilled' ? categories.value.items : [],
 		tours: tours.status === 'fulfilled' ? tours.value.items : [],
+		// Built-in seasons only when the API is unreachable; an empty CMS list hides the cards.
+		seasons: seasons.status === 'fulfilled' ? seasons.value.items : fallbackSeasons,
 		tourTotal: tours.status === 'fulfilled' ? tours.value.pagination.total : 0,
 		page: Number(query.get('page')),
 		pageCount: tours.status === 'fulfilled' ? tours.value.pagination.totalPages : 1,

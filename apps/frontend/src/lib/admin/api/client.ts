@@ -582,6 +582,14 @@ export const api = {
     update: (id: string, body: Record<string, unknown>) => apiRequest(`/media/${id}`, { method: 'PUT', body }),
     remove: (id: string) => apiRequest(`/media/${id}`, { method: 'DELETE' })
   },
+  // Homepage "When should you go?" — the month strip and season cards.
+  seasons: {
+    list: (params?: Record<string, QueryValue>) => apiRequest<Paginated<Record<string, unknown>>>(`/seasons${queryString(params)}`),
+    get: (id: string) => apiRequest<Record<string, unknown>>(`/seasons/${id}`),
+    create: (body: Record<string, unknown>) => apiRequest('/seasons', { method: 'POST', body }),
+    update: (id: string, body: Record<string, unknown>) => apiRequest(`/seasons/${id}`, { method: 'PUT', body }),
+    remove: (id: string) => apiRequest(`/seasons/${id}`, { method: 'DELETE' })
+  },
   testimonials: {
     list: (params?: Record<string, QueryValue>) => apiRequest<Paginated<Testimonial>>(`/testimonials${queryString(params)}`),
     get: (id: string) => apiRequest<Record<string, unknown>>(`/testimonials/${id}`),
