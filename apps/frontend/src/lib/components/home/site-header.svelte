@@ -7,8 +7,12 @@
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import { safeUrl, circuitFor } from '$lib/home-content';
 	import type { Activity, Destination } from '$lib/types/api';
+	import { page } from '$app/state';
 
 	let open = $state(false);
+	// CMS branding from the root layout; empty keeps the built-in mark.
+	let logo = $derived(safeUrl(page.data.branding?.logo_url, ''));
+	let emblem = $derived(safeUrl(page.data.branding?.favicon_url, ''));
 	let menu = $state('');
 	let { visible, activities, destinations, onInterest }: { visible: string[]; activities: Activity[]; destinations: Destination[]; onInterest: (name: string) => void } = $props();
 	const navItems = [{ id: 'experiences', label: 'Experiences', icon: Compass }, { id: 'destinations', label: 'Destinations', icon: Map }, { id: 'zanzibar', label: 'Zanzibar', icon: Palmtree }, { id: 'plan', label: 'Plan your trip', icon: Route }];
@@ -47,8 +51,12 @@
 <header class="site-header">
 	<div class="header-shell">
 		<a href="/" class="flex shrink-0 items-center gap-3 text-primary" aria-label={`${siteInfo.brand} home`}>
-			<span class="grid size-10 place-items-center rounded-full border-2 border-sun"><Compass class="size-5" strokeWidth={1.5} /></span>
-			<span class="leading-none"><span class="block text-[17px] font-bold">Key2africa</span><span class="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-primary/65">Safaris</span></span>
+			{#if logo}
+				<img src={logo} alt={siteInfo.brand} class="site-logo" width="305" height="176" />
+			{:else}
+				<span class="grid size-10 place-items-center rounded-full border-2 border-sun"><Compass class="size-5" strokeWidth={1.5} /></span>
+				<span class="leading-none"><span class="block text-[17px] font-bold">Key2africa</span><span class="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-primary/65">Safaris</span></span>
+			{/if}
 		</a>
 		<NavigationMenu.Root value={menu} onValueChange={(value) => menu = value} viewport={false} class="desktop-navigation" aria-label="Main navigation">
 			<NavigationMenu.List class="gap-1">
@@ -105,7 +113,7 @@
 			<Sheet.Trigger class="mobile-navigation rounded-md p-2" aria-label="Open navigation"><Menu class="size-6" /></Sheet.Trigger>
             <Sheet.Content side="right" class="mobile-menu-panel">
                 <Sheet.Header class="mobile-menu-header">
-                    <div class="mobile-brand"><span><Compass class="size-5" strokeWidth={1.5} /></span><div><Sheet.Title class="text-base font-semibold">{siteInfo.brand}</Sheet.Title><Sheet.Description class="mt-1 text-[11px]">Your Tanzania. Your way.</Sheet.Description></div></div>
+                    <div class="mobile-brand"><span>{#if emblem}<img src={emblem} alt="" class="size-7 object-contain" />{:else}<Compass class="size-5" strokeWidth={1.5} />{/if}</span><div><Sheet.Title class="text-base font-semibold">{siteInfo.brand}</Sheet.Title><Sheet.Description class="mt-1 text-[11px]">Your Tanzania. Your way.</Sheet.Description></div></div>
                 </Sheet.Header>
                 <div class="mobile-menu-scroll">
                     <p class="mobile-menu-eyebrow">LET THE EXPLORING BEGIN</p>
@@ -203,6 +211,8 @@
     :global(.mobile-menu-panel) { display: flex; width: min(92vw,400px); flex-direction: column; gap: 0; padding: 0; overflow: hidden; background: white; }
     :global(.mobile-menu-header) { flex-shrink: 0; padding: 25px 22px; border-bottom: 1px solid var(--border); text-align: left; }
     .mobile-brand { display: flex; align-items: center; gap: 12px; }
+    .site-logo { display: block; width: auto; height: 64px; }
+    @media (max-width: 1099px) { .site-logo { height: 54px; } }
     .mobile-brand > span { display: grid; place-items: center; width: 42px; height: 42px; border: 1.5px solid var(--sun); border-radius: 50%; }
     .mobile-menu-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 24px 16px; }
     .mobile-menu-eyebrow { margin: 0 9px 16px; font-size: 9px; font-weight: 500; letter-spacing: .14em; color: var(--muted-foreground); }
