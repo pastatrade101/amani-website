@@ -72,6 +72,7 @@
 }
 
 :root {
+  --site-header-height: 86px;
   --radius: 0.625rem;
   --navy: oklch(0.3 0.07 252);
   --sun: oklch(0.86 0.168 95);
@@ -159,7 +160,7 @@
 }
 
 @layer base {
-  html { scroll-padding-top: 1.5rem; }
+  html { scroll-padding-top: calc(var(--site-header-height) + 1.5rem); }
   body { margin: 0; font-family: var(--font-sans); }
   button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
   button:not(:disabled), [role="tab"] { cursor: pointer; }
@@ -189,3 +190,5 @@ a[data-slot="button"]:hover svg:last-child { translate: 2px 0; }
 @media print {
   [data-motion]:not([data-motion="hero-image"]), [data-motion-word] { opacity: 1 !important; transform: none !important; }
 }
+
+@media (max-width: 1099px) { :root { --site-header-height: 76px; } }
