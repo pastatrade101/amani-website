@@ -5,6 +5,7 @@
   import { Input as CmsInput } from '$lib/components/ui/input';
   import * as CmsTable from '$lib/components/ui/table';
   import { Button as CmsButton } from '$lib/components/ui/button';
+  import * as CmsNativeSelect from '$lib/components/ui/native-select';
 
   import { onMount } from 'svelte';
   import {
@@ -15,6 +16,8 @@
     CloudSun,
     Edit,
     FileText,
+    Heading,
+    LayoutList,
     ListChecks,
     Palette,
     Plus,
@@ -40,16 +43,20 @@
   import LoadingState from '$lib/admin/components/public/LoadingState.svelte';
   import SeasonCard from '$lib/components/home/season-card.svelte';
   import {
+    GUIDE_ICONS,
     MONTHS,
     MONTH_SHORT,
+    QUICK_GUIDE_DEFAULTS,
     SEASON_ICONS,
     SEASON_TONES,
     UNASSIGNED_MONTH,
     coversMonth,
+    guideIcon,
     monthRange,
     monthStrip,
     seasonIcon,
     seasonTone,
+    type QuickGuideItem,
     type Season
   } from '$lib/seasons';
 
@@ -327,7 +334,126 @@
     return new Intl.DateTimeFormat('en', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
   };
 
-  onMount(loadSeasons);
+  // ── Section header & quick guide ──────────────────────────────────────────
+  // The homepage `when_to_go` row: heading copy + extra_data.quick_guide. Edited
+  // here so everything in "When should you go?" is managed from one screen.
+  type SectionTab = 'header' | 'guide';
+  const SECTION_TABS = [
+    ['header', Heading, 'Heading'],
+    ['guide', LayoutList, 'Quick guide']
+  ] as const;
+  const SECTION_HINTS: Record<SectionTab, string> = {
+    header: 'The label, heading and intro paragraph above the month strip.',
+    guide: 'The row of experiences under the season cards, and the note below it.'
+  };
+  const MAX_GUIDE = 8;
+  type SectionForm = { eyebrow: string; title: string; intro: string; guide_eyebrow: string; guide_title: string; footnote: string; items: QuickGuideItem[] };
+
+  let sectionRow: Record<string, unknown> | null = null;
+  let sectionOpen = false;
+  let savingSection = false;
+  let sectionTab: SectionTab = 'header';
+  let sectionBodyEl: HTMLDivElement;
+  let sectionForm: SectionForm = { eyebrow: '', title: '', intro: '', guide_eyebrow: '', guide_title: '', footnote: '', items: [] };
+
+  $: sectionStep = SECTION_TABS.findIndex(([key]) => key === sectionTab);
+  $: sectionExtra = (sectionRow?.extra_data ?? {}) as Record<string, unknown>;
+  $: guideCount = Array.isArray(sectionExtra.quick_guide) ? sectionExtra.quick_guide.length : QUICK_GUIDE_DEFAULTS.items.length;
+  $: eyebrowTooLong = sectionForm.eyebrow.trim().length > 40;
+
+  const loadSection = async () => {
+    try {
+      const res = await api.homepage.get();
+      sectionRow = (res.data ?? []).find((row) => row.section_key === 'when_to_go') ?? null;
+    } catch {
+      sectionRow = null;
+    }
+  };
+
+  const selectSectionTab = (tab: SectionTab) => {
+    sectionTab = tab;
+    sectionBodyEl?.scrollTo({ top: 0 });
+  };
+
+  const openSectionEditor = () => {
+    const extra = sectionExtra;
+    const text = (value: unknown, fallback = '') => (typeof value === 'string' ? value : fallback);
+    const items = Array.isArray(extra.quick_guide) ? (extra.quick_guide as Partial<QuickGuideItem>[]) : QUICK_GUIDE_DEFAULTS.items;
+    sectionForm = {
+      eyebrow: text(extra.eyebrow, 'Best time to visit'),
+      title: text(sectionRow?.title, 'When Should You Go?'),
+      intro: text(sectionRow?.subtitle),
+      guide_eyebrow: text(extra.quick_guide_eyebrow, QUICK_GUIDE_DEFAULTS.eyebrow),
+      guide_title: text(extra.quick_guide_title, QUICK_GUIDE_DEFAULTS.title),
+      footnote: text(extra.footnote, QUICK_GUIDE_DEFAULTS.footnote),
+      items: items.map((item) => ({ label: text(item?.label), value: text(item?.value), icon: text(item?.icon, 'binoculars') }))
+    };
+    sectionTab = 'header';
+    sectionOpen = true;
+  };
+
+  const closeSectionEditor = () => {
+    sectionOpen = false;
+    sectionTab = 'header';
+  };
+
+  const addGuideItem = () => {
+    if (sectionForm.items.length >= MAX_GUIDE) return;
+    sectionForm.items = [...sectionForm.items, { label: '', value: '', icon: 'binoculars' }];
+  };
+  const removeGuideItem = (index: number) => {
+    sectionForm.items = sectionForm.items.filter((_, i) => i !== index);
+  };
+  const moveGuideItem = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= sectionForm.items.length) return;
+    const next = [...sectionForm.items];
+    [next[index], next[target]] = [next[target], next[index]];
+    sectionForm.items = next;
+  };
+
+  const saveSection = async () => {
+    if (savingSection) return;
+    if (!sectionForm.title.trim()) {
+      selectSectionTab('header');
+      showToast('Give the section a heading.', 'error');
+      return;
+    }
+    if (eyebrowTooLong) {
+      selectSectionTab('header');
+      showToast('Keep the eyebrow to 40 characters — it is a short label.', 'error');
+      return;
+    }
+    savingSection = true;
+    // Keep every other extra_data key (the Homepage editor may have set some).
+    const extra_data = {
+      ...sectionExtra,
+      eyebrow: sectionForm.eyebrow.trim(),
+      quick_guide_eyebrow: sectionForm.guide_eyebrow.trim(),
+      quick_guide_title: sectionForm.guide_title.trim(),
+      quick_guide: sectionForm.items
+        .map((item) => ({ label: item.label.trim(), value: item.value.trim(), icon: item.icon }))
+        .filter((item) => item.label),
+      footnote: sectionForm.footnote.trim()
+    };
+    const body = { title: sectionForm.title.trim(), subtitle: sectionForm.intro.trim() || null, extra_data };
+    try {
+      if (sectionRow?.id) await api.homepage.updateSection(String(sectionRow.id), body);
+      else await api.homepage.createSection({ section_key: 'when_to_go', sort_order: 40, is_active: true, ...body });
+      showToast('Section updated successfully.');
+      closeSectionEditor();
+      await loadSection();
+    } catch (requestError) {
+      showToast(requestError instanceof Error ? requestError.message : 'Unable to save the section.', 'error');
+    } finally {
+      savingSection = false;
+    }
+  };
+
+  onMount(() => {
+    loadSeasons();
+    loadSection();
+  });
 </script>
 
 <ToastStack {toasts} on:dismiss={dismissToast} />
@@ -355,6 +481,19 @@
 
   <AdminButton variant="secondary" on:click={loadSeasons}>Apply</AdminButton>
 </AdminToolbar>
+
+<!-- The rest of the section: heading and quick guide, stored on the homepage row. -->
+<section class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-ink/10 bg-surface p-4 shadow-sm">
+  <div class="min-w-0">
+    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-forest/70">Section heading & quick guide</p>
+    <p class="mt-1 truncate text-sm font-semibold text-ink">{String(sectionRow?.title ?? 'When Should You Go?')}</p>
+    <p class="mt-0.5 text-xs text-ink/55">Label “{String(sectionExtra.eyebrow ?? 'Best time to visit')}” · {guideCount} quick-guide {guideCount === 1 ? 'item' : 'items'}</p>
+  </div>
+  <CmsButton variant="ghost" class="inline-flex h-9 items-center gap-2 rounded-xl border border-ink/10 bg-surface px-3 text-xs font-semibold text-ink shadow-sm transition hover:border-goldfinch-gold/35 hover:bg-sand/70" type="button" onclick={openSectionEditor}>
+    <Edit size={14} />
+    Edit section
+  </CmsButton>
+</section>
 
 {#if loading}
   <LoadingState message="Loading seasons..." />
@@ -625,6 +764,89 @@
             {#if stepIndex > 0}<CmsButton variant="ghost" class="cms-editor-back" aria-label="Previous section" onclick={() => selectTab(TABS[stepIndex - 1][0])}><ArrowLeft size={14}/><span>Back</span></CmsButton>{/if}
             {#if stepIndex < TABS.length - 1}<CmsButton variant="outline" onclick={() => selectTab(TABS[stepIndex + 1][0])}>Continue<ArrowRight size={14}/></CmsButton>{/if}
             <CmsButton variant="default" type="submit" disabled={saving} class="gap-2 px-5"><Save size={14}/>{saving ? 'Saving…' : form.status === 'draft' ? 'Save draft' : editingSeason ? 'Save changes' : 'Create season'}</CmsButton>
+          </div>
+        </footer>
+      </form>
+    </CmsDialog.Content>
+  </CmsDialog.Root>
+{/if}
+
+{#if sectionOpen}
+  <CmsDialog.Root open={true} onOpenChange={(next) => { if (!next) closeSectionEditor(); }}>
+    <CmsDialog.Content onInteractOutside={(event) => event.preventDefault()} showCloseButton={false} class="cms-editor-dialog cms-category-dialog gap-0 p-0 overflow-hidden" style="width:min(calc(100vw - 2rem),64rem);max-width:none">
+      <CmsDialog.Title class="sr-only">When should you go? section</CmsDialog.Title>
+      <CmsDialog.Description class="sr-only">Edit the section heading and the quick guide, then save.</CmsDialog.Description>
+      <form class="cms-editor-form" novalidate on:submit|preventDefault={saveSection}>
+        <header class="cms-editor-header"><div class="flex items-center gap-3"><span class="cms-editor-emblem"><CloudSun size={20}/></span><div><p>SECTION EDITOR</p><h2>When should you go?</h2></div></div><div class="flex items-center gap-4"><CmsButton variant="ghost" size="icon" aria-label="Close section editor" onclick={closeSectionEditor}><X size={19}/></CmsButton></div></header>
+        <div class="cms-editor-workspace">
+          <EditorNavigation sections={SECTION_TABS} active={sectionTab} onNavigate={(key) => selectSectionTab(key as SectionTab)}/>
+          <div class="cms-editor-canvas" bind:this={sectionBodyEl}>
+            <div class="cms-editor-section-heading"><p>STEP {String(sectionStep + 1).padStart(2, '0')} / {String(SECTION_TABS.length).padStart(2, '0')}</p><h3>{SECTION_TABS[sectionStep]?.[2]}</h3><span>{SECTION_HINTS[sectionTab]}</span></div>
+
+        <div class="grid gap-5 cms-form-panel" class:hidden={sectionTab !== 'header'}>
+          <section class="cms-form-section grid gap-5">
+            <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-forest/70">Section heading</p>
+            <div class="grid gap-1.5">
+              <AdminFormInput label="Eyebrow · small label above the heading" name="section_eyebrow" bind:value={sectionForm.eyebrow} placeholder="2–5 words, e.g. Best time to visit" counter={40} />
+              {#if eyebrowTooLong}<span class="text-[11px] font-semibold text-clay">Too long for a label — the site will show its default instead.</span>{/if}
+            </div>
+            <AdminFormInput label="Title · the section heading" name="section_title" bind:value={sectionForm.title} placeholder="When Should You Go?" counter={70} />
+            <AdminTextArea label="Intro paragraph · under the heading" name="section_intro" bind:value={sectionForm.intro} rows={3} counter={220} placeholder="Every season tells a different story. Choose the landscapes, wildlife and pace that speak to you." />
+          </section>
+        </div>
+
+        <div class="grid gap-5 cms-form-panel" class:hidden={sectionTab !== 'guide'}>
+          <section class="cms-form-section grid gap-5">
+            <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-forest/70">Quick guide heading</p>
+            <div class="grid gap-4 md:grid-cols-2">
+              <AdminFormInput label="Label" name="guide_eyebrow" bind:value={sectionForm.guide_eyebrow} placeholder="Quick Guide" counter={30} />
+              <AdminFormInput label="Title" name="guide_title" bind:value={sectionForm.guide_title} placeholder="Best Time for Different Experiences" counter={60} />
+            </div>
+          </section>
+
+          <section class="cms-form-section grid gap-4">
+            <div class="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p class="text-sm font-semibold text-ink">Experiences</p>
+                <p class="text-xs text-ink/45">Up to {MAX_GUIDE}. Remove them all to hide the quick guide.</p>
+              </div>
+              <CmsButton variant="ghost" class="inline-flex h-9 items-center gap-1.5 rounded-md border border-ink/10 bg-surface px-3 text-xs font-bold text-ink transition hover:border-forest/25 hover:bg-sand/55 disabled:opacity-40" type="button" disabled={sectionForm.items.length >= MAX_GUIDE} onclick={addGuideItem}>
+                <Plus size={14} /> Add
+              </CmsButton>
+            </div>
+            <div class="grid gap-2">
+              {#each sectionForm.items as item, index}
+                <div class="grid items-center gap-2 rounded-xl border border-ink/10 bg-surface p-2.5 md:grid-cols-[2.25rem_minmax(0,1fr)_minmax(0,1fr)_10rem_auto]">
+                  <span class="hidden size-9 place-items-center rounded-full bg-[#FFFAE8] md:grid"><svelte:component this={guideIcon(item.icon)} size={18} class="text-[#D9A900]" /></span>
+                  <CmsInput class="h-10 rounded-md border border-ink/15 bg-black/[0.02] px-3 text-sm text-ink outline-none focus:border-forest focus:bg-surface focus:ring-2 focus:ring-forest/20" aria-label={`Experience ${index + 1}`} placeholder="Great Migration" bind:value={item.label} />
+                  <CmsInput class="h-10 rounded-md border border-ink/15 bg-black/[0.02] px-3 text-sm text-ink outline-none focus:border-forest focus:bg-surface focus:ring-2 focus:ring-forest/20" aria-label={`When, for experience ${index + 1}`} placeholder="June – October" bind:value={item.value} />
+                  <CmsNativeSelect.Root class="h-10" aria-label={`Icon for experience ${index + 1}`} bind:value={item.icon}>
+                    {#each GUIDE_ICONS as option (option.key)}<CmsNativeSelect.Option value={option.key}>{option.label}</CmsNativeSelect.Option>{/each}
+                  </CmsNativeSelect.Root>
+                  <div class="flex gap-1.5">
+                    <CmsButton variant="ghost" class="grid h-10 w-9 place-items-center rounded-md border border-ink/10 bg-surface text-ink/60 transition hover:text-heading disabled:opacity-30" type="button" aria-label={`Move experience ${index + 1} up`} disabled={index === 0} onclick={() => moveGuideItem(index, -1)}><ArrowUp size={14} /></CmsButton>
+                    <CmsButton variant="ghost" class="grid h-10 w-9 place-items-center rounded-md border border-ink/10 bg-surface text-ink/60 transition hover:text-heading disabled:opacity-30" type="button" aria-label={`Move experience ${index + 1} down`} disabled={index === sectionForm.items.length - 1} onclick={() => moveGuideItem(index, 1)}><ArrowDown size={14} /></CmsButton>
+                    <CmsButton variant="ghost" class="inline-flex h-10 items-center justify-center rounded-md border border-red-200 bg-surface px-3 text-red-700 transition hover:bg-red-50" type="button" aria-label={`Remove experience ${index + 1}`} onclick={() => removeGuideItem(index)}><Trash2 size={14} /></CmsButton>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          </section>
+
+          <section class="cms-form-section grid gap-5">
+            <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-forest/70">Note under the section</p>
+            <AdminTextArea label="Footnote" name="section_footnote" bind:value={sectionForm.footnote} rows={2} counter={160} placeholder="Seasons are a general guide. Rainfall and wildlife movements vary by location and year." />
+          </section>
+        </div>
+
+          </div>
+        </div>
+        <footer class="cms-editor-footer">
+          <span class="cms-save-note">Changes will be visible on your website</span>
+          <div class="cms-editor-footer-actions">
+            {#if sectionStep > 0}<CmsButton variant="ghost" class="cms-editor-back" aria-label="Previous section" onclick={() => selectSectionTab(SECTION_TABS[sectionStep - 1][0])}><ArrowLeft size={14}/><span>Back</span></CmsButton>{/if}
+            {#if sectionStep < SECTION_TABS.length - 1}<CmsButton variant="outline" onclick={() => selectSectionTab(SECTION_TABS[sectionStep + 1][0])}>Continue<ArrowRight size={14}/></CmsButton>{/if}
+            <CmsButton variant="default" type="submit" disabled={savingSection} class="gap-2 px-5"><Save size={14}/>{savingSection ? 'Saving…' : 'Save section'}</CmsButton>
           </div>
         </footer>
       </form>

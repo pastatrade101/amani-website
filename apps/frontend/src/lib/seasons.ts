@@ -1,4 +1,7 @@
-import { CloudDrizzle, CloudRain, CloudSun, Droplets, Leaf, Snowflake, Sprout, Sun, ThermometerSun, Wind } from '@lucide/svelte';
+import {
+	Binoculars, Bird, Camera, CloudDrizzle, CloudRain, CloudSun, Droplets, Fish, Footprints, Heart, Leaf, Mountain,
+	Palmtree, Sailboat, Snowflake, Sprout, Sun, Tent, ThermometerSun, Trees, Wind
+} from '@lucide/svelte';
 
 /** One row of the `seasons` table (/api/seasons). */
 export type Season = {
@@ -71,6 +74,62 @@ export const monthRange = (season: Pick<Season, 'start_month' | 'end_month'>) =>
 /** The month strip: each month takes the first season (by sort order) that covers it. */
 export const monthStrip = (seasons: Season[]) =>
 	MONTH_SHORT.map((label, index) => ({ label, season: seasons.find((season) => coversMonth(season, index + 1)) ?? null }));
+
+/**
+ * The "Quick guide" row under the season cards. Stored on the homepage
+ * `when_to_go` section: extra_data.quick_guide = [{ label, value, icon }],
+ * with extra_data.quick_guide_eyebrow / quick_guide_title / footnote.
+ */
+export type QuickGuideItem = { label: string; value: string; icon: string };
+
+export const GUIDE_ICONS: { key: string; label: string; icon: Icon }[] = [
+	{ key: 'footprints', label: 'Migration', icon: Footprints },
+	{ key: 'camera', label: 'Photography', icon: Camera },
+	{ key: 'trees', label: 'Landscapes', icon: Trees },
+	{ key: 'bird', label: 'Birds', icon: Bird },
+	{ key: 'mountain', label: 'Mountain', icon: Mountain },
+	{ key: 'palmtree', label: 'Beach', icon: Palmtree },
+	{ key: 'binoculars', label: 'Game viewing', icon: Binoculars },
+	{ key: 'sailboat', label: 'Sailing', icon: Sailboat },
+	{ key: 'fish', label: 'Diving & fishing', icon: Fish },
+	{ key: 'tent', label: 'Camping', icon: Tent },
+	{ key: 'heart', label: 'Honeymoon', icon: Heart },
+	{ key: 'sun', label: 'Sunshine', icon: Sun },
+	{ key: 'leaf', label: 'Green season', icon: Leaf }
+];
+
+export const guideIcon = (key: string | null | undefined): Icon => GUIDE_ICONS.find((item) => item.key === key)?.icon ?? Binoculars;
+
+export const QUICK_GUIDE_DEFAULTS = {
+	eyebrow: 'Quick Guide',
+	title: 'Best Time for Different Experiences',
+	footnote: 'Seasons are a general guide. Rainfall and wildlife movements vary by location and year.',
+	items: [
+		{ label: 'Great Migration', value: 'June – October', icon: 'footprints' },
+		{ label: 'Best Photography', value: 'January – March', icon: 'camera' },
+		{ label: 'Green Landscapes', value: 'November – March', icon: 'trees' },
+		{ label: 'Bird Watching', value: 'November – April', icon: 'bird' },
+		{ label: 'Climbing Kilimanjaro', value: 'January – March & June – October', icon: 'mountain' },
+		{ label: 'Zanzibar Beaches', value: 'Year Round', icon: 'palmtree' }
+	] as QuickGuideItem[]
+};
+
+/** The quick guide as the CMS stores it, falling back to the built-in copy field by field. */
+export const quickGuide = (extra: Record<string, unknown> | null | undefined) => {
+	const text = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+	const items = Array.isArray(extra?.quick_guide)
+		? (extra.quick_guide as Partial<QuickGuideItem>[])
+				.map((item) => ({ label: text(item?.label), value: text(item?.value), icon: text(item?.icon) }))
+				.filter((item) => item.label)
+		: null;
+	return {
+		eyebrow: text(extra?.quick_guide_eyebrow) || QUICK_GUIDE_DEFAULTS.eyebrow,
+		title: text(extra?.quick_guide_title) || QUICK_GUIDE_DEFAULTS.title,
+		footnote: text(extra?.footnote) || QUICK_GUIDE_DEFAULTS.footnote,
+		// An explicitly emptied list hides the guide; no list at all keeps the built-in one.
+		items: items ?? QUICK_GUIDE_DEFAULTS.items
+	};
+};
 
 /** Shown only when the API cannot be reached, so the section never renders empty by accident. */
 export const fallbackSeasons: Season[] = [

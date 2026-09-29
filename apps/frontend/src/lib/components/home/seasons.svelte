@@ -1,20 +1,13 @@
 <script lang="ts">
-	import { Camera, Trees, Bird, Mountain, Palmtree, Footprints } from '@lucide/svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import SeasonCard from './season-card.svelte';
-	import { monthStrip, seasonTone, UNASSIGNED_MONTH, type Season } from '$lib/seasons';
+	import { guideIcon, monthStrip, quickGuide, seasonTone, UNASSIGNED_MONTH, type Season } from '$lib/seasons';
 	import { textContent } from '$lib/home-content';
 	import type { HomepageSection } from '$lib/types/api';
 	// `seasons` comes from the CMS (Seasons); the month strip and the cards are both painted from it.
 	let { section, seasons }: { section: HomepageSection; seasons: Season[] } = $props();
-	const guide = [
-        { label: 'Great Migration', value: 'June – October', icon: Footprints },
-        { label: 'Best Photography', value: 'January – March', icon: Camera },
-        { label: 'Green Landscapes', value: 'November – March', icon: Trees },
-        { label: 'Bird Watching', value: 'November – April', icon: Bird },
-        { label: 'Climbing Kilimanjaro', value: 'January – March & June – October', icon: Mountain },
-        { label: 'Zanzibar Beaches', value: 'Year Round', icon: Palmtree }
-    ];
+	// Quick guide + footnote live on this homepage section's extra_data (edited under CMS → Seasons).
+	let guide = $derived(quickGuide(section.extra_data));
 	let strip = $derived(monthStrip(seasons));
 </script>
 <section id="when-to-go" class="page-container py-14 md:py-20">
@@ -27,6 +20,8 @@
 			{#each seasons as season (season.id ?? season.name)}<SeasonCard {season} />{/each}
 		</div>
 	{/if}
-    <Card.Root data-motion="reveal" class="mt-8 gap-0 rounded-2xl border-black/5 bg-white p-5 shadow-sm md:p-7"><div class="text-center"><p class="text-xs font-semibold uppercase tracking-[.2em] text-[#111111]">Quick Guide</p><h3 class="mt-1 text-lg font-bold text-[#111111]">Best Time for Different Experiences</h3></div><ul class="mt-6 grid grid-cols-2 gap-y-6 md:grid-cols-3 lg:grid-cols-6">{#each guide as item}<li class="flex flex-col items-center px-3 text-center lg:border-r lg:border-black/10 lg:last:border-r-0"><item.icon class="size-6 text-[#D9A900]" /><p class="mt-2 text-sm font-semibold text-[#111111]">{item.label}</p><p class="mt-1 text-xs leading-snug text-muted-foreground md:text-sm">{item.value}</p></li>{/each}</ul></Card.Root>
-	<p class="mt-5 text-center text-[11px] leading-5 text-muted-foreground">Seasons are a general guide. Rainfall and wildlife movements vary by location and year.</p>
+	{#if guide.items.length}
+    <Card.Root data-motion="reveal" class="mt-8 gap-0 rounded-2xl border-black/5 bg-white p-5 shadow-sm md:p-7"><div class="text-center"><p class="text-xs font-semibold uppercase tracking-[.2em] text-[#111111]">{guide.eyebrow}</p><h3 class="mt-1 text-lg font-bold text-[#111111]">{guide.title}</h3></div><ul class="mt-6 grid grid-cols-2 gap-y-6 md:grid-cols-3 lg:grid-cols-6">{#each guide.items as item}{@const GuideIcon = guideIcon(item.icon)}<li class="flex flex-col items-center px-3 text-center lg:border-r lg:border-black/10 lg:last:border-r-0"><GuideIcon class="size-6 text-[#D9A900]" /><p class="mt-2 text-sm font-semibold text-[#111111]">{item.label}</p><p class="mt-1 text-xs leading-snug text-muted-foreground md:text-sm">{item.value}</p></li>{/each}</ul></Card.Root>
+	{/if}
+	<p class="mt-5 text-center text-[11px] leading-5 text-muted-foreground">{guide.footnote}</p>
 </section>
