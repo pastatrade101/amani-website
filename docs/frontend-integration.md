@@ -49,3 +49,14 @@ The planning steps and FAQ answers are local editorial copy. Their section headi
 Reveals run once per mounted element, including newly mounted destination tabs and menu content. Reduced-motion preferences, keyboard focus, print, and no-JavaScript rendering keep content visible. Observers and animations are disposed when their elements or layout unmount.
 
 The full company name is provided in the footer, document title, description, Open Graph site name, and WebSite/Organization JSON-LD. Google chooses its displayed site name after crawling a deployed public site; a Git push does not update search results by itself. See [Google's site-name guidance](https://developers.google.com/search/docs/appearance/site-names) and [Motion's JavaScript API](https://motion.dev/docs/animate).
+
+
+## Admin workspace
+
+`/admin/login` and the restored management routes use the existing Express CMS contracts. The browser calls `/api/*`; the SvelteKit proxy forwards bearer authentication to the private `API_BASE_URL`, preserves backend error status codes and never caches private responses. Admin route content waits for `/api/auth/me`, and admin pages send `noindex, nofollow` metadata.
+
+The Key2africa workspace uses a light shell with navy navigation states and yellow accents. Shared shadcn components power buttons, fields, select menus, checkboxes, switches, tables, confirmations, dialogs, account menus, mobile navigation and search. Compatibility code and backend contracts live under `src/lib/admin`; the shared UI primitives remain in `src/lib/components/ui`.
+
+Category and safari editors share section navigation and a persistent save bar. Inactive panels stay mounted to preserve unfinished rich text and translations. A draft category can be created without its optional landing-page document; publishing still requires the backend's complete landing-page contract. Once configured, all builder sections remain editable, and replacing the page with a template requires confirmation.
+
+To provision the initial administrator, set `ADMIN_NAME`, `ADMIN_EMAIL`, and a random `ADMIN_PASSWORD` of at least 16 characters in the ignored backend `.env`, then run `npm run admin:create --workspace @amani/backend`. The script refuses to overwrite an existing account. Never put these values in frontend environment variables or commit `.env`.

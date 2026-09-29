@@ -7,6 +7,7 @@
  *
  * Optional flags:
  *   --dry-run  Print the SQL files in order without connecting.
+ *   --skip-seed  Apply schema and migrations without sample content/admin users.
  *   --demo     Also apply database/seed-demo.sql after seed.sql.
  */
 import dotenv from 'dotenv';
@@ -23,7 +24,8 @@ type SqlStep = {
 
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has('--dry-run');
-const includeDemo = args.has('--demo') || process.env.DB_PIPELINE_INCLUDE_DEMO === 'true';
+const skipSeed = args.has('--skip-seed');
+const includeDemo = !skipSeed && (args.has('--demo') || process.env.DB_PIPELINE_INCLUDE_DEMO === 'true');
 
 const connectionString = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
@@ -74,9 +76,12 @@ const getMigrationSteps = (): SqlStep[] => {
 const getPipeline = (): SqlStep[] => {
   const steps: SqlStep[] = [
     requireFile(path.join(databaseDir, 'schema.sql'), 'schema.sql'),
-    ...getMigrationSteps(),
-    requireFile(path.join(databaseDir, 'seed.sql'), 'seed.sql')
+    ...getMigrationSteps()
   ];
+
+  if (!skipSeed) {
+    steps.push(requireFile(path.join(databaseDir, 'seed.sql'), 'seed.sql'));
+  }
 
   if (includeDemo) {
     steps.push(requireFile(path.join(databaseDir, 'seed-demo.sql'), 'seed-demo.sql'));

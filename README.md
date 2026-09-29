@@ -13,6 +13,7 @@ apps/
     components.json  shadcn-svelte configuration
     .env.example
 docs/                Backend reference and operational documentation
+database/            Supabase schema, dated migrations and optional sample seeds
 Dockerfile           API image; build context is this repository root
 package.json         Shared development, build and verification commands
 package-lock.json    One lockfile for both workspaces
@@ -59,7 +60,7 @@ Run these from the repository root:
 | `npm run start:backend` | Run the compiled API |
 | `npm run start:frontend` | Run the frontend's Node adapter build (port 3000) |
 
-Backend operational scripts remain available at the root, for example `npm run db:pipeline -- --dry-run` and `npm run email:test -- you@example.com`. They execute in `apps/backend`, so relative file arguments are resolved there. The full database schema is not included in this repository; use `DATABASE_DIR` for an external schema directory.
+Backend operational scripts remain available at the root, for example `npm run db:pipeline -- --skip-seed --dry-run` and `npm run email:test -- you@example.com`. They execute in `apps/backend`, so relative file arguments are resolved there. The database schema and migrations are included in `database/`; `DATABASE_DIR` can override that location. For a fresh database, run `npm run db:pipeline -- --skip-seed` to apply schema and migrations without importing the inherited Goldfinch sample content and default admin account. See [database setup](docs/database.md).
 
 ## UI components
 

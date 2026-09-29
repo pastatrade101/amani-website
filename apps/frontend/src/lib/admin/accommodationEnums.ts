@@ -1,0 +1,42 @@
+export const PROPERTY_TYPES=['HOTEL','SAFARI_LODGE','TENTED_CAMP','MOBILE_CAMP','BEACH_RESORT','VILLA','GUEST_HOUSE','ECO_LODGE','BOUTIQUE_HOTEL'];
+export const PROPERTY_CATEGORIES=['BUDGET','MID_RANGE','LUXURY','PREMIUM_LUXURY'];
+export const BEST_FOR=['COUPLES','HONEYMOON','FAMILIES','GROUPS','SOLO_TRAVELERS','SENIORS','LUXURY_TRAVELERS','ADVENTURE_TRAVELERS','PHOTOGRAPHERS'];
+// Older lodge rows stored display labels (and a few free-text values) before
+// the API switched this field to controlled enum codes. Normalize those rows
+// when opening the editor so saving an otherwise unchanged lodge succeeds.
+const LEGACY_BEST_FOR: Record<string, string> = {
+  'couples': 'COUPLES',
+  'honeymooners': 'HONEYMOON',
+  'honeymoon': 'HONEYMOON',
+  'families': 'FAMILIES',
+  'groups': 'GROUPS',
+  'solo travellers': 'SOLO_TRAVELERS',
+  'solo travelers': 'SOLO_TRAVELERS',
+  'seniors': 'SENIORS',
+  'luxury travellers': 'LUXURY_TRAVELERS',
+  'luxury travelers': 'LUXURY_TRAVELERS',
+  'adventure travellers': 'ADVENTURE_TRAVELERS',
+  'adventure travelers': 'ADVENTURE_TRAVELERS',
+  'photographers': 'PHOTOGRAPHERS'
+};
+export const normalizeBestFor = (values: unknown): string[] =>
+  (Array.isArray(values) ? values : [])
+    .map((value) => String(value).trim())
+    .map((value) => BEST_FOR.includes(value) ? value : LEGACY_BEST_FOR[value.toLowerCase()])
+    .filter((value): value is string => Boolean(value));
+export const SETTINGS=['INSIDE_NATIONAL_PARK','OUTSIDE_NATIONAL_PARK','CONSERVATION_AREA','PRIVATE_RESERVE','BEACHFRONT','ISLAND','CITY','COUNTRYSIDE','MOUNTAIN','REMOTE_WILDERNESS'];
+export const ROOM_TYPES=['STANDARD_ROOM','DELUXE_ROOM','SUPERIOR_ROOM','SUITE','FAMILY_ROOM','FAMILY_SUITE','SAFARI_TENT','LUXURY_TENT','COTTAGE','CHALET','VILLA','BUNGALOW','HONEYMOON_SUITE'];
+export const BED_TYPES=['SINGLE','TWIN','DOUBLE','QUEEN','KING','BUNK_BED','SOFA_BED','EXTRA_BED'];
+export const ROOM_VIEWS=['GARDEN','POOL','MOUNTAIN','OCEAN','BEACH','RIVER','LAKE','SAVANNAH','FOREST','WILDLIFE','CITY','COURTYARD'];
+export const PRICING_BASES=['PER_PERSON','PER_PERSON_SHARING','PER_ROOM','PER_UNIT','PER_NIGHT'];
+export const MEAL_PLANS=['ROOM_ONLY','BED_AND_BREAKFAST','HALF_BOARD','FULL_BOARD','ALL_INCLUSIVE','FULL_BOARD_PLUS_ACTIVITIES'];
+export const SEASON_TYPES=['LOW_SEASON','GREEN_SEASON','SHOULDER_SEASON','HIGH_SEASON','PEAK_SEASON','FESTIVE_SEASON'];
+export const AMENITIES=['WIFI','SWIMMING_POOL','RESTAURANT','BAR','SPA','GYM','LAUNDRY','ROOM_SERVICE','AIR_CONDITIONING','FAN','MOSQUITO_NET','ENSUITE_BATHROOM','HOT_SHOWER','BATHTUB','PRIVATE_BALCONY','PRIVATE_VERANDA','FAMILY_ROOMS','WHEELCHAIR_ACCESS','PARKING','SOLAR_POWER','GENERATOR','SAFE','MINIBAR','FIREPLACE','LUGGAGE_STORAGE'];
+export const ACCESSIBILITY=['FULLY_ACCESSIBLE','PARTIALLY_ACCESSIBLE','NOT_ACCESSIBLE','UNKNOWN'];
+export const ELECTRICITY=['TWENTY_FOUR_HOURS','LIMITED_HOURS','SOLAR_ONLY','GENERATOR_BACKUP','NO_RELIABLE_POWER'];
+export const WIFI=['PROPERTY_WIDE','COMMON_AREAS_ONLY','ROOMS_ONLY','LIMITED','NOT_AVAILABLE'];
+export const MOBILE_NETWORKS=['VODACOM','AIRTEL','TIGO','HALOTEL','TTCL','OTHER','NO_RELIABLE_SIGNAL'];
+export const ROAD_ACCESS=['ALL_VEHICLES','FOUR_BY_FOUR_RECOMMENDED','FOUR_BY_FOUR_REQUIRED','SEASONAL_ACCESS','FLY_IN_ONLY'];
+export const SUPPLIER_PREFERENCES=['PREFERRED','STANDARD','BACKUP','DO_NOT_USE'];
+export const GALLERY_CATEGORIES=['HERO','EXTERIOR','ROOM','INTERIOR','BATHROOM','DINING','POOL','SPA','LANDSCAPE','WILDLIFE','EXPERIENCE','FOOD','AERIAL','BEACH','COMMON_AREA','OTHER'];
+export const enumLabel=(value:string)=>value.toLowerCase().replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());

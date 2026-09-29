@@ -5,6 +5,7 @@
 @import "@fontsource/poppins/600.css";
 @import "@fontsource/poppins/700.css";
 @import "tw-animate-css";
+@import "$lib/admin/admin-theme.css";
 
 @custom-variant dark (&:is(.dark *));
 

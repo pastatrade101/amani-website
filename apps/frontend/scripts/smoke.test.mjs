@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 test('built frontend matches the Express contracts and fails safely', { timeout: 30000 }, async () => {
   const calls = [];
   const contacts = [];
+  const adminRequests = [];
   let unavailable = false;
   let rejectContact = false;
   const id = '0de809b1-15ac-4111-b805-5bc25910c0ae';
@@ -23,6 +24,21 @@ test('built frontend matches the Express contracts and fails safely', { timeout:
       return;
     }
     let data;
+    if (url.pathname.startsWith('/api/auth/') || url.pathname === '/api/dashboard/stats') {
+      let body = '';
+      for await (const chunk of req) body += chunk;
+      adminRequests.push({ path: url.pathname, authorization: req.headers.authorization, forwarded: req.headers['x-forwarded-for'], body });
+      if (url.pathname === '/api/auth/login') {
+        const credentials = JSON.parse(body);
+        if (credentials.email !== 'test@example.invalid' || credentials.password !== 'fixture-password-only') {
+          res.writeHead(401).end(JSON.stringify({success:false,message:'Invalid credentials'})); return;
+        }
+        data = {token:'fixture-token',user:{name:'Test admin',role:'super_admin'}};
+      } else if (req.headers.authorization !== 'Bearer fixture-token') {
+        res.writeHead(401).end(JSON.stringify({success:false,message:'Authentication required'})); return;
+      } else data = {name:'Test admin',role:'super_admin'};
+      res.end(JSON.stringify({success:true,message:'OK',data})); return;
+    }
     if (url.pathname === '/api/homepage') data = [{ section_key: 'hero', title: 'Live Tanzania Adventures' }, { section_key: 'when_to_go', is_active: false }];
     else if (url.pathname === '/api/destinations') data = page([{ id, name: 'Live Serengeti', slug: 'serengeti', country: 'Tanzania' }]);
     else if (url.pathname === '/api/activities') data = page([]);
@@ -103,6 +119,24 @@ test('built frontend matches the Express contracts and fails safely', { timeout:
     assert.equal(failed.status, 503);
     assert.ok(failed.data.includes('test@example.invalid'), 'Failed enquiry keeps form values');
     assert.equal(contacts.length, 1);
+
+    // Admin pages are registered and private APIs retain backend authentication.
+    const adminPage = await (await fetch(`${origin}/admin`)).text();
+    assert.ok(adminPage.includes('Checking your session'));
+    assert.ok(adminPage.includes('noindex, nofollow'));
+    const loginPage = await (await fetch(`${origin}/admin/login`)).text();
+    assert.ok(loginPage.includes('Sign in'));
+    assert.ok(!loginPage.includes('ADMIN_PASSWORD'));
+    assert.equal((await fetch(`${origin}/api/auth/me`)).status, 401);
+    const login = await fetch(`${origin}/api/auth/login`, {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:'test@example.invalid',password:'fixture-password-only'})});
+    assert.equal(login.status,200);
+    assert.equal(login.headers.get('cache-control'),'no-store');
+    assert.equal((await login.json()).data.token,'fixture-token');
+    const authenticated = await fetch(`${origin}/api/dashboard/stats`, {headers:{authorization:'Bearer fixture-token','x-forwarded-for':'untrusted-client-value'}});
+    assert.equal(authenticated.status,200);
+    assert.equal(adminRequests.at(-1).authorization,'Bearer fixture-token');
+    assert.notEqual(adminRequests.at(-1).forwarded,'untrusted-client-value');
+    assert.equal((await fetch(`${origin}/api/auth/login`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:'wrong@example.invalid',password:'wrong'})})).status,401);
 
     unavailable = true;
     const fallback = await (await fetch(origin)).text();

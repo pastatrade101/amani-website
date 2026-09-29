@@ -20,32 +20,47 @@ The backend has a single database pipeline command. It applies:
 `database/migrations/000-apply-all.sql` is skipped because it is a bundle of
 dated migrations, not a separate migration step.
 
-Set a raw Postgres connection string in `backend/.env`:
+Set a raw Postgres connection string in `apps/backend/.env`:
 
 ```bash
 SUPABASE_DB_URL=postgresql://...
 ```
 
-Then run:
+For a fresh Key2africa database, run from the repository root:
 
 ```bash
-npm run db:pipeline
+npm run db:pipeline -- --skip-seed
 ```
+
+This applies the schema and dated migrations only. The inherited `seed.sql`
+contains Goldfinch sample content and a default super-admin account; it is not
+needed to create the database structure. `--skip-seed` also suppresses demo data
+even when `DB_PIPELINE_INCLUDE_DEMO=true`.
 
 To inspect the exact order before applying SQL:
 
 ```bash
-npm run db:pipeline -- --dry-run
+npm run db:pipeline -- --skip-seed --dry-run
 ```
 
-To include demo content after the normal seed:
+For a disposable development database only, omitting `--skip-seed` imports the
+inherited `seed.sql`. To also include `seed-demo.sql`:
 
 ```bash
 npm run db:pipeline -- --demo
 ```
 
-All migrations are idempotent (`create table if not exists`, `add column if not
-exists`), so re-running is safe.
+The runner has no migration history table: it replays every SQL file on each
+run. Most DDL is idempotent, but data migrations may update existing records.
+Review the dry run and back up a populated database before rerunning.
+
+The SQL was recovered from the original `tour-website/database` project that
+matches this backend. The tour customization migration from this repository's
+`docs/20260811_tour_customization_options.sql` is also included in the dated set.
+The final table-access migration enables RLS on the application's tables without
+browser-client policies. Express uses `service_role` (which bypasses RLS), so
+public content still flows through the API while private tables stay inaccessible
+to direct anonymous Supabase requests.
 
 ### Migration history (apply oldest → newest)
 

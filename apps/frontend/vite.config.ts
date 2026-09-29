@@ -9,9 +9,9 @@ export default defineConfig({
 		tailwindcss(),
 		sveltekit({
 			compilerOptions: {
-				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
+				// Keep the restored CMS compatible with legacy Svelte components; new UI uses runes.
 				runes: ({ filename }) =>
-					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
+					filename.split(/[/\\]/).includes('node_modules') || /[/\\](?:routes|lib)[/\\]admin[/\\]/.test(filename) ? undefined : true
 			},
 
 			adapter: adapter()
