@@ -1750,11 +1750,14 @@
         {/if}
 
         <!-- Above the heading on the page, so it sits above Title here too. -->
+        <!-- Rendered in small caps; the public site ignores anything over 40
+             characters and keeps its default label, so the counter says so. -->
         <AdminFormInput
-          label="Eyebrow"
+          label="Eyebrow · small label above the heading"
           name="eyebrow"
           bind:value={sectionEyebrow}
-          placeholder={form.section_key.trim() === 'advisor_note' ? "Advisor's Note" : 'Small label above the heading'}
+          placeholder={form.section_key.trim() === 'advisor_note' ? "Advisor's Note" : '2–5 words, e.g. Why Key2africa'}
+          counter={40}
         />
 
         {#if form.section_key.trim() === 'advisor_note'}
@@ -1769,13 +1772,18 @@
             placeholder="The paragraph in the dark panel, under the heading."
           />
         {:else}
-          <div class="grid gap-4 sm:grid-cols-2">
-            <AdminFormInput label="Title" name="title" bind:value={form.title} placeholder="Section heading" counter={70} />
-            <AdminFormInput label="Subtitle" name="subtitle" bind:value={form.subtitle} placeholder="Supporting line" counter={160} />
-          </div>
+          <AdminFormInput label="Title · the section heading" name="title" bind:value={form.title} placeholder="Section heading" counter={70} />
+          <AdminTextArea
+            label="Intro paragraph · under the heading"
+            name="subtitle"
+            bind:value={form.subtitle}
+            rows={3}
+            placeholder="One or two sentences shown under the heading."
+            counter={220}
+          />
         {/if}
 
-        <AdminTextArea label="Content" name="content" bind:value={form.content} rows={3} placeholder="Optional body text for this section." />
+        <AdminTextArea label="Extra body text (optional)" name="content" bind:value={form.content} rows={3} placeholder="Shown only when the intro paragraph is empty." />
 
         <!-- The short reassurance chips under the buttons. -->
         <AdminTextArea

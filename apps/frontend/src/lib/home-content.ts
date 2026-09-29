@@ -12,13 +12,33 @@ export const defaultSections: HomepageSection[] = [
 	{ section_key: 'enquiry', title: 'Let’s Plan Your Tanzania Story', subtitle: 'MADE AROUND YOU', content: 'Tell us a little about your dream trip. Our team will help turn your ideas into a safari designed around you.', sort_order: 50 }
 ];
 
-/** Disabled CMS markers must never be replaced with fallback copy. */
+/** Longest text that still reads as the small uppercase label above a heading. */
+export const EYEBROW_MAX = 40;
+
+const trimmed = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+
+/**
+ * The homepage blocks render `subtitle` as the small label above the heading and
+ * `content` as the paragraph under it. The CMS stores them the other way: the
+ * label is `extra_data.eyebrow` and the paragraph is `subtitle` (or `content`).
+ * Map one onto the other here, once. A label longer than EYEBROW_MAX is not a
+ * label, so the default one is kept rather than printing a paragraph in caps.
+ * Disabled CMS markers must never be replaced with fallback copy.
+ */
 export function mergeSections(rows: HomepageSection[]): HomepageSection[] {
 	return defaultSections.map((fallback) => {
 		const row = rows.find((item) => item.section_key === fallback.section_key);
 		if (row?.is_active === false) return { section_key: fallback.section_key, is_active: false, sort_order: row.sort_order ?? fallback.sort_order };
 		const filled = Object.fromEntries(Object.entries(row ?? {}).filter(([, value]) => value !== null && value !== undefined));
-		return { ...fallback, is_active: true, ...filled };
+		const eyebrow = trimmed(row?.extra_data?.eyebrow);
+		const paragraph = trimmed(row?.subtitle) || trimmed(row?.content);
+		return {
+			...fallback,
+			is_active: true,
+			...filled,
+			subtitle: eyebrow && eyebrow.length <= EYEBROW_MAX ? eyebrow : fallback.subtitle,
+			content: paragraph || fallback.content
+		};
 	}).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 }
 

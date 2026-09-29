@@ -14,6 +14,17 @@ test('CMS overrides copy and section ordering without discarding missing default
 	assert.equal(sections[0].title, 'Choose your park');
 	assert.equal(sections.length, defaultSections.length);
 });
+test('CMS eyebrow becomes the label and the CMS subtitle becomes the paragraph', () => {
+	const why = mergeSections([{ section_key: 'why_us', title: 'A local team', subtitle: 'A full sentence of supporting copy for travellers.', extra_data: { eyebrow: 'Why Key2africa' } }]).find((item) => item.section_key === 'why_us');
+	assert.equal(why?.subtitle, 'Why Key2africa');
+	assert.equal(why?.content, 'A full sentence of supporting copy for travellers.');
+});
+test('an over-long eyebrow keeps the default label, and an empty paragraph keeps the default copy', () => {
+	const fallback = defaultSections.find((item) => item.section_key === 'why_us');
+	const why = mergeSections([{ section_key: 'why_us', extra_data: { eyebrow: 'x'.repeat(41) } }]).find((item) => item.section_key === 'why_us');
+	assert.equal(why?.subtitle, fallback?.subtitle);
+	assert.equal(why?.content, fallback?.content);
+});
 test('CMS links reject executable and protocol-relative values', () => {
 	for (const value of ['javascript:alert(1)', 'data:text/html,test', '//example.com', '/\\example.com']) assert.equal(safeUrl(value), '#request-quote');
 	assert.equal(safeUrl('/tours'), '/tours');
