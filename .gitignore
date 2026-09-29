@@ -17,3 +17,10 @@ npm-debug.log*
 .idea/
 .vscode/
 .DS_Store
+
+# SvelteKit
+.svelte-kit/
+build/
+.vercel/
+.netlify/
+coverage/

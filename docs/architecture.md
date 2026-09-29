@@ -1,5 +1,7 @@
 # Architecture
 
+> **Current Amani repository:** One npm workspaces monorepo, with the existing API in `apps/backend` and a new SvelteKit 2 / Svelte 5 / Tailwind 4 / shadcn-svelte starter in `apps/frontend`. The frontend has a Tanzania start page, server-side content loading, tour search and an enquiry action; the CMS, trip portal, PWA, and other frontend features described below belong to the inherited Goldfinch architecture and are not implemented in this new frontend. See the [root README](../README.md).
+
 ## Components
 
 ```
@@ -41,7 +43,7 @@
 | Analytics | First-party event store (Postgres) + GA4 Data API |
 | CRM | HubSpot (best-effort lead sync) |
 
-## Repository layout
+## Historical Goldfinch repository layout
 
 Two independent git repos (the project root itself is **not** a git repo):
 

@@ -1,5 +1,7 @@
 # Deployment & Operations
 
+> **Monorepo update:** The API now lives in `apps/backend`; the new SvelteKit starter lives in `apps/frontend`. Build the API Dockerfile from the repository root and place local API environment settings in `apps/backend/.env`. The notes below describe the inherited Goldfinch deployment, not a deployment of the new Amani frontend. See the [root README](../README.md) for current commands.
+
 ## Where it runs
 
 - **Server:** VPS, SSH `makutano@vmi2680790`. App lives in `~/app`.

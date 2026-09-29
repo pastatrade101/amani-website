@@ -30,6 +30,8 @@ const connectionString = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL
 const findDatabaseDir = () => {
   const candidates = [
     process.env.DATABASE_DIR,
+    path.join(process.cwd(), '..', '..', 'database'),
+    path.join(process.cwd(), '..', '..', '..', 'database'),
     path.join(process.cwd(), '..', 'database'),
     path.join(process.cwd(), 'database'),
     '/database'
