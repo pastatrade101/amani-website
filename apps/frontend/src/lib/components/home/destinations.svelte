@@ -30,14 +30,25 @@
 	</Tabs.Root>
 </section>
 <style>
-	.circuit-tabs-scroll { overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: thin; }
-	:global(.circuit-tabs) { display: flex; width: max-content; height: auto; margin-inline: auto; gap: 4px; border: 1px solid var(--border); border-radius: 999px; background: var(--secondary); padding: 5px; }
-	:global(.circuit-tab) { height: 44px; flex: none; gap: 8px; border: 0; border-radius: 999px; padding: 0 23px; background: transparent; color: var(--muted-foreground); font-size: 13px; font-weight: 500; line-height: 1.4; box-shadow: none; transition: color 160ms ease-out, background 160ms ease-out, box-shadow 160ms ease-out; }
+	/* Mobile first: every region visible at once as a 2-column grid of full
+	   44px tap targets, instead of a pill that scrolls its last tabs off-screen.
+	   An odd last tab ("More Places") spans the full row. */
+	.circuit-tabs-scroll { padding: 4px 0 8px; }
+	:global(.circuit-tabs) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 440px; height: auto; margin-inline: auto; gap: 4px; border: 1px solid var(--border); border-radius: 24px; background: var(--secondary); padding: 5px; }
+	:global(.circuit-tab) { height: 44px; min-width: 0; gap: 8px; border: 0; border-radius: 999px; padding: 0 12px; background: transparent; color: var(--muted-foreground); font-size: 13px; font-weight: 500; line-height: 1.4; white-space: nowrap; box-shadow: none; transition: color 160ms ease-out, background 160ms ease-out, box-shadow 160ms ease-out; }
+	:global(.circuit-tab:last-child:nth-child(odd)) { grid-column: 1 / -1; }
 	:global(.circuit-tab::after) { display: none; }
-	:global(.circuit-tab:hover) { background: white; color: var(--navy); }
 	:global(.circuit-tab[data-state="active"]), :global(.circuit-tab[data-active]) { background: var(--navy); color: white; box-shadow: 0 3px 8px rgb(15 35 55 / .13); }
 	:global(.circuit-tab:focus-visible) { outline: 2px solid var(--sun); outline-offset: 2px; }
-	@media (max-width: 639px) { :global(.circuit-tab) { height: 40px; padding-inline: 17px; font-size: 12px; } }
+	/* Hover only where there is a pointer, so a tapped tab doesn't stay lit. */
+	@media (hover: hover) { :global(.circuit-tab:not([data-state="active"]):not([data-active]):hover) { background: white; color: var(--navy); } }
+	/* From 640px: the single-row pill. */
+	@media (min-width: 640px) {
+		.circuit-tabs-scroll { overflow-x: auto; padding-inline: 2px; scrollbar-width: thin; }
+		:global(.circuit-tabs) { display: flex; width: max-content; max-width: none; border-radius: 999px; }
+		:global(.circuit-tab) { flex: none; padding-inline: 23px; }
+		:global(.circuit-tab:last-child:nth-child(odd)) { grid-column: auto; }
+	}
 
 	.destination-grid { display: grid; gap: 16px; }
 	@media (min-width: 640px) { .destination-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
