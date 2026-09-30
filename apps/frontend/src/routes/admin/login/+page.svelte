@@ -7,12 +7,15 @@
   import { Input } from '$lib/components/ui/input';
   import { Label } from '$lib/components/ui/label';
   import { api } from '$lib/admin/api/client';
+  import { safeUrl } from '$lib/home-content';
 
   let email = $state('');
   let password = $state('');
   let showPassword = $state(false);
   let loading = $state(false);
   let error = $state('');
+  // CMS logo (Branding → logo_url); the compass mark stays as the fallback.
+  const logo = $derived(safeUrl(page.data.branding?.logo_url, ''));
   const clearSession = () => ['admin_token', 'admin_user', 'admin_permissions'].forEach(key => localStorage.removeItem(key));
 
   async function signIn(event: SubmitEvent) {
@@ -45,13 +48,16 @@
   <aside class="login-story" aria-label="Key2africa Safaris">
     <img src="/images/safari-hero.jpg" alt="The golden landscapes of a Tanzania safari" />
     <div class="story-shade"></div>
-    <a class="story-brand" href="/" aria-label="Key2africa Safaris home"><span><Compass size={25} strokeWidth={1.5} /></span><div><strong>Key2africa</strong><small>SAFARIS</small></div></a>
+    <!-- The logo's wordmark is dark, so it sits on a light plate over the photo. -->
+    <a class="story-brand" class:story-brand-logo={logo} href="/" aria-label="Key2africa Safaris home">{#if logo}<img src={logo} alt="Key2africa Tours and Safaris" width="305" height="176" />{:else}<span><Compass size={25} strokeWidth={1.5} /></span><div><strong>Key2africa</strong><small>SAFARIS</small></div>{/if}</a>
     <div class="story-copy"><p>BEHIND EVERY GREAT JOURNEY</p><h1>A little planning.<br />A world of possibility.</h1><div class="story-line"></div><span>Bring your safari stories, experiences and guest journeys together in one place.</span></div>
     <p class="story-footer">Key2africa Tours and Safaris ltd</p>
   </aside>
   <section class="login-form-side" aria-labelledby="login-title">
     <a class="back-link" href="/"><ArrowLeft size={15} /> Back to website</a>
-    <div class="login-card">
+    <div class="login-card" class:has-logo={logo}>
+      <!-- Phones hide the photo panel, so the logo moves above the form. -->
+      {#if logo}<a class="card-logo" href="/" aria-label="Key2africa Safaris home"><img src={logo} alt="Key2africa Tours and Safaris" width="305" height="176" /></a>{/if}
       <div class="login-mark"><LockKeyhole size={23} strokeWidth={1.6} /></div>
       <p class="login-eyebrow">KEY2AFRICA · ADMIN</p>
       <h2 id="login-title">Welcome back.</h2>
@@ -78,6 +84,9 @@
   .story-brand > span { display:grid; place-items:center; width:50px; height:50px; border:1px solid rgb(246 210 27 / .85); border-radius:50%; color:#f6d21b; }
   .story-brand strong { display:block; font-size:23px; line-height:1.2; letter-spacing:-.6px; }
   .story-brand small { display:block; margin-top:5px; font-size:9px; letter-spacing:3px; }
+  .story-brand-logo { padding:12px 18px; border-radius:18px; background:rgb(255 255 255 / .95); box-shadow:0 12px 32px rgb(8 25 41 / .28); }
+  .story-brand-logo img { display:block; width:auto; height:64px; }
+  .card-logo { display:none; }
   .story-copy { position:relative; margin-top:auto; padding-top:160px; max-width:490px; }
   .story-copy > p { margin-bottom:22px; font-size:10px; font-weight:600; letter-spacing:2.5px; color:#f6d21b; }
   .story-copy h1 { font-size:clamp(30px,3.3vw,48px); line-height:1.2; font-weight:600; letter-spacing:-1.8px; }
@@ -99,5 +108,5 @@
   .login-notice { margin-top:20px; background:#fffbeb; color:#92400e; border-color:#fde68a; }
   .login-security { display:flex; justify-content:center; align-items:center; gap:7px; margin-top:27px; font-size:10px; color:var(--muted-foreground); }
   .login-copyright { position:absolute; bottom:30px; left:24px; right:24px; text-align:center; color:var(--muted-foreground); font-size:9px; }
-  @media(max-width:900px) { .login-page { grid-template-columns:1fr; } .login-story { display:none; } .login-form-side { min-height:100dvh; padding:120px 24px 100px; } .back-link { top:32px; left:24px; } }
+  @media(max-width:900px) { .login-page { grid-template-columns:1fr; } .login-story { display:none; } .card-logo { display:block; width:fit-content; margin-bottom:26px; } .card-logo img { display:block; width:auto; height:60px; } .has-logo .login-mark { display:none; } .login-form-side { min-height:100dvh; padding:120px 24px 100px; } .back-link { top:32px; left:24px; } }
 </style>

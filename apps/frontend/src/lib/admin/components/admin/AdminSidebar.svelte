@@ -5,8 +5,12 @@
   import * as Accordion from '$lib/components/ui/accordion';
   import * as Sheet from '$lib/components/ui/sheet';
   import { groups, activeNavigation } from '$lib/admin/navigation';
+  import { page } from '$app/state';
+  import { safeUrl } from '$lib/home-content';
   let { collapsed = false, currentPath = '/admin', mobileOpen = false, onCloseMobile = () => {}, onToggleDesktop = () => {} }: { collapsed?: boolean; currentPath?: string; mobileOpen?: boolean; onCloseMobile?: () => void; onToggleDesktop?: () => void } = $props();
   let search = $state('');
+  // CMS emblem (Branding → favicon_url); the full logo is too wide to read at sidebar size.
+  const emblem = $derived(safeUrl(page.data.branding?.favicon_url, ''));
   let expanded = $state(['Workspace', 'Safaris & destinations', 'Bookings & guests']);
   const active = $derived(activeNavigation(currentPath));
   const filtered = $derived(groups.map(group => ({ ...group, links: group.links.filter(link => `${group.label} ${link.label}`.toLowerCase().includes(search.toLowerCase())) })).filter(group => group.links.length));
@@ -18,7 +22,11 @@
 
 {#snippet navigation(compact: boolean)}
   <a class="cms-brand" href="/admin" onclick={onCloseMobile} aria-label="Key2africa dashboard">
-    <span class="cms-brand-mark"><Compass size={25} strokeWidth={1.7} /></span>
+    {#if emblem}
+      <span class="cms-brand-mark" style="background:#fff;box-shadow:inset 0 0 0 1px rgb(18 50 82 / .12)"><img src={emblem} alt="" class="size-8 object-contain" /></span>
+    {:else}
+      <span class="cms-brand-mark"><Compass size={25} strokeWidth={1.7} /></span>
+    {/if}
     {#if !compact}<span><strong>Key2africa<span class="cms-brand-dot">.</span></strong><small>SAFARI WORKSPACE</small></span>{/if}
   </a>
   {#if !compact}
