@@ -9,10 +9,11 @@
   export let placeholder = '';
   export let required = false;
   export let min: number | undefined = undefined;
+  export let step: number | 'any' | undefined = undefined;
   export let counter: number | undefined = undefined;
 </script>
 <div class="cms-field">
   <Label for={name}>{label}{#if required}<span class="text-destructive" aria-hidden="true">*</span>{/if}</Label>
-  <Input id={name} {name} {type} bind:value {placeholder} {required} {min} aria-describedby={counter ? `${name}-counter` : undefined}/>
+  <Input id={name} {name} {type} bind:value {placeholder} {required} {min} {step} aria-describedby={counter ? `${name}-counter` : undefined}/>
   {#if counter}<span id={`${name}-counter`} class={`cms-field-hint text-right ${String(value ?? '').length > counter ? 'text-destructive' : ''}`}>{String(value ?? '').length}/{counter}</span>{/if}
 </div>

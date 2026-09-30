@@ -216,7 +216,18 @@
     modalOpen = true;
   };
 
-  const openEditModal = (destination: Destination) => {
+  // The list endpoint returns a trimmed projection without the health & safety
+  // fields, so editing from a list row and saving would blank them. Load the
+  // full record first, and refuse to open rather than edit partial data.
+  const openEditModal = async (listRow: Destination) => {
+    let destination: Destination;
+    try {
+      const res = await api.destinations.get(listRow.slug);
+      destination = { ...listRow, ...(res.data as Destination) };
+    } catch (requestError) {
+      showToast(requestError instanceof Error ? requestError.message : 'Unable to load this destination.', 'error');
+      return;
+    }
     editingDestination = destination;
     form = {
       banner_image_url: destination.banner_image_url ?? '',
@@ -515,8 +526,8 @@
 
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <AdminSelect label="Status" name="status" bind:value={form.status} options={statusOptions} />
-          <AdminFormInput label="Latitude" name="latitude" type="number" bind:value={form.latitude} placeholder="-6.3690" />
-          <AdminFormInput label="Longitude" name="longitude" type="number" bind:value={form.longitude} placeholder="34.8888" />
+          <AdminFormInput label="Latitude" name="latitude" type="number" step="any" bind:value={form.latitude} placeholder="-6.3690" />
+          <AdminFormInput label="Longitude" name="longitude" type="number" step="any" bind:value={form.longitude} placeholder="34.8888" />
           <CmsLabel class="flex h-full min-h-[74px] items-center gap-3 rounded-2xl border border-ink/10 bg-sand/20 px-4 py-3 text-sm font-medium text-ink">
             <CmsCheckbox class="h-4 w-4 rounded border-ink/20 text-forest focus:ring-forest"  bind:checked={form.is_featured} />
             Featured destination
