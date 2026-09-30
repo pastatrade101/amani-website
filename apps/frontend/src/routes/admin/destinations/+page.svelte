@@ -401,9 +401,35 @@
     on:action={openCreateModal}
   />
 {:else}
-  <div class="overflow-hidden rounded-xl border border-ink/10 bg-surface shadow-sm">
+  <!-- Phones: one card per destination, no sideways scrolling. -->
+  <div class="grid gap-3 md:hidden">
+    {#each rows as destination (destination.id)}
+      <article class="rounded-xl border border-ink/10 bg-surface p-4 shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h3 class="break-words font-semibold text-ink">{destination.name}</h3>
+            <p class="mt-0.5 truncate text-xs text-ink/50">{[destination.region, destination.country].filter(Boolean).join(' · ') || destination.slug}</p>
+          </div>
+          <div class="flex shrink-0 flex-col items-end gap-1.5">
+            <StatusBadge status={destination.status} />
+            {#if destination.is_featured}<span class="rounded-full bg-goldfinch-gold/15 px-2 py-0.5 text-[10px] font-semibold text-heading ring-1 ring-goldfinch-gold/30">Featured</span>{/if}
+          </div>
+        </div>
+        <p class="mt-2 line-clamp-2 text-xs leading-5 text-ink/60">{destination.short_description || destination.location || ''}</p>
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <span class="text-[11px] text-ink/45">Updated {formatDate(destination.updated_at ?? destination.created_at)}</span>
+          <div class="flex gap-2">
+            <CmsButton variant="ghost" class="inline-flex h-9 items-center gap-2 rounded-xl border border-ink/10 bg-surface px-3 text-xs font-semibold text-ink shadow-sm" type="button" onclick={() => openEditModal(destination)}><Edit size={14} />Edit</CmsButton>
+            <CmsButton variant="ghost" class="inline-flex h-9 items-center gap-2 rounded-xl border border-red-200 bg-surface px-3 text-xs font-semibold text-red-700 shadow-sm" type="button" aria-label={`Delete ${destination.name}`} onclick={() => openDeleteConfirm(destination)}><Trash2 size={14} /></CmsButton>
+          </div>
+        </div>
+      </article>
+    {/each}
+  </div>
+
+  <div class="hidden overflow-hidden rounded-xl border border-ink/10 bg-surface shadow-sm md:block">
     <div class="overflow-x-auto">
-      <CmsTable.Root class="w-full min-w-[980px] text-start text-sm">
+      <CmsTable.Root class="w-full text-start text-sm">
         <CmsTable.Header class="bg-sand/70 text-xs uppercase tracking-[0.08em] text-ink/60">
           <CmsTable.Row>
             <CmsTable.Head class="px-4 py-3 font-semibold">Name</CmsTable.Head>
@@ -418,12 +444,12 @@
         <CmsTable.Body class="divide-y divide-ink/10">
           {#each rows as destination}
             <CmsTable.Row class="transition hover:bg-sand/25">
-              <CmsTable.Cell class="px-4 py-4">
-                <div class="font-semibold text-ink">{destination.name}</div>
-                <p class="mt-1 line-clamp-1 text-xs text-ink/55">{destination.short_description || destination.location || destination.slug}</p>
+              <CmsTable.Cell class="w-[34%] max-w-0 px-4 py-4">
+                <div class="truncate font-semibold text-ink">{destination.name}</div>
+                <p class="mt-1 truncate text-xs text-ink/55">{destination.short_description || destination.location || destination.slug}</p>
               </CmsTable.Cell>
               <CmsTable.Cell class="px-4 py-4 text-ink/65">{destination.country || '-'}</CmsTable.Cell>
-              <CmsTable.Cell class="px-4 py-4 text-ink/65">{destination.region || '-'}</CmsTable.Cell>
+              <CmsTable.Cell class="max-w-0 truncate px-4 py-4 text-ink/65">{destination.region || '-'}</CmsTable.Cell>
               <CmsTable.Cell class="px-4 py-4"><StatusBadge status={destination.status} /></CmsTable.Cell>
               <CmsTable.Cell class="px-4 py-4">
                 {#if destination.is_featured}
