@@ -5,7 +5,7 @@
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import * as NavigationMenu from '$lib/components/ui/navigation-menu/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
-	import { safeUrl, circuitFor } from '$lib/home-content';
+	import { safeUrl, circuitFor, destinationPhoto } from '$lib/home-content';
 	import type { Activity, Destination } from '$lib/types/api';
 	import { page } from '$app/state';
 
@@ -127,7 +127,7 @@
                                             {#each activities as activity}<a data-motion="reveal" class="mobile-menu-link" href={enquiryHref} onclick={() => choose(activity.name)}><img src={safeUrl(activity.image_url_thumbnail || activity.image_url || activity.hero_image_url, '/images/safari-hero.jpg')} alt="" /><span>{activity.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
                                             <a class="mobile-menu-link mobile-view-all" href="#experiences" onclick={closeMenu}>View all experiences <ArrowRight class="size-4" /></a>
                                         {:else if item.id === 'destinations'}
-                                            {#each destinations.slice(0, 8) as destination}<a data-motion="reveal" class="mobile-menu-link" href={enquiryHref} onclick={() => choose(destination.name)}><img src={safeUrl(destination.main_image_url_thumbnail || destination.image_url_thumbnail || destination.main_image_url || destination.image_url, '/images/serengeti.jpg')} alt="" /><span>{destination.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
+                                            {#each destinations.slice(0, 8) as destination, i}<a data-motion="reveal" class="mobile-menu-link" href={enquiryHref} onclick={() => choose(destination.name)}><img src={destinationPhoto(destination, i)} alt="" /><span>{destination.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
                                             <a class="mobile-menu-link mobile-view-all" href="#destinations" onclick={closeMenu}>Explore all destinations <ArrowRight class="size-4" /></a>
                                         {:else if item.id === 'zanzibar'}
                                             {#each islandIdeas as idea}<a class="mobile-menu-link mobile-idea-link" href={enquiryHref} onclick={() => choose(idea.title)}><span>{idea.title}<small>{idea.description}</small></span><ArrowUpRight class="size-3.5" /></a>{/each}

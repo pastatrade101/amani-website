@@ -175,7 +175,7 @@ export const saveTourPricingSeasons = asyncHandler(async (req, res) => {
 
   for (const [index, season] of seasons.entries()) {
     const seasonPayload = {
-      ...(season.id ? { id: season.id } : {}), tour_id: tourId, season_type: season.season_type,
+      ...(season.id ? { id: season.id } : {}), tour_id: tourId, safari_style: season.safari_style ?? 'midrange', season_type: season.season_type,
       season_name: season.season_name, start_date: season.start_date || null, end_date: season.end_date || null,
       currency: season.currency, pricing_basis: season.pricing_basis, status: season.status, sort_order: season.sort_order ?? index * 10
     };

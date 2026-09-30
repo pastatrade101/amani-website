@@ -55,6 +55,33 @@ export const textContent = (value?: string | null): string => (value ?? '')
 	.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
 	.replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
 
+/**
+ * Bundled photos for well-known places, used only while a destination has no
+ * CMS image. Without this every image-less card showed the same hero shot.
+ */
+const PLACE_PHOTOS: [RegExp, string][] = [
+	[/serengeti/, '/images/serengeti.jpg'],
+	[/ngorongoro/, '/images/ngorongoro.jpg'],
+	[/tarangire/, '/images/tarangire.jpg'],
+	[/manyara/, '/images/lake-manyara.jpg'],
+	[/zanzibar|stone town|pemba|mafia/, '/images/experience-zanzibar.jpg'],
+	[/nyerere|selous|rufiji/, '/images/itinerary-game-drive.jpg'],
+	[/ruaha/, '/images/itinerary-lions.jpg'],
+	[/mikumi/, '/images/itinerary-elephants.jpg'],
+	[/arusha|kilimanjaro/, '/images/itinerary-rhino.jpg']
+];
+/** Rotated by position for anything unmatched, so neighbouring cards differ. */
+const SPARE_PHOTOS = ['/images/itinerary-elephants.jpg', '/images/itinerary-lions.jpg', '/images/itinerary-baobab-sunset.jpg', '/images/itinerary-rhino.jpg', '/images/tanzania-hero-2.jpg', '/images/itinerary-crater.jpg'];
+
+/** The CMS image when there is one; otherwise a photo of the place, or a rotating spare. */
+export function destinationPhoto(item: Destination, index = 0): string {
+	const spare = SPARE_PHOTOS[index % SPARE_PHOTOS.length];
+	const own = item.main_image_url_thumbnail || item.image_url_thumbnail || item.main_image_url || item.image_url || item.banner_image_url;
+	if (own) return safeUrl(own, spare);
+	const place = `${item.name} ${item.slug} ${item.region ?? ''}`.toLowerCase();
+	return PLACE_PHOTOS.find(([pattern]) => pattern.test(place))?.[1] ?? spare;
+}
+
 export function circuitFor(destination: Destination): string {
 	const location = `${destination.region ?? ''} ${destination.name} ${destination.slug}`.toLowerCase();
 	if (/zanzibar|pemba|mafia|coast|stone town|saadani|dar es salaam/.test(location)) return 'coast';

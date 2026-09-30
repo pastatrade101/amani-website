@@ -137,6 +137,7 @@ export type TourGroupPrice = {
 export type TourPricingSeason = {
   id?: string;
   tour_id?: string;
+  safari_style?: 'budget' | 'midrange' | 'luxury' | null;
   season_type: 'STANDARD_SEASON' | 'PEAK_SEASON' | 'CUSTOM';
   season_name: string;
   start_date?: string | null;

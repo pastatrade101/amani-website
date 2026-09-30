@@ -41,6 +41,8 @@ export const pricingSeasonSaveSchema = z.object({
   tour_id: z.string().uuid(),
   seasons: z.array(z.object({
     id: z.string().uuid().optional(),
+    // Comfort level these prices are for; seasons saved before styles existed read as midrange.
+    safari_style: z.enum(['budget', 'midrange', 'luxury']).default('midrange'),
     season_type: z.enum(['STANDARD_SEASON', 'PEAK_SEASON', 'CUSTOM']),
     season_name: z.string().trim().min(2),
     start_date: z.string().date().optional().nullable(),

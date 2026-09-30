@@ -2,7 +2,7 @@
 	import { ArrowUpRight } from '@lucide/svelte';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import type { Destination, HomepageSection } from '$lib/types/api';
-	import { circuitFor, safeUrl, textContent } from '$lib/home-content';
+	import { circuitFor, destinationPhoto, textContent } from '$lib/home-content';
 	let { items, section, reference, canEnquire = true, showPackages = true, onInterest }: { items: Destination[]; section: HomepageSection; reference: boolean; canEnquire?: boolean; showPackages?: boolean; onInterest: (name: string) => void } = $props();
 	const circuits = [ { id: 'northern', label: 'Northern Circuit' }, { id: 'southern', label: 'Southern Circuit' }, { id: 'western', label: 'Western Circuit' }, { id: 'coast', label: 'Zanzibar & Coast' }, { id: 'other', label: 'More Places' } ];
 	let available = $derived(circuits.filter((circuit) => circuit.id !== 'other' || items.some((item) => circuitFor(item) === 'other')));
@@ -19,7 +19,7 @@
 					{#each items.filter((item) => circuitFor(item) === circuit.id).slice(0, 6) as item, index}
 						{@const href = !reference && showPackages ? `/?destination_id=${encodeURIComponent(item.id)}#tanzania-safari-packages` : canEnquire ? '#request-quote' : '#destinations'}
 						<a data-motion="card" data-motion-hover="card" {href} onclick={() => { if (reference) onInterest(item.name); }} class={`destination-cell cell-${index} group relative block min-h-60 overflow-hidden rounded-2xl bg-navy`}>
-							<img src={safeUrl(item.main_image_url_thumbnail || item.image_url_thumbnail || item.main_image_url || item.image_url || item.banner_image_url, '/images/safari-hero.jpg')} alt={item.name} loading="lazy" class="absolute inset-0 size-full object-cover transition-transform duration-[350ms] ease-out group-hover:scale-[1.04] motion-reduce:transition-none" />
+							<img src={destinationPhoto(item, index)} alt={item.name} loading="lazy" class="absolute inset-0 size-full object-cover transition-transform duration-[350ms] ease-out group-hover:scale-[1.04] motion-reduce:transition-none" />
 							<div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/10 to-transparent"></div>
 							<div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 text-white"><div><div class="gold-line w-8"></div><h3 class="mt-3 text-lg font-bold">{item.name}</h3><p class="mt-1.5 line-clamp-2 text-xs leading-5 text-white/85">{textContent(item.short_description || item.description)}</p></div><span class="grid size-8 shrink-0 place-items-center rounded-full bg-sun text-navy"><ArrowUpRight class="size-4" /></span></div>
 						</a>
