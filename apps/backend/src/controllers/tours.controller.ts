@@ -33,8 +33,10 @@ const summaryListSelect =
   'id, title, slug, destination_id, duration_days, duration_nights, status, created_at';
 // Detail view also embeds the assigned trip specialist, day-by-day itinerary,
 // what's included/excluded, pricing options and the tour gallery images.
-const detailExtras = 'itinerary_days(id,day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:lodges!itinerary_days_accommodation_id_fkey(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations!lodges_destination_id_fkey(name),lodge_images(id,image_url,alt_text,caption,sort_order,is_cover))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_pricing_seasons(id,safari_style,season_type,season_name,start_date,end_date,currency,pricing_basis,status,sort_order,group_prices:tour_group_prices(id,minimum_travelers,maximum_travelers,room_count,price,price_status,sort_order)), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
-const detailExtrasWithoutSeasons = 'itinerary_days(id,day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:lodges!itinerary_days_accommodation_id_fkey(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations!lodges_destination_id_fkey(name),lodge_images(id,image_url,alt_text,caption,sort_order,is_cover))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
+// Catalogue activities linked in the CMS (tour_activities); filtered to published in fetchTourById.
+const activitiesEmbed = 'tour_activities(sort_order,activity:activities(id,name,slug,category,duration_label,price_from,currency,price_unit,badge,hero_image_url,image_url,status))';
+const detailExtras = `itinerary_days(id,day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:lodges!itinerary_days_accommodation_id_fkey(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations!lodges_destination_id_fkey(name),lodge_images(id,image_url,alt_text,caption,sort_order,is_cover))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_pricing_seasons(id,safari_style,season_type,season_name,start_date,end_date,currency,pricing_basis,status,sort_order,group_prices:tour_group_prices(id,minimum_travelers,maximum_travelers,room_count,price,price_status,sort_order)), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at), ${activitiesEmbed}`;
+const detailExtrasWithoutSeasons = `itinerary_days(id,day_number,title,description,accommodation,accommodation_id,meals,activities,image_url,lodge:lodges!itinerary_days_accommodation_id_fkey(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations!lodges_destination_id_fkey(name),lodge_images(id,image_url,alt_text,caption,sort_order,is_cover))), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at), ${activitiesEmbed}`;
 const detailExtrasWithoutLodgeEmbed = 'itinerary_days(id,day_number,title,description,accommodation,accommodation_id,meals,activities,image_url), tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
 const detailSelect = `${select}, ${detailExtras}`;
 const fallbackDetailSelect = `${fallbackSelect}, ${detailExtrasWithoutLodgeEmbed}`;
@@ -184,6 +186,12 @@ const fetchTourById = async (id: string) => {
   if (!data) throw new AppError('Record not found.', 404);
 
   const record = data as unknown as Record<string, unknown>;
+  // Only published activities leave the API, so a draft's name never reaches a public tour page.
+  if (Array.isArray(record.tour_activities)) {
+    record.tour_activities = (record.tour_activities as Array<Record<string, any>>)
+      .filter((link) => link.activity && link.activity.status === 'published')
+      .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0));
+  }
   await attachTourDetailImages(record);
   return record;
 };

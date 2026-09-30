@@ -354,11 +354,20 @@ export type Activity = {
   price_unit?: string | null;
   badge?: string | null;
   best_season?: string[];
+  best_months?: number[] | null;
+  sort_order?: number | null;
+  og_image_url?: string | null;
   status?: string;
   is_featured?: boolean;
   seo_title?: string;
   meta_title?: string;
   meta_description?: string;
+  created_at?: string;
+  updated_at?: string;
+  /** Where it can be done (primary first); detail reads include names. */
+  activity_destinations?: { destination_id: string; is_primary?: boolean; sort_order?: number; destinations?: { id: string; name: string; slug: string; region?: string | null; status?: string } | null }[] | null;
+  /** Tours that include it. */
+  tour_activities?: { tour_id: string; sort_order?: number; tours?: { id: string; title: string; slug: string; status?: string } | null }[] | null;
 };
 
 export type TripPoint = {
