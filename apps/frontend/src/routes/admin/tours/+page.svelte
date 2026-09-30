@@ -7,7 +7,7 @@
 
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { Edit, Plus, Search, Trash2 } from '@lucide/svelte';
+  import { Edit, ExternalLink, MapPin, Plus, Route, Search, Star, Trash2 } from '@lucide/svelte';
   import { api } from '$lib/admin/api/client';
   import AdminButton from '$lib/admin/components/admin/AdminButton.svelte';
   import AdminEmptyState from '$lib/admin/components/admin/AdminEmptyState.svelte';
@@ -19,33 +19,13 @@
   import ToastStack from '$lib/admin/components/admin/ToastStack.svelte';
   import ErrorState from '$lib/admin/components/public/ErrorState.svelte';
   import LoadingState from '$lib/admin/components/public/LoadingState.svelte';
-  import { getTourDestinationLabel } from '$lib/admin/tourDestinations';
-  import type { Pagination, Tour as PublicTour } from '$lib/admin/types';
+  import { getTourDestinations } from '$lib/admin/tourDestinations';
+  import type { Pagination, Tour } from '$lib/admin/types';
+  import { SAFARI_STYLES, SAFARI_STYLE_THEME, formatPrice } from '$lib/safari-pricing';
 
   type Option = {
     label: string;
     value: string;
-  };
-
-  type Tour = {
-    category_id?: string | null;
-    created_at?: string;
-    currency?: string | null;
-    destination_id?: string | null;
-    destinations?: unknown;
-    duration_days?: number | string | null;
-    duration_nights?: number | string | null;
-    id: string;
-    is_available?: boolean | null;
-    is_featured?: boolean | null;
-    is_popular?: boolean | null;
-    price_from?: number | string | null;
-    short_description?: string | null;
-    slug: string;
-    status: 'draft' | 'published' | 'archived';
-    title: string;
-    tour_categories?: unknown;
-    updated_at?: string;
   };
 
   type Toast = {
@@ -98,21 +78,28 @@
     toasts = toasts.filter((toast) => toast.id !== event.detail);
   };
 
-  const relationText = (value: unknown, key: string) => {
-    if (Array.isArray(value)) return String((value[0] as Record<string, unknown> | undefined)?.[key] ?? '-');
-    if (value && typeof value === 'object') return String((value as Record<string, unknown>)[key] ?? '-');
-    return '-';
-  };
-
   const formatDate = (value?: string) => {
     if (!value) return '-';
     return new Intl.DateTimeFormat('en', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
   };
 
-  const formatPrice = (tour: Tour) => {
-    const amount = Number(tour.price_from ?? 0);
-    const currency = tour.currency || 'USD';
-    return `${currency} ${Number.isFinite(amount) ? amount.toLocaleString() : '0'}`;
+  /** "Serengeti +2": the primary destination and how many more the route visits. */
+  const routeLabel = (tour: Tour) => {
+    const places = getTourDestinations(tour);
+    if (!places.length) return 'No destination';
+    return places.length > 1 ? `${places[0].name} +${places.length - 1}` : places[0].name;
+  };
+  const routeTitle = (tour: Tour) => getTourDestinations(tour).map((place) => place.name).join(' → ');
+
+  const dayCount = (tour: Tour) => Number(tour.itinerary_day_count ?? tour.itinerary_days?.length ?? 0);
+  const tripDays = (tour: Tour) => Number(tour.duration_days ?? 0);
+  /** Itinerary days that do not match the trip length are worth a second look. */
+  const itineraryOff = (tour: Tour) => dayCount(tour) !== tripDays(tour);
+
+  const priceStyles = (tour: Tour) => SAFARI_STYLES.filter((style) => tour.pricing_summary?.styles?.includes(style.id));
+  const priceFrom = (tour: Tour) => {
+    const summary = tour.pricing_summary;
+    return summary?.from != null ? `from ${formatPrice(Number(summary.from), summary.currency || tour.currency || 'USD')}` : '';
   };
 
   const loadFilters = async () => {
@@ -284,7 +271,7 @@
   <AdminPageHeader
     eyebrow="Tour Management"
     title="Tours"
-    description="Manage tour packages, publishing status, AI matching data, pricing, image assets, and SEO metadata."
+    description="Safari packages with their day-by-day itinerary, overnights per safari style, prices, photos and publishing status."
     actionLabel="New Tour"
     actionIcon={Plus}
     secondaryLabel="Import CSV"
@@ -317,13 +304,13 @@
   {:else if rows.length === 0}
     <AdminEmptyState
       title="No tours found"
-      message="Create your first Key2africa tour package with CMS publishing controls, images, AI matching fields, and SEO metadata."
+      message="Create your first Key2africa safari: its itinerary, where travellers sleep in each safari style, prices, photos and SEO."
       actionLabel="Create tour"
       on:action={() => goto('/admin/tours/new')}
     />
   {:else}
     {#if selectedCount}
-      <div class="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-goldfinch-gold/40 bg-goldfinch-gold/10 px-4 py-3">
+      <div class="flex flex-wrap items-center gap-3 rounded-xl border border-goldfinch-gold/40 bg-goldfinch-gold/10 px-4 py-3">
         <p class="text-sm font-bold text-heading" aria-live="polite">
           {selectedCount} tour{selectedCount === 1 ? '' : 's'} selected
         </p>
@@ -356,15 +343,61 @@
       </div>
     {/if}
 
-    <div class="min-w-0 max-w-full overflow-hidden rounded-xl border border-ink/10 bg-surface shadow-sm">
+    <!-- Phones: one card per tour, no sideways scrolling. -->
+    <div class="grid gap-3 md:hidden">
+      <label class="flex items-center gap-2 px-1 text-xs font-semibold text-ink/60">
+        <CmsCheckbox class="h-4 w-4 cursor-pointer accent-forest" checked={allVisibleSelected} indeterminate={someVisibleSelected} onCheckedChange={toggleAllVisible} />
+        Select all on this page
+      </label>
+      {#each rows as tour (tour.id)}
+        <article class={`rounded-xl border bg-surface p-4 shadow-sm ${selectedIds.has(tour.id) ? 'border-goldfinch-gold/50 bg-goldfinch-gold/5' : 'border-ink/10'}`}>
+          <div class="flex items-start gap-3">
+            <CmsCheckbox class="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-forest" aria-label={`Select ${tour.title}`} checked={selectedIds.has(tour.id)} onCheckedChange={() => toggleOne(tour.id)} />
+            <div class="min-w-0 flex-1">
+              <h3 class="flex items-start gap-1.5 break-words font-semibold text-ink">
+                {#if tour.is_featured}<Star size={13} class="mt-1 shrink-0 fill-goldfinch-gold text-goldfinch-gold" />{/if}{tour.title}
+              </h3>
+              <p class="mt-0.5 truncate text-xs text-ink/50">/{tour.slug}</p>
+            </div>
+            <StatusBadge status={tour.status || 'draft'} />
+          </div>
+          <p class="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink/60">
+            <span>{tripDays(tour)} {tripDays(tour) === 1 ? 'day' : 'days'}</span>
+            <span class="inline-flex min-w-0 items-center gap-1"><MapPin size={12} class="shrink-0" /><span class="truncate">{routeLabel(tour)}</span></span>
+            <span class={`inline-flex items-center gap-1 ${itineraryOff(tour) ? 'font-semibold text-amber-700' : ''}`}><Route size={12} />{dayCount(tour)}/{tripDays(tour)} days planned</span>
+          </p>
+          <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink/60">
+            {#if priceStyles(tour).length}
+              <span class="inline-flex items-center gap-1">
+                {#each priceStyles(tour) as style (style.id)}<span class="size-2.5 rounded-full" style={`background:${SAFARI_STYLE_THEME[style.id].primary}`} title={style.title}></span>{/each}
+              </span>
+              <span>{priceFrom(tour) || 'Prices on request'}</span>
+            {:else}
+              <span>On request</span>
+            {/if}
+          </div>
+          <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <span class="text-[11px] text-ink/45">Updated {formatDate(tour.updated_at ?? tour.created_at)}</span>
+            <div class="flex gap-2">
+              <a class="inline-flex h-9 items-center gap-2 rounded-xl border border-ink/10 bg-surface px-3 text-xs font-semibold text-ink shadow-sm" href={`/admin/tours/${tour.id}/edit`}><Edit size={14} />Edit</a>
+              {#if tour.status === 'published'}
+                <a class="inline-flex h-9 items-center rounded-xl border border-ink/10 bg-surface px-3 text-ink/70 shadow-sm" href={`/tours/${tour.slug}`} target="_blank" rel="noopener" aria-label={`View ${tour.title} on the site`}><ExternalLink size={14} /></a>
+              {/if}
+              <CmsButton variant="ghost" class="inline-flex h-9 items-center gap-2 rounded-xl border border-red-200 bg-surface px-3 text-xs font-semibold text-red-700 shadow-sm" type="button" aria-label={`Delete ${tour.title}`} onclick={() => openDeleteConfirm(tour)}><Trash2 size={14} /></CmsButton>
+            </div>
+          </div>
+        </article>
+      {/each}
+    </div>
+
+    <div class="hidden min-w-0 max-w-full overflow-hidden rounded-xl border border-ink/10 bg-surface shadow-sm md:block">
       <div class="max-w-full overflow-x-auto overscroll-x-contain" data-lenis-prevent>
-        <CmsTable.Root class="w-full min-w-[1180px] text-start text-sm">
+        <CmsTable.Root class="w-full min-w-[900px] text-start text-sm">
           <CmsTable.Header class="bg-sand/70 text-xs uppercase tracking-[0.08em] text-ink/60">
             <CmsTable.Row>
               <CmsTable.Head class="w-10 px-4 py-3">
                 <CmsCheckbox
                   class="h-4 w-4 cursor-pointer accent-forest"
-                  
                   aria-label={allVisibleSelected ? 'Deselect all tours on this page' : 'Select all tours on this page'}
                   checked={allVisibleSelected}
                   indeterminate={someVisibleSelected}
@@ -372,60 +405,58 @@
                 />
               </CmsTable.Head>
               <CmsTable.Head class="px-4 py-3 font-semibold">Tour</CmsTable.Head>
-              <CmsTable.Head class="px-4 py-3 font-semibold">Destination</CmsTable.Head>
-              <CmsTable.Head class="px-4 py-3 font-semibold">Category</CmsTable.Head>
+              <CmsTable.Head class="px-4 py-3 font-semibold">Days</CmsTable.Head>
+              <CmsTable.Head class="px-4 py-3 font-semibold">Route</CmsTable.Head>
+              <CmsTable.Head class="px-4 py-3 font-semibold">Itinerary</CmsTable.Head>
+              <CmsTable.Head class="px-4 py-3 font-semibold">Prices</CmsTable.Head>
               <CmsTable.Head class="px-4 py-3 font-semibold">Status</CmsTable.Head>
-              <CmsTable.Head class="px-4 py-3 font-semibold">Flags</CmsTable.Head>
-              <CmsTable.Head class="px-4 py-3 font-semibold">Duration</CmsTable.Head>
-              <CmsTable.Head class="px-4 py-3 font-semibold">Price</CmsTable.Head>
               <CmsTable.Head class="px-4 py-3 font-semibold">Updated</CmsTable.Head>
               <CmsTable.Head class="px-4 py-3 text-right font-semibold">Actions</CmsTable.Head>
             </CmsTable.Row>
           </CmsTable.Header>
           <CmsTable.Body class="divide-y divide-ink/10">
-            {#each rows as tour}
+            {#each rows as tour (tour.id)}
               <CmsTable.Row class={`transition hover:bg-sand/25 ${selectedIds.has(tour.id) ? 'bg-goldfinch-gold/10' : ''}`}>
                 <CmsTable.Cell class="px-4 py-4">
                   <CmsCheckbox
                     class="h-4 w-4 cursor-pointer accent-forest"
-                    
                     aria-label={`Select ${tour.title}`}
                     checked={selectedIds.has(tour.id)}
                     onCheckedChange={() => toggleOne(tour.id)}
                   />
                 </CmsTable.Cell>
-                <CmsTable.Cell class="px-4 py-4">
-                  <div class="font-semibold text-ink">{tour.title}</div>
-                  <p class="mt-1 line-clamp-1 text-xs text-ink/55">{tour.short_description || tour.slug}</p>
+                <CmsTable.Cell class="w-[34%] max-w-0 px-4 py-4">
+                  <div class="flex items-center gap-2 font-semibold text-ink">{#if tour.is_featured}<Star size={13} class="shrink-0 fill-goldfinch-gold text-goldfinch-gold" />{/if}<span class="truncate" title={tour.title}>{tour.title}</span></div>
+                  <p class="mt-1 truncate text-xs text-ink/55">/{tour.slug}</p>
                 </CmsTable.Cell>
-                <CmsTable.Cell class="px-4 py-4 text-ink/65">{getTourDestinationLabel(tour as unknown as PublicTour, 2) || relationText(tour.destinations, 'name')}</CmsTable.Cell>
-                <CmsTable.Cell class="px-4 py-4 text-ink/65">{relationText(tour.tour_categories, 'name')}</CmsTable.Cell>
-                <CmsTable.Cell class="px-4 py-4"><StatusBadge status={tour.status} /></CmsTable.Cell>
-                <CmsTable.Cell class="px-4 py-4">
-                  <div class="flex flex-wrap gap-1.5">
-                    <span class={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${tour.is_available ? 'bg-forest/10 text-forest ring-forest/20' : 'bg-slate-100 text-slate-600 ring-slate-200'}`}>
-                      {tour.is_available ? 'Available' : 'Unavailable'}
-                    </span>
-                    {#if tour.is_featured}
-                      <span class="inline-flex rounded-full bg-goldfinch-gold/15 px-2.5 py-1 text-xs font-bold text-heading ring-1 ring-goldfinch-gold/25">Featured</span>
-                    {/if}
-                    {#if tour.is_popular}
-                      <span class="inline-flex rounded-full bg-sand px-2.5 py-1 text-xs font-bold text-ink ring-1 ring-ink/10">Popular</span>
-                    {/if}
-                  </div>
+                <CmsTable.Cell class="whitespace-nowrap px-4 py-4 text-ink/65">{tripDays(tour)}d / {tour.duration_nights ?? Math.max(0, tripDays(tour) - 1)}n</CmsTable.Cell>
+                <CmsTable.Cell class="max-w-[180px] truncate px-4 py-4 text-ink/65" title={routeTitle(tour)}>{routeLabel(tour)}</CmsTable.Cell>
+                <CmsTable.Cell class={`whitespace-nowrap px-4 py-4 ${itineraryOff(tour) ? 'font-semibold text-amber-700' : 'text-ink/65'}`} title={itineraryOff(tour) ? 'The planned days do not match the trip length' : undefined}>
+                  {dayCount(tour)} / {tripDays(tour)}
                 </CmsTable.Cell>
-                <CmsTable.Cell class="px-4 py-4 text-ink/65">{tour.duration_days ?? '-'}d / {tour.duration_nights ?? 0}n</CmsTable.Cell>
-                <CmsTable.Cell class="px-4 py-4 font-semibold text-ink">{formatPrice(tour)}</CmsTable.Cell>
-                <CmsTable.Cell class="px-4 py-4 text-ink/65">{formatDate(tour.updated_at ?? tour.created_at)}</CmsTable.Cell>
+                <CmsTable.Cell class="px-4 py-4">
+                  {#if priceStyles(tour).length}
+                    <div class="flex items-center gap-1" aria-label={`Prices for ${priceStyles(tour).map((style) => style.title).join(', ')}`}>
+                      {#each priceStyles(tour) as style (style.id)}<span class="size-2.5 rounded-full" style={`background:${SAFARI_STYLE_THEME[style.id].primary}`} title={style.title}></span>{/each}
+                    </div>
+                    {#if priceFrom(tour)}<p class="mt-1 whitespace-nowrap text-xs text-ink/55">{priceFrom(tour)}</p>{/if}
+                  {:else}
+                    <span class="text-xs text-ink/50">On request</span>
+                  {/if}
+                </CmsTable.Cell>
+                <CmsTable.Cell class="px-4 py-4"><StatusBadge status={tour.status || 'draft'} /></CmsTable.Cell>
+                <CmsTable.Cell class="whitespace-nowrap px-4 py-4 text-ink/65">{formatDate(tour.updated_at ?? tour.created_at)}</CmsTable.Cell>
                 <CmsTable.Cell class="px-4 py-4">
                   <div class="flex justify-end gap-2">
                     <a class="inline-flex h-9 items-center gap-2 rounded-xl border border-ink/10 bg-surface px-3 text-xs font-semibold text-ink shadow-sm transition hover:border-goldfinch-gold/35 hover:bg-sand/70" href={`/admin/tours/${tour.id}/edit`}>
                       <Edit size={14} />
                       Edit
                     </a>
-                    <CmsButton variant="ghost" class="inline-flex h-9 items-center gap-2 rounded-xl border border-red-200 bg-surface px-3 text-xs font-semibold text-red-700 shadow-sm transition hover:bg-red-50" type="button" onclick={() => openDeleteConfirm(tour)}>
+                    {#if tour.status === 'published'}
+                      <a class="inline-flex h-9 items-center rounded-xl border border-ink/10 bg-surface px-3 text-ink/70 shadow-sm transition hover:bg-sand/70" href={`/tours/${tour.slug}`} target="_blank" rel="noopener" aria-label={`View ${tour.title} on the site`} title="View on site"><ExternalLink size={14} /></a>
+                    {/if}
+                    <CmsButton variant="ghost" class="inline-flex h-9 items-center gap-2 rounded-xl border border-red-200 bg-surface px-3 text-xs font-semibold text-red-700 shadow-sm transition hover:bg-red-50" type="button" aria-label={`Delete ${tour.title}`} title="Delete" onclick={() => openDeleteConfirm(tour)}>
                       <Trash2 size={14} />
-                      Delete
                     </CmsButton>
                   </div>
                 </CmsTable.Cell>

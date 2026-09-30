@@ -38,38 +38,8 @@ export const imagesForLodge = async (lodgeId: string): Promise<Row[]> =>
     return (data ?? []) as Row[];
   }, []);
 
-/**
- * Attach each property's gallery cover as `cover_image_url`.
- *
- * Most properties imported from the photo set have no image_url or
- * hero_image_url — their photography lives entirely in lodge_images — so a
- * card reading only the legacy fields renders an empty tile. This gives the
- * listing something real to fall back to.
- */
-export const attachCovers = async (rows: Array<Record<string, unknown>>): Promise<void> => {
-  const ids = rows.map((row) => String(row.id)).filter(Boolean);
-  if (!ids.length) return;
-
-  await softly(async () => {
-    const { data, error } = await supabase
-      .from('lodge_images')
-      .select('lodge_id,image_url,is_cover,sort_order')
-      .in('lodge_id', ids)
-      .order('is_cover', { ascending: false })
-      .order('sort_order', { ascending: true });
-    if (error) return;
-
-    // First row per lodge wins: covers sort first, then lowest sort_order.
-    const cover = new Map<string, string>();
-    for (const row of (data ?? []) as Array<{ lodge_id: string; image_url: string }>) {
-      if (!cover.has(row.lodge_id)) cover.set(row.lodge_id, row.image_url);
-    }
-    for (const row of rows) {
-      const url = cover.get(String(row.id));
-      if (url) row.cover_image_url = url;
-    }
-  }, undefined);
-};
+// Gallery covers for lists (attachCovers) and the tours that stay at a
+// property live in services/lodge-stays.service.ts, batched per page.
 
 /** Public gallery-only response used by itinerary pages. */
 export const getLodgeGallery = asyncHandler(async (req, res) => {
@@ -90,33 +60,6 @@ export const amenitiesForLodge = async (lodgeId: string): Promise<Row[]> =>
       .map((row) => row.amenities as Row | null)
       .filter((amenity): amenity is Row => Boolean(amenity) && amenity!.is_active !== false)
       .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0));
-  }, []);
-
-/**
- * Tours whose itinerary actually stays at this property.
- *
- * Built on the real itinerary_days.accommodation_id link — never on "same
- * destination", which would claim a trip uses a lodge it may not.
- */
-export const toursFeaturingLodge = async (lodgeId: string): Promise<Row[]> =>
-  softly(async () => {
-    const [days, attached] = await Promise.all([
-      supabase.from('itinerary_days').select('tour_id, tours!inner(id,title,slug,status,deleted_at,duration_days,price_from,currency,main_image_url)').eq('accommodation_id', lodgeId),
-      supabase.from('lodge_tours').select('tour_id, tours!inner(id,title,slug,status,deleted_at,duration_days,price_from,currency,main_image_url)').eq('lodge_id', lodgeId)
-    ]);
-    if (days.error && attached.error) return [];
-
-    const seen = new Set<string>();
-    const tours: Row[] = [];
-    for (const row of ([...(days.data ?? []), ...(attached.data ?? [])]) as Row[]) {
-      const tour = row.tours as Row | null;
-      if (!tour || tour.deleted_at || tour.status !== 'published') continue;
-      const id = String(tour.id);
-      if (seen.has(id)) continue;
-      seen.add(id);
-      tours.push(tour);
-    }
-    return tours.slice(0, 6);
   }, []);
 
 const lodgeIdOr404 = async (id: string): Promise<string> => {

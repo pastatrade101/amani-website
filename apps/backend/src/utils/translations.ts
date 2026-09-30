@@ -190,6 +190,7 @@ export const TRANSLATABLE_ENTITIES: Record<string, TranslatableField[]> = {
    */
   itinerary_days: [
     { key: 'title', label: 'Day title', kind: 'text', required: true },
+    { key: 'summary', label: 'One-line summary', kind: 'text' },
     { key: 'description', label: 'What happens that day', kind: 'rich', required: true },
     { key: 'accommodation', label: 'Where they stay', kind: 'text' },
     { key: 'meals', label: 'Meals included', kind: 'text' },

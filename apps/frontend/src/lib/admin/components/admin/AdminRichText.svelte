@@ -34,6 +34,7 @@
     Undo2
   } from '@lucide/svelte';
   import { hasRichContent, looksLikeHtml, plainToHtml, sanitizeRichText } from '$lib/admin/richText';
+  import { richTextLength } from '$lib/tour-limits';
 
   export let label: string;
   export let name: string;
@@ -46,6 +47,15 @@
   export let hint = '';
   /** Content-only toolbar for template-managed package sections. */
   export let compact = false;
+  /**
+   * Characters of text the field may hold (markup does not count). Shows a
+   * live counter; a contenteditable has no `maxlength`, so the form's own
+   * save check is what stops a longer text.
+   */
+  export let maxChars: number | undefined = undefined;
+
+  $: textLength = maxChars ? richTextLength(value) : 0;
+  $: overBy = maxChars ? textLength - maxChars : 0;
 
   let element: HTMLDivElement;
   let editor: Editor | null = null;
@@ -309,7 +319,14 @@
     <div class="admin-rich" style={`--rich-min-height: ${Math.max(rows, 3) * 1.6}rem`} bind:this={element}></div>
   </div>
 
-  {#if hint}
+  {#if maxChars}
+    <div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+      {#if hint}<span class="text-[12px] text-ink/45">{hint}</span>{/if}
+      <span id={`${name}-counter`} class={`cms-field-hint ml-auto text-right ${overBy > 0 ? 'font-semibold text-destructive' : ''}`}>
+        {textLength}/{maxChars} characters{#if overBy > 0} · {overBy} over — shorten it to save{/if}
+      </span>
+    </div>
+  {:else if hint}
     <span class="text-[12px] text-ink/45">{hint}</span>
   {/if}
 

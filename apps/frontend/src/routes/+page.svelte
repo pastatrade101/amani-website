@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { ArrowRight, ArrowUpRight, Clock, MapPin } from '@lucide/svelte';
+	import { ArrowRight } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { Badge } from '$lib/components/ui/badge/index.js';
 	import SiteHeader from '$lib/components/home/site-header.svelte';
 	import WhyKey2africa from '$lib/components/home/why-key2africa.svelte';
 	import Planning from '$lib/components/home/planning.svelte';
@@ -14,8 +12,9 @@
 	import Destinations from '$lib/components/home/destinations.svelte';
 	import Seasons from '$lib/components/home/seasons.svelte';
 	import Enquiry from '$lib/components/home/enquiry.svelte';
+	import TourCard from '$lib/components/tours/tour-card.svelte';
 	import { siteInfo, websiteSchema } from '$lib/site-info';
-	import { safeUrl, textContent } from '$lib/home-content';
+	import { textContent, tourPhotos } from '$lib/home-content';
 	import type { PageProps } from './$types';
 	let { data, form }: PageProps = $props();
 	let interest = $state('');
@@ -23,12 +22,8 @@
 	let hero = $derived(data.sections.find((section) => section.section_key === 'hero'));
 	let pageTitle = $derived(`${hero?.title || 'Tanzania Safaris'} | ${siteInfo.company}`);
 	let structuredData = $derived(JSON.stringify(websiteSchema(data.siteOrigin)).replace(/</g, '\\u003c'));
+	let photos = $derived(tourPhotos(data.tours));
 	const chooseInterest = (name: string) => { interest = name; };
-	function price(amount: string | number | null | undefined, currency: string) {
-		if (amount == null || !Number.isFinite(Number(amount)) || Number(amount) <= 0) return 'Price on request';
-		try { return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(amount)); }
-		catch { return `${amount} ${currency}`; }
-	}
 	function pageHref(page: number) {
 		const params = new URLSearchParams({ ...data.filters, page: String(page) });
 		for (const [key, value] of [...params]) if (!value) params.delete(key);
@@ -56,7 +51,7 @@
 </svelte:head>
 <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-sun focus:p-4">Skip to content</a>
 <div id="top" class="border-b border-border bg-secondary/50"><div class="page-container flex items-center justify-between gap-4 py-2 text-[9px] text-muted-foreground"><p>Home <span class="mx-2">/</span> Destinations <span class="mx-2">/</span> <span class="text-primary">Tanzania Safari</span></p><span class="hidden tracking-wider sm:block">YOUR TANZANIA. YOUR WAY.</span></div></div>
-<SiteHeader {visible} activities={data.activities} destinations={data.destinations} onInterest={chooseInterest} />
+<SiteHeader {visible} activities={data.activities} destinations={data.destinations} onInterest={chooseInterest} tours={data.navTours} categories={data.categories} stays={data.navStays} />
 <main id="main">
 	{#each data.sections.filter((section) => section.is_active !== false) as section (section.section_key)}
 		{#if section.section_key === 'hero'}
@@ -75,14 +70,11 @@
 		{:else if section.section_key === 'safari_packages'}
 			<section id="tanzania-safari-packages" class="my-6 bg-secondary/45 py-14 md:py-18">
 				<div class="page-container">
-					<div data-motion="reveal" class="flex flex-wrap items-end justify-between gap-5"><div class="max-w-2xl"><p class="eyebrow text-muted-foreground">{section.subtitle}</p><h2 class="section-heading mt-3">{section.title}</h2><p class="mt-3 text-sm leading-7 text-muted-foreground">{textContent(section.content)}</p></div>{#if data.filters.search || data.filters.destination_id || data.filters.category_id}<Button href="/#tanzania-safari-packages" variant="outline">Clear filters</Button>{/if}</div>
+					<div data-motion="reveal" class="flex flex-wrap items-end justify-between gap-5"><div class="max-w-2xl"><p class="eyebrow text-muted-foreground">{section.subtitle}</p><h2 class="section-heading mt-3">{section.title}</h2><p class="mt-3 text-sm leading-7 text-muted-foreground">{textContent(section.content)}</p></div><div class="flex flex-wrap items-center gap-3">{#if data.filters.search || data.filters.destination_id || data.filters.category_id}<Button href="/#tanzania-safari-packages" variant="outline">Clear filters</Button>{/if}<Button href="/tours" variant="outline" class="border-navy/20">View all tours <ArrowRight class="size-4" /></Button></div></div>
 					{#if data.filters.search}<p class="mt-5 text-sm">Results for “{data.filters.search}”</p>{/if}
 					<div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-						{#each data.tours as tour}
-							<Card.Root data-motion="card" data-motion-hover="card" class="gap-0 overflow-hidden rounded-2xl py-0 shadow-none">
-								<div class="relative"><img src={safeUrl(tour.main_image_url_thumbnail || tour.main_image_url, '/images/safari-hero.jpg')} alt={tour.title} loading="lazy" class="h-56 w-full object-cover" />{#if tour.budget_tier}<Badge class="absolute top-4 left-4 bg-white text-primary">{tour.budget_tier}</Badge>{/if}</div>
-								<Card.Content class="flex flex-1 flex-col p-5"><div class="flex flex-wrap gap-4 text-[10px] text-muted-foreground"><span class="flex items-center gap-1"><Clock class="size-3" /> {tour.duration_days} days</span>{#if tour.destinations}<span class="flex items-center gap-1"><MapPin class="size-3" /> {tour.destinations.name}</span>{/if}</div><h3 class="mt-3 text-lg font-bold">{tour.title}</h3><p class="mt-3 line-clamp-3 text-xs leading-6 text-muted-foreground">{textContent(tour.short_description)}</p><div class="mt-auto flex items-end justify-between gap-4 pt-6"><p class="text-lg font-semibold">{#if Number(tour.price_from) > 0}<span class="block text-[10px] font-normal text-muted-foreground">From</span>{/if}{price(tour.price_from, tour.currency)}</p>{#if visible.includes('enquiry')}<Button href="#request-quote" onclick={() => chooseInterest(tour.title)} variant="safari" class="h-10 px-4 text-xs">Enquire <ArrowUpRight /></Button>{/if}</div></Card.Content>
-							</Card.Root>
+						{#each data.tours as tour, i (tour.id)}
+							<TourCard {tour} photo={photos[i]} />
 						{:else}
                             <div data-motion="image" class="col-span-full grid overflow-hidden rounded-2xl border border-border bg-white md:grid-cols-2">
                                 <img src="/images/tanzania-hero-3.jpg" alt="Hot air balloons drifting over the Serengeti at sunrise" loading="lazy" class="h-60 w-full object-cover md:h-full md:min-h-80" />

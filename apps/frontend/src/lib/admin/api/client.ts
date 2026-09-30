@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import { API_URL } from '$lib/admin/config/env';
 import type { EntityTranslations, Language, TranslationRecord } from '$lib/admin/types';
 import type { LegalDefaults } from '$lib/admin/legal';
-import type { Activity, AdvisorDonePayload, AdvisorMeta, AdvisorPageContext, AdvisorRecommendation, AiChatResponse, ApiResponse, BlogPost, Comparison, CurrencyApiState, Destination, FAQ, Lodge, MigrationEntry, PageSeo, Paginated, Review, ReviewSummary, SafariPackage, SafetyTopic, Specialist, Testimonial, Tour, TourCategory, TravelStyle, TripPoint } from '$lib/admin/types';
+import type { Activity, AdvisorDonePayload, AdvisorMeta, AdvisorPageContext, AdvisorRecommendation, AiChatResponse, ApiResponse, BlogPost, Comparison, CurrencyApiState, Destination, FAQ, Lodge, MigrationEntry, PageSeo, Paginated, Review, ReviewSummary, SafariPackage, SafetyTopic, Specialist, Testimonial, Tour, TourCategory, TourContentBody, TravelStyle, TripPoint } from '$lib/admin/types';
 
 type QueryValue = string | number | boolean | undefined | null;
 type RequestOptions = Omit<RequestInit, 'body'> & {
@@ -210,6 +210,13 @@ export const api = {
     get: (slug: string, params?: Record<string, QueryValue>) => apiRequest<Tour>(`/tours/${slug}${queryString(params)}`),
     create: (body: Record<string, unknown>) => apiRequest<Tour>('/tours', { method: 'POST', body }),
     update: (id: string, body: Record<string, unknown>) => apiRequest<Tour>(`/tours/${id}`, { method: 'PUT', body }),
+    /**
+     * Days, inclusions, exclusions, gallery and activities in one request; each
+     * key sent replaces that collection. Returns the full staff record, so the
+     * editor picks up the ids of anything new.
+     */
+    saveContent: (id: string, body: TourContentBody) =>
+      apiRequest<Tour>(`/tours/${id}/content`, { method: 'PUT', body }),
     remove: (id: string) => apiRequest(`/tours/${id}`, { method: 'DELETE' }),
     bulkRemove: (ids: string[]) =>
       apiRequest<{ deleted: number; ids: string[] }>('/tours/bulk-delete', { method: 'POST', body: { ids } }),

@@ -2,6 +2,9 @@ import { supabase } from '../config/supabase';
 import { asyncHandler } from '../utils/async-handler';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { safeAudit } from '../services/audit.service';
+import { toursUsingLodges } from '../services/lodge-stays.service';
+import { isPublicStay } from '../utils/lodge-stays';
+import type { TourUsingLodge } from '../utils/tour-content';
 
 type Row = Record<string, any>;
 
@@ -23,19 +26,33 @@ export const publicDetailsForLodge = async (id: string) => {
     supabase.from('lodge_seasonal_rates').select('season_name,valid_from,valid_until,currency,rack_rate,single_rate,double_rate,triple_rate,child_rate,single_supplement,pricing_basis,meal_plan,room_id').eq('lodge_id',id).order('valid_from'),
     supabase.from('lodge_inclusions').select('title,is_included,sort_order').eq('lodge_id',id).order('sort_order'),
     supabase.from('lodge_experiences').select('accommodation_experiences(id,name,slug)').eq('lodge_id',id),
-    supabase.from('lodge_destinations').select('destinations(id,name,slug,country)').eq('lodge_id',id),
-    supabase.from('lodge_alternatives').select('lodges!lodge_alternatives_alternative_lodge_id_fkey(id,name,slug,image_url,hero_image_url,accommodation_level,lodge_type)').eq('lodge_id',id)
+    supabase.from('lodge_destinations').select('destinations(id,name,slug,country,status)').eq('lodge_id',id),
+    supabase.from('lodge_alternatives').select('lodges!lodge_alternatives_alternative_lodge_id_fkey(id,name,slug,image_url,hero_image_url,accommodation_level,lodge_type,status,show_property_publicly,deleted_at)').eq('lodge_id',id)
   ]);
   const rows=(q:any)=>q.error?[]:q.data??[];
+  // Public page data: a draft destination or a hidden/draft property is never
+  // linked from it. The visibility columns are read only to decide that.
+  const publicDestination=(x:Row)=>{ if(!x||x.status!=='published') return null; const {status:_s,...destination}=x; return destination; };
+  const publicAlternative=(x:Row)=>{ if(!isPublicStay(x)) return null; const {status:_s,show_property_publicly:_v,deleted_at:_d,...lodge}=x; return lodge; };
   return {highlights:rows(highlights),rooms:rows(rooms),rates:rows(rates),inclusions:rows(inclusions),
     experiences:rows(experiences).map((x:Row)=>x.accommodation_experiences).filter(Boolean),
-    related_destinations:rows(destinations).map((x:Row)=>x.destinations).filter(Boolean),
-    alternatives:rows(alternatives).map((x:Row)=>x.lodges).filter(Boolean)};
+    related_destinations:rows(destinations).map((x:Row)=>publicDestination(x.destinations)).filter(Boolean),
+    alternatives:rows(alternatives).map((x:Row)=>publicAlternative(x.lodges)).filter(Boolean)};
 };
+
+/**
+ * Tours whose itinerary sleeps at this lodge, per style and day, for the CMS —
+ * drafts included. Fail-soft: before the stays migration only the legacy
+ * links are read.
+ */
+const toursUsingLodge = async (id: string): Promise<TourUsingLodge[]> =>
+  (await toursUsingLodges([id], { publishedOnly: false })).get(id) ?? [];
 
 export const getLodgeDetails = asyncHandler(async (req, res) => {
   await lodgeExists(req.params.id);
   const id = req.params.id;
+  // Started alongside the other reads; never allowed to fail the editor.
+  const toursUsing = toursUsingLodge(id).catch((): TourUsingLodge[] => []);
   const queries = await Promise.all([
     supabase.from('lodge_highlights').select('*').eq('lodge_id', id).order('sort_order'),
     supabase.from('lodge_rooms').select('*, lodge_room_images(*)').eq('lodge_id', id).order('sort_order'),
@@ -53,7 +70,8 @@ export const getLodgeDetails = asyncHandler(async (req, res) => {
     highlights:value(0), rooms:value(1), rates:value(2), inclusions:value(3), supplier:queries[4].data ?? null,
     destination_ids:value(5).map((x:Row)=>x.destination_id), tour_ids:value(6).map((x:Row)=>x.tour_id),
     alternative_ids:value(7).map((x:Row)=>x.alternative_lodge_id), experience_ids:value(8).map((x:Row)=>x.experience_id),
-    experiences:value(9)
+    experiences:value(9),
+    tours_using: await toursUsing
   });
 });
 

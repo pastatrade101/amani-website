@@ -1,4 +1,5 @@
-import type { Destination, HomepageSection } from './types/api.js';
+import { formatPrice } from './safari-pricing.js';
+import type { Destination, HomepageSection, Tour } from './types/api.js';
 
 export const defaultSections: HomepageSection[] = [
 	{ section_key: 'hero', title: 'Tanzania Safari Tours', subtitle: 'DISCOVER. EXPLORE. BELONG.', content: 'Follow the wild. Find your quiet. Discover Tanzania on a private journey from the Serengeti plains to the shores of Zanzibar — thoughtfully planned around you.', button_text: 'Plan My Safari', button_url: '#request-quote', sort_order: 0 },
@@ -80,6 +81,88 @@ export function destinationPhoto(item: Destination, index = 0): string {
 	if (own) return safeUrl(own, spare);
 	const place = `${item.name} ${item.slug} ${item.region ?? ''}`.toLowerCase();
 	return PLACE_PHOTOS.find(([pattern]) => pattern.test(place))?.[1] ?? spare;
+}
+
+type Place = { name: string; slug: string };
+
+/** A tour's places in route order; older tours only have their primary destination. */
+export function tourRoute(tour: Pick<Tour, 'tour_destinations' | 'destinations'>): Place[] {
+	const linked = [...(tour.tour_destinations ?? [])]
+		.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+		.map((link) => link.destinations)
+		.filter((place): place is NonNullable<typeof place> => Boolean(place && String(place.name ?? '').trim()));
+	const primary = tour.destinations;
+	const places: Place[] = linked.length ? linked : primary && String(primary.name ?? '').trim() ? [primary] : [];
+	return places.filter((place, index) => places.findIndex((other) => other.name === place.name) === index);
+}
+
+/** "Serengeti National Park" reads as "Serengeti" in a one-line route. */
+export const shortPlaceName = (name: string) =>
+	name.replace(/\s+(national park|conservation area|game reserve|marine park|nature reserve|forest reserve)$/i, '').trim() || name.trim();
+
+/** Route stops for a card: the first `max` places, and how many more there are. */
+export function routeStops(tour: Pick<Tour, 'tour_destinations' | 'destinations'>, max = 3) {
+	const names = tourRoute(tour).map((place) => shortPlaceName(place.name));
+	return { stops: names.slice(0, max), more: Math.max(0, names.length - max) };
+}
+
+/** "6 days · 5 nights"; nights only when the tour records them. Empty for a missing duration. */
+export function tourDuration(days: unknown, nights?: unknown): string {
+	const dayCount = Math.floor(Number(days));
+	if (!Number.isFinite(dayCount) || dayCount <= 0) return '';
+	const nightCount = Math.floor(Number(nights));
+	const count = (value: number, word: string) => `${value} ${word}${value === 1 ? '' : 's'}`;
+	return Number.isFinite(nightCount) && nightCount > 0 ?`${count(dayCount, 'day')} · ${count(nightCount, 'night')}` : count(dayCount, 'day');
+}
+
+/** "6 Days / 5 Nights", the card's duration row. Empty for a missing duration. */
+export function tourDurationTitle(days: unknown, nights?: unknown): string {
+	const dayCount = Math.floor(Number(days));
+	if (!Number.isFinite(dayCount) || dayCount <= 0) return '';
+	const nightCount = Math.floor(Number(nights));
+	const count = (value: number, word: string) => `${value} ${word}${value === 1 ? '' : 's'}`;
+	return Number.isFinite(nightCount) && nightCount > 0 ? `${count(dayCount, 'Day')} / ${count(nightCount, 'Night')}` : count(dayCount, 'Day');
+}
+
+/** "Tarangire, Serengeti & Ngorongoro" — a tour's route as a card subtitle, with "+N more" past `max`. */
+export function routeSentence(tour: Pick<Tour, 'tour_destinations' | 'destinations'>, max = 4): string {
+	const { stops, more } = routeStops(tour, max);
+	if (!stops.length) return '';
+	if (more) return `${stops.join(', ')} +${more} more`;
+	return stops.length === 1 ? stops[0] : `${stops.slice(0, -1).join(', ')} & ${stops[stops.length - 1]}`;
+}
+
+/**
+ * The per-person "from" price a tour advertises: the lowest style price when
+ * the tour has priced styles, else its own from-price. Null means on request.
+ */
+export function tourFromPrice(tour: Pick<Tour, 'pricing_summary' | 'price_from' | 'currency'>): string | null {
+	const summary = tour.pricing_summary;
+	const styled = Number(summary?.from);
+	if (summary?.from != null && Number.isFinite(styled) && styled > 0) return formatPrice(styled, summary.currency || tour.currency || 'USD');
+	const own = Number(tour.price_from);
+	return Number.isFinite(own) && own > 0 ? formatPrice(own, tour.currency || 'USD') : null;
+}
+
+/**
+ * One photo per tour in a list: the tour's own image, else a bundled photo of
+ * a place on its route, else a spare. Image-less tours in the same list never
+ * share a bundled photo while an unused one is left.
+ */
+export function tourPhotos(tours: Pick<Tour, 'main_image_url' | 'main_image_url_thumbnail' | 'banner_image_url' | 'tour_destinations' | 'destinations'>[]): string[] {
+	const used = new Set<string>();
+	return tours.map((tour, index) => {
+		const spare = SPARE_PHOTOS[index % SPARE_PHOTOS.length];
+		const own = tour.main_image_url_thumbnail || tour.main_image_url || tour.banner_image_url;
+		if (own) return safeUrl(own, spare);
+		const places = tourRoute(tour)
+			.map((place) => PLACE_PHOTOS.find(([pattern]) => pattern.test(`${place.name} ${place.slug}`.toLowerCase()))?.[1])
+			.filter((photo): photo is string => Boolean(photo));
+		const candidates = [...new Set([...places, ...SPARE_PHOTOS])];
+		const photo = candidates.find((candidate) => !used.has(candidate)) ?? candidates[index % candidates.length];
+		used.add(photo);
+		return photo;
+	});
 }
 
 export function circuitFor(destination: Destination): string {

@@ -105,11 +105,97 @@ export type Tour = {
   itinerary_days?: ItineraryDay[];
   tour_inclusions?: { title: string; sort_order?: number }[];
   tour_exclusions?: { title: string; sort_order?: number }[];
+  tour_images?: TourImage[] | null;
+  /** Catalogue activities linked to the tour; staff reads include drafts. */
+  tour_activities?: TourActivityLink[] | null;
+  og_image_url?: string | null;
+  og_image?: string | null;
   status?: string;
   is_available?: boolean | null;
   seats_remaining?: number | null;
   is_featured?: boolean;
   is_popular?: boolean;
+  /** List endpoint only: computed from the tour's active per-person price seasons. */
+  pricing_summary?: TourPricingSummary | null;
+  /** List endpoint only. */
+  itinerary_day_count?: number | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type SafariStyleKey = 'budget' | 'midrange' | 'luxury';
+
+export type TourPricingSummary = {
+  /** Styles with at least one price to show, Budget → Luxury. */
+  styles: SafariStyleKey[];
+  /** Lowest fixed per-person price, null when every price is on request. */
+  from: number | null;
+  currency: string | null;
+};
+
+export type TourImage = {
+  id: string;
+  tour_id?: string;
+  image_url: string;
+  alt_text?: string | null;
+  caption?: string | null;
+  sort_order?: number;
+  is_featured?: boolean;
+};
+
+export type TourActivityLink = {
+  sort_order?: number | null;
+  activity?: {
+    id: string;
+    name: string;
+    slug: string;
+    category?: string | null;
+    status?: string | null;
+  } | null;
+};
+
+/** Where travellers sleep on a day for one safari style (itinerary_day_stays). */
+export type ItineraryDayStay = {
+  safari_style: SafariStyleKey;
+  lodge_id?: string | null;
+  /** Free-text name, for a property that is not in the CMS. */
+  accommodation?: string | null;
+  lodge?: {
+    id: string;
+    name: string;
+    slug: string;
+    lodge_type?: string | null;
+    accommodation_level?: string | null;
+    hero_image_url?: string | null;
+    image_url?: string | null;
+    status?: string | null;
+  } | null;
+};
+
+/**
+ * PUT /tours/:id/content. Every key is optional; a key that is present
+ * replaces that whole collection, and a day field sent as null clears it.
+ */
+export type TourContentDay = {
+  id?: string;
+  day_number: number;
+  title: string;
+  summary: string | null;
+  description: string | null;
+  destination_id: string | null;
+  travel_mode: 'DRIVE' | 'FLY' | 'BOAT' | null;
+  meals: string | null;
+  activities: string | null;
+  image_urls: string[];
+  stays: Array<{ safari_style: SafariStyleKey; lodge_id: string | null; accommodation: string | null }>;
+};
+
+export type TourContentBody = {
+  days?: TourContentDay[];
+  inclusions?: string[];
+  exclusions?: string[];
+  images?: Array<{ id?: string; image_url: string; alt_text: string | null; caption: string | null; is_featured: boolean }>;
+  activity_ids?: string[];
 };
 
 export type TourPriceOption = {
@@ -183,9 +269,17 @@ export type TourCategory = {
 };
 
 export type ItineraryDay = {
+  id?: string;
+  tour_id?: string;
   day_number: number;
   title: string;
+  /** One line under the day title. */
+  summary?: string | null;
   description?: string | null;
+  /** Day photos, first is the lead; image_url mirrors the first for older readers. */
+  image_urls?: string[] | null;
+  /** Overnight per safari style. Older days may have none and use the legacy lodge. */
+  stays?: ItineraryDayStay[] | null;
   /** Free text — still the fallback for any day with no linked property. */
   accommodation?: string | null;
   accommodation_id?: string | null;

@@ -416,6 +416,13 @@
     on:action={() => openCreate(activeTab === 'images' ? 'image' : activeTab === 'inclusions' ? 'inclusion' : 'exclusion')}
   />
 
+  <!-- Inclusions, exclusions and the gallery now live in the tour editor. -->
+  <p class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-forest/20 bg-forest/5 px-4 py-3 text-sm text-heading">
+    <ListPlus size={15} class="shrink-0 text-forest" />
+    <span class="min-w-0 flex-1">Inclusions, exclusions and gallery photos are now edited in the tour editor, under “Included & excluded” and “Photography”.</span>
+    <a class="font-semibold text-forest underline-offset-2 hover:underline" href={selectedTourId ? `/admin/tours/${selectedTourId}/edit` : '/admin/tours'}>{selectedTourId ? 'Open this tour in the editor' : 'Go to Tours'} →</a>
+  </p>
+
   <AdminToolbar className="grid gap-3 lg:grid-cols-[1fr_360px] lg:items-end">
     <CmsLabel class="grid gap-2 text-sm font-medium text-ink">
       <span>Search tours</span>

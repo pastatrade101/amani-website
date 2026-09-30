@@ -11,7 +11,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "start": "node build",
-    "test": "tsx --test src/lib/*.test.ts",
+    "test": "tsx --test src/lib/*.test.ts src/lib/admin/components/admin/tour-editor/*.test.ts",
     "test:integration": "node --test scripts/smoke.test.mjs"
   },
   "devDependencies": {

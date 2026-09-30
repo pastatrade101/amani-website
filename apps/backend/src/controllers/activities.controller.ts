@@ -4,6 +4,7 @@ import { createUniqueSlug } from '../services/slug.service';
 import { AppError, sendSuccess } from '../utils/api-response';
 import { asyncHandler } from '../utils/async-handler';
 import { sanitizeRichFields } from '../utils/rich-text';
+import { isStaffRequest } from '../utils/staff';
 import { getRecordBySlug, listRecords, softDeleteRecord } from '../utils/supabase-helpers';
 
 /**
@@ -14,7 +15,7 @@ import { getRecordBySlug, listRecords, softDeleteRecord } from '../utils/supabas
  */
 const listSelect = '*, destinations!activities_destination_id_fkey(name,slug), activity_destinations(destination_id,is_primary,sort_order), tour_activities(tour_id)';
 const detailSelect =
-  '*, destinations!activities_destination_id_fkey(name,slug), activity_destinations(destination_id,sort_order,is_primary,destinations(id,name,slug,region,status)), tour_activities(tour_id,sort_order,tours(id,title,slug,status))';
+  '*, destinations!activities_destination_id_fkey(name,slug), activity_destinations(destination_id,sort_order,is_primary,destinations(id,name,slug,region,status)), tour_activities(tour_id,sort_order,tours(id,title,slug,status,deleted_at))';
 // The primary destination needs the FK hint: with activity_destinations in place,
 // a bare `destinations(...)` embed is ambiguous (PGRST201) and fails the query.
 // Before the links migration the link embeds don't resolve; fall back rather than fail.
@@ -111,8 +112,25 @@ export const listActivities = asyncHandler(async (req, res) => {
   });
 });
 
+/** Public readers only see links to published tours and destinations. */
+const hideUnpublishedLinks = (record: Record<string, unknown>) => {
+  if (Array.isArray(record.tour_activities)) {
+    record.tour_activities = (record.tour_activities as Array<Record<string, any>>).filter((link) => link.tours?.status === 'published' && !link.tours?.deleted_at);
+  }
+  if (Array.isArray(record.activity_destinations)) {
+    record.activity_destinations = (record.activity_destinations as Array<Record<string, any>>).filter(
+      (link) => link.destinations?.status === 'published'
+    );
+  }
+};
+
 export const getActivity = asyncHandler(async (req, res) => {
-  return getRecordBySlug(res, 'activities', req.params.slug, detailSelect);
+  // A draft activity does not exist for the public; the CMS reads any status.
+  if (isStaffRequest(req)) return getRecordBySlug(res, 'activities', req.params.slug, detailSelect);
+  return getRecordBySlug(res, 'activities', req.params.slug, detailSelect, {
+    status: 'published',
+    afterFetch: hideUnpublishedLinks
+  });
 });
 
 export const createActivity = asyncHandler(async (req, res) => {

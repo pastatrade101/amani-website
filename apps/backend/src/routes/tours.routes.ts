@@ -5,11 +5,11 @@ import { listTourPricingOptions } from '../controllers/pricing-options.controlle
 import { listTourInclusions } from '../controllers/tour-inclusions.controller';
 import { listTourExclusions } from '../controllers/tour-exclusions.controller';
 import { listTourImagesForTour } from '../controllers/tour-images.controller';
-import { bulkDeleteTours, createTour, deleteTour, getTour, listTours, updateTour } from '../controllers/tours.controller';
+import { bulkDeleteTours, createTour, deleteTour, getTour, listTours, saveTourContent, updateTour } from '../controllers/tours.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/permission.middleware';
 import { validate } from '../middleware/validate.middleware';
-import { tourCreateSchema, tourUpdateSchema } from '../schemas/tours.schema';
+import { tourContentSchema, tourCreateSchema, tourUpdateSchema } from '../schemas/tours.schema';
 
 const router = Router();
 
@@ -25,6 +25,7 @@ router.post('/bulk-delete', authenticate, requirePermission('tours.delete'), bul
 router.get('/:slug', getTour);
 router.post('/', authenticate, requirePermission('tours.create'), validate({ body: tourCreateSchema }), createTour);
 router.put('/:id', authenticate, requirePermission('tours.update'), validate({ body: tourUpdateSchema }), updateTour);
+router.put('/:id/content', authenticate, requirePermission('tours.update'), validate({ body: tourContentSchema }), saveTourContent);
 router.delete('/:id', authenticate, requirePermission('tours.delete'), deleteTour);
 
 export default router;

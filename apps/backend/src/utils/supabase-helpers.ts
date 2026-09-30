@@ -6,6 +6,7 @@ import { createUniqueSlug } from '../services/slug.service';
 import { AppError, sendSuccess } from './api-response';
 import { cleanSearch, getPagination, getQueryString, paginationMeta } from './query';
 import { sanitizeRichFields } from './rich-text';
+import { isStaffRequest } from './staff';
 
 type ListOptions = {
   table: string;
@@ -145,8 +146,12 @@ export const attachThumbnails = async (table: string, rows: Array<Record<string,
 export const listRecords = async (req: Request, res: Response, options: ListOptions) => {
   const { page, limit, from, to } = getPagination(req.query);
   const search = cleanSearch(getQueryString(req.query, 'search'));
-  const status = getQueryString(req.query, 'status');
-  const omit = !req.headers.authorization && options.publicOmit?.length ? options.publicOmit : [];
+  const staff = isStaffRequest(req);
+  // On a list with a default status, ?status is the CMS's to choose: a visitor
+  // asking for status=all or =draft still gets the default (published) rows.
+  // Staff is a verified token, never just a header being present.
+  const status = staff || !options.defaultStatus ? getQueryString(req.query, 'status') : '';
+  const omit = !staff && options.publicOmit?.length ? options.publicOmit : [];
   const select = omit.length
     ? await selectWithout(options.table, options.select ?? '*', omit)
     : options.select ?? '*';
@@ -196,7 +201,13 @@ export const getRecordBySlug = async (
   table: string,
   slug: string,
   select = '*',
-  options: { locale?: string } = {}
+  options: {
+    locale?: string;
+    /** Any other status reads as not found — for public readers of draftable content. */
+    status?: string;
+    /** Runs on the record before thumbnails and translations. */
+    afterFetch?: (record: Record<string, unknown>) => void | Promise<void>;
+  } = {}
 ) => {
   const { data, error } = await supabase
     .from(table)
@@ -209,6 +220,8 @@ export const getRecordBySlug = async (
   if (!data) throw new AppError('Record not found.', 404);
 
   const record = data as unknown as Record<string, unknown>;
+  if (options.status && record.status !== options.status) throw new AppError('Record not found.', 404);
+  if (options.afterFetch) await options.afterFetch(record);
   await attachThumbnails(table, [record]);
   // Detail reads carry the locales a page genuinely exists in, so the frontend
   // can emit hreflang without claiming translations that were never published.

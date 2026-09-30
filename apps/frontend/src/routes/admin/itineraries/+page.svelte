@@ -519,6 +519,13 @@
     description="Pick a tour to build its day-by-day plan — or edit it inside the full tour editor."
   />
 
+  <!-- Itineraries now live in the tour editor, next to the overnights per safari style. -->
+  <p class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-forest/20 bg-forest/5 px-4 py-3 text-sm text-heading">
+    <Route size={15} class="shrink-0 text-forest" />
+    <span class="min-w-0 flex-1">Itineraries are now edited in the tour editor, where each day also has an overnight per safari style. Changes made here do not update those overnights.</span>
+    <a class="font-semibold text-forest underline-offset-2 hover:underline" href={selectedTourId ? `/admin/tours/${selectedTourId}/edit` : '/admin/tours'}>{selectedTourId ? 'Open this tour in the editor' : 'Go to Tours'} →</a>
+  </p>
+
   <AdminToolbar className="grid gap-3 lg:grid-cols-[1fr_360px] lg:items-end">
     <CmsLabel class="grid gap-2 text-sm font-medium text-ink">
       <span>Search tours</span>

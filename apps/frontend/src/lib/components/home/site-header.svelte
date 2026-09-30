@@ -1,12 +1,15 @@
 <script lang="ts">
-	import { Menu, ArrowRight, ArrowUpRight, Search, Compass, Map, CalendarDays, Route, MessageCircle, Palmtree } from '@lucide/svelte';
+	import { Menu, ArrowRight, ArrowUpRight, Search, Compass, Map, CalendarDays, Route, MessageCircle, Palmtree, Binoculars, BedDouble } from '@lucide/svelte';
 	import { siteInfo } from '$lib/site-info';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import * as NavigationMenu from '$lib/components/ui/navigation-menu/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
-	import { safeUrl, circuitFor, destinationPhoto } from '$lib/home-content';
-	import type { Activity, Destination } from '$lib/types/api';
+	import { STYLE_ICONS } from '$lib/components/stays/stay-icons';
+	import { safeUrl, circuitFor, destinationPhoto, tourDuration, tourFromPrice, tourPhotos } from '$lib/home-content';
+	import { SAFARI_STYLE_THEME } from '$lib/safari-pricing';
+	import { ownStayPhoto, STAY_STYLES, stayLocation, stayTypeLabel } from '$lib/stay-content';
+	import type { Activity, Category, Destination, Stay, Tour } from '$lib/types/api';
 	import { page } from '$app/state';
 
 	let open = $state(false);
@@ -14,8 +17,10 @@
 	let logo = $derived(safeUrl(page.data.branding?.logo_url, ''));
 	let emblem = $derived(safeUrl(page.data.branding?.favicon_url, ''));
 	let menu = $state('');
-	let { visible, activities, destinations, onInterest }: { visible: string[]; activities: Activity[]; destinations: Destination[]; onInterest: (name: string) => void } = $props();
-	const navItems = [{ id: 'experiences', label: 'Experiences', icon: Compass }, { id: 'destinations', label: 'Destinations', icon: Map }, { id: 'zanzibar', label: 'Zanzibar', icon: Palmtree }, { id: 'plan', label: 'Plan your trip', icon: Route }];
+	let { visible, activities, destinations, onInterest, tours = [], categories = [], stays = [], onPage }: { visible: string[]; activities: Activity[]; destinations: Destination[]; onInterest: (name: string) => void; tours?: Tour[]; categories?: Category[]; stays?: Stay[]; onPage?: string[] } = $props();
+	// Without onPage this is the home page; elsewhere a section missing from the page links home.
+	const anchor = (id: string) => (!onPage || onPage.includes(id) ? `#${id}` : `/#${id}`);
+	const navItems = [{ id: 'tours', label: 'Tours', icon: Binoculars }, { id: 'stays', label: 'Stays', icon: BedDouble }, { id: 'experiences', label: 'Experiences', icon: Compass }, { id: 'destinations', label: 'Destinations', icon: Map }, { id: 'zanzibar', label: 'Zanzibar', icon: Palmtree }, { id: 'plan', label: 'Plan your trip', icon: Route }];
 	const experienceGroups = [
 		{ title: 'Wildlife & safari', description: 'Big cats, open plains and extraordinary encounters.', image: '/images/safari-hero.jpg' },
 		{ title: 'A little adventure', description: 'Balloon flights and journeys beyond the everyday.', image: '/images/activity-balloon.jpg' },
@@ -37,13 +42,36 @@
 		{ title: 'Honeymoon in Zanzibar', description: 'A little time, just for two.' }
 	];
 	let links = $derived([
-		...(visible.includes('safari_packages') ? [{ label: 'Explore safari packages', description: 'Find an itinerary to make your own.', href: '#tanzania-safari-packages', icon: Route }] : []),
-		...(visible.includes('when_to_go') ? [{ label: 'When to visit', description: 'Find the season that suits your journey.', href: '#when-to-go', icon: CalendarDays }] : []),
-		...(visible.includes('destinations') ? [{ label: 'Where to go', description: 'Get to know Tanzania’s wild places.', href: '#destinations', icon: Map }] : []),
-		...(visible.includes('enquiry') ? [{ label: 'Talk to our local team', description: 'Let’s start with your safari ideas.', href: '#request-quote', icon: MessageCircle }] : [])
+		...(visible.includes('safari_packages') ? [{ label: 'Explore safari packages', description: 'Find an itinerary to make your own.', href: anchor('tanzania-safari-packages'), icon: Route }] : []),
+		...(visible.includes('when_to_go') ? [{ label: 'When to visit', description: 'Find the season that suits your journey.', href: anchor('when-to-go'), icon: CalendarDays }] : []),
+		...(visible.includes('destinations') ? [{ label: 'Where to go', description: 'Get to know Tanzania’s wild places.', href: anchor('destinations'), icon: Map }] : []),
+		...(visible.includes('enquiry') ? [{ label: 'Talk to our local team', description: 'Let’s start with your safari ideas.', href: anchor('request-quote'), icon: MessageCircle }] : [])
 	]);
-	let navigation = $derived(navItems.filter((item) => item.id === 'plan' ? links.length > 0 : item.id === 'zanzibar' ? visible.includes('enquiry') : visible.includes(item.id)));
-	let enquiryHref = $derived(visible.includes('enquiry') ? '#request-quote' : visible.includes('experiences') ? '#experiences' : '#destinations');
+	// /tours and /stays always exist, so their menus show even before anything is published.
+	let navigation = $derived(navItems.filter((item) => item.id === 'tours' || item.id === 'stays' ? true : item.id === 'plan' ? links.length > 0 : item.id === 'zanzibar' ? visible.includes('enquiry') : visible.includes(item.id)));
+	let enquiryHref = $derived(anchor(visible.includes('enquiry') ? 'request-quote' : visible.includes('experiences') ? 'experiences' : 'destinations'));
+	// On the home page the search panel exists only while safari packages are shown.
+	let searchHref = $derived((onPage ? onPage.includes('safari-search') : visible.includes('safari_packages')) ? '#safari-search' : '/tours#safari-search');
+	// Featured tours first, otherwise the API's newest-first order.
+	let menuTours = $derived([...tours].sort((a, b) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured))).slice(0, 4));
+	let menuPhotos = $derived(tourPhotos(menuTours));
+	function tourMeta(tour: Tour) {
+		const price = tourFromPrice(tour);
+		return [tourDuration(tour.duration_days), price ? `From ${price}` : 'On request'].filter(Boolean).join(' · ');
+	}
+	// Featured stays come first; only a stay's own photo is used, never a stand-in.
+	let menuStays = $derived([...stays].sort((a, b) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured))).slice(0, 4));
+	// Only call them featured when they are; before that the page passes its first stays.
+	let staysHeading = $derived(menuStays.some((stay) => stay.is_featured) ? 'Featured stays' : 'Places to stay');
+	const stayMeta = (stay: Stay) => [stayTypeLabel(stay.lodge_type), stay.destinations?.name?.trim() || stayLocation(stay)].filter(Boolean).join(' · ');
+	const styleVars = (id: keyof typeof SAFARI_STYLE_THEME) => `--style-ink:${SAFARI_STYLE_THEME[id].priceColor};--style-light:${SAFARI_STYLE_THEME[id].light}`;
+	function footerLink(id: string) {
+		if (id === 'tours') return { href: '/tours', label: 'View all tours' };
+		if (id === 'stays') return { href: '/stays', label: 'View all stays' };
+		if (id === 'experiences') return { href: anchor('experiences'), label: 'View all experiences' };
+		if (id === 'destinations') return { href: anchor('destinations'), label: 'Explore all destinations' };
+		return { href: enquiryHref, label: 'Start planning' };
+	}
 	function closeMenu() { open = false; menu = ''; }
 	function choose(name: string) { onInterest(name); closeMenu(); }
 </script>
@@ -64,7 +92,58 @@
 					<NavigationMenu.Item value={item.id} class="mega-menu-item">
 						<NavigationMenu.Trigger class="main-menu-trigger">{item.label}</NavigationMenu.Trigger>
 						<NavigationMenu.Content class="mega-panel">
-							{#if item.id === 'experiences'}
+							{#if item.id === 'tours'}
+								<div class="experience-menu">
+									<NavigationMenu.Link href="/tours" onclick={closeMenu} class="menu-feature">
+										<img src="/images/tanzania-safari-hero.jpg" alt="Elephants on the savannah beside a safari vehicle" />
+										<div class="feature-copy"><span class="menu-eyebrow">SAFARI TOURS</span><h2>Ready-made journeys.<br />Shaped around you.</h2><span class="feature-cta">Browse all tours <ArrowUpRight class="size-4" /></span></div>
+									</NavigationMenu.Link>
+									<div class="experience-options">
+										<div class="menu-heading"><p class="menu-eyebrow">TANZANIA SAFARI ITINERARIES</p><h2>Find a safari that feels like you</h2></div>
+										{#if menuTours.length}
+											<div class="experience-links">
+												{#each menuTours as tour, i (tour.id)}
+													<NavigationMenu.Link data-motion-hover="card" href={`/tours/${encodeURIComponent(tour.slug)}`} onclick={closeMenu} class="experience-link tour-menu-link">
+														<img src={menuPhotos[i]} alt="" /><span><strong>{tour.title}</strong><small>{tourMeta(tour)}</small></span><ArrowUpRight class="menu-arrow size-4" />
+													</NavigationMenu.Link>
+												{/each}
+											</div>
+										{:else}
+											<p class="menu-empty">New itineraries are on their way. Browse our tours, or tell us the trip you have in mind.</p>
+										{/if}
+										{#if categories.length}<div class="popular-experiences"><span>Safari styles:</span>{#each categories.slice(0, 6) as category (category.id)}<NavigationMenu.Link href={`/tours?category_id=${encodeURIComponent(category.id)}`} onclick={closeMenu} class="popular-link">{category.name}</NavigationMenu.Link>{/each}</div>{/if}
+									</div>
+								</div>
+							{:else if item.id === 'stays'}
+								<div class="experience-menu">
+									<NavigationMenu.Link href="/stays" onclick={closeMenu} class="menu-feature">
+										<img src="/images/activity-bush-lunch.jpg" alt="A table laid for lunch in the shade of an acacia, with elephants grazing beyond" />
+										<div class="feature-copy"><span class="menu-eyebrow">WHERE YOU’LL STAY</span><h2>Wake up somewhere wild.</h2><span class="feature-cta">Browse all stays <ArrowUpRight class="size-4" /></span></div>
+									</NavigationMenu.Link>
+									<div class="experience-options">
+										<div class="menu-heading"><p class="menu-eyebrow">LODGES &amp; CAMPS BY STYLE</p><h2>Choose the comfort that feels like you</h2></div>
+										<div class="stay-style-links">
+											{#each STAY_STYLES as style (style.id)}
+												{@const StyleIcon = STYLE_ICONS[style.id]}
+												<NavigationMenu.Link data-motion-hover="card" href={`/stays?style=${style.id}`} onclick={closeMenu} class="stay-style-link" style={styleVars(style.id)}>
+													<span class="stay-style-icon"><StyleIcon class="size-5" strokeWidth={1.6} /></span><span><strong>{style.label}</strong><small>{style.hint}</small></span><ArrowUpRight class="menu-arrow size-4" />
+												</NavigationMenu.Link>
+											{/each}
+										</div>
+										{#if menuStays.length}
+											<p class="stay-menu-subheading">{staysHeading}</p>
+											<div class="experience-links">
+												{#each menuStays as stay (stay.id)}
+													{@const photo = ownStayPhoto(stay)}
+													<NavigationMenu.Link href={`/stays/${encodeURIComponent(stay.slug)}`} onclick={closeMenu} class="experience-link stay-menu-link">
+														{#if photo}<img src={photo} alt="" />{:else}<span class="stay-menu-mark"><BedDouble class="size-5" strokeWidth={1.5} /></span>{/if}<span><strong>{stay.name}</strong>{#if stayMeta(stay)}<small>{stayMeta(stay)}</small>{/if}</span><ArrowUpRight class="menu-arrow size-4" />
+													</NavigationMenu.Link>
+												{/each}
+											</div>
+										{/if}
+									</div>
+								</div>
+							{:else if item.id === 'experiences'}
 								<div class="experience-menu">
 									<NavigationMenu.Link href={enquiryHref} onclick={() => choose('A Tanzania safari')} class="menu-feature">
 										<img src="/images/tanzania-hero-2.jpg" alt="Lions resting on a rocky Serengeti kopje" />
@@ -88,7 +167,7 @@
 									<div class="destination-columns">
 										{#each destinationGroups as group}
 											<section class="destination-column">
-												<NavigationMenu.Link href="#destinations" onclick={closeMenu} class="destination-cover"><img src={group.image} alt="" /><span><strong>{group.title}</strong><small>{group.description}</small></span><ArrowUpRight class="size-4" /></NavigationMenu.Link>
+												<NavigationMenu.Link href={anchor('destinations')} onclick={closeMenu} class="destination-cover"><img src={group.image} alt="" /><span><strong>{group.title}</strong><small>{group.description}</small></span><ArrowUpRight class="size-4" /></NavigationMenu.Link>
 												<div class="destination-links">{#each destinations.filter((destination) => circuitFor(destination) === group.circuit).slice(0, 4) as destination}<NavigationMenu.Link href={enquiryHref} onclick={() => choose(destination.name)} class="destination-link">{destination.name}<ArrowRight class="size-3.5" /></NavigationMenu.Link>{/each}</div>
 											</section>
 										{/each}
@@ -100,15 +179,15 @@
 									<div class="island-options"><div class="menu-heading"><p class="menu-eyebrow">BAREFOOT DAYS AWAIT</p><h2>Make time for the coast</h2></div><div class="island-links">{#each islandIdeas as idea}<NavigationMenu.Link href={enquiryHref} onclick={() => choose(idea.title)} class="idea-link"><span><strong>{idea.title}</strong><small>{idea.description}</small></span><ArrowUpRight class="size-4" /></NavigationMenu.Link>{/each}</div></div>
 								</div>
 							{:else}
-								<div class="planning-menu"><div><div class="menu-heading"><p class="menu-eyebrow">A GREAT JOURNEY STARTS HERE</p><h2>A little inspiration. A plan that’s yours.</h2></div><div class="planning-links">{#each links as link}<NavigationMenu.Link href={link.href} onclick={closeMenu} class="planning-link"><span class="planning-icon"><link.icon class="size-5" strokeWidth={1.6} /></span><span><strong>{link.label}</strong><small>{link.description}</small></span><ArrowUpRight class="size-4" /></NavigationMenu.Link>{/each}</div></div><aside class="planning-aside"><Compass class="size-8" strokeWidth={1.4} /><h2>Your ideas.<br />Our local knowledge.</h2><p>We’ll help you bring the pieces together, from the first game drive to your final sunset.</p>{#if visible.includes('enquiry')}<Button href="#request-quote" onclick={closeMenu} variant="safari" class="mt-5 h-11 w-full">Let’s plan your safari <ArrowRight class="size-4" /></Button>{/if}</aside></div>
+								<div class="planning-menu"><div><div class="menu-heading"><p class="menu-eyebrow">A GREAT JOURNEY STARTS HERE</p><h2>A little inspiration. A plan that’s yours.</h2></div><div class="planning-links">{#each links as link}<NavigationMenu.Link href={link.href} onclick={closeMenu} class="planning-link"><span class="planning-icon"><link.icon class="size-5" strokeWidth={1.6} /></span><span><strong>{link.label}</strong><small>{link.description}</small></span><ArrowUpRight class="size-4" /></NavigationMenu.Link>{/each}</div></div><aside class="planning-aside"><Compass class="size-8" strokeWidth={1.4} /><h2>Your ideas.<br />Our local knowledge.</h2><p>We’ll help you bring the pieces together, from the first game drive to your final sunset.</p>{#if visible.includes('enquiry')}<Button href={anchor('request-quote')} onclick={closeMenu} variant="safari" class="mt-5 h-11 w-full">Let’s plan your safari <ArrowRight class="size-4" /></Button>{/if}</aside></div>
 							{/if}
-							<div class="menu-footer"><span><Compass class="size-4" /> Tanzania, with a local perspective.</span><NavigationMenu.Link href={item.id === 'experiences' ? '#experiences' : item.id === 'destinations' ? '#destinations' : enquiryHref} onclick={closeMenu} class="menu-footer-link">{item.id === 'experiences' ? 'View all experiences' : item.id === 'destinations' ? 'Explore all destinations' : 'Start planning'}<ArrowRight class="size-4" /></NavigationMenu.Link></div>
+							<div class="menu-footer"><span><Compass class="size-4" /> Tanzania, with a local perspective.</span><NavigationMenu.Link href={footerLink(item.id).href} onclick={closeMenu} class="menu-footer-link">{footerLink(item.id).label}<ArrowRight class="size-4" /></NavigationMenu.Link></div>
 						</NavigationMenu.Content>
 					</NavigationMenu.Item>
 				{/each}
 			</NavigationMenu.List>
 		</NavigationMenu.Root>
-		<div class="header-actions">{#if visible.includes('safari_packages')}<Button href="#safari-search" variant="ghost" size="icon" aria-label="Search safaris" class="rounded-full"><Search class="size-5" /></Button>{/if}{#if visible.includes('enquiry')}<Button variant="safari" href="#request-quote" class="h-11 px-5 text-[13px]">Plan my safari <ArrowRight class="size-4" /></Button>{/if}</div>
+		<div class="header-actions"><Button href={searchHref} variant="ghost" size="icon" aria-label="Search safaris" class="rounded-full"><Search class="size-5" /></Button>{#if visible.includes('enquiry')}<Button variant="safari" href={anchor('request-quote')} class="h-11 px-5 text-[13px]">Plan my safari <ArrowRight class="size-4" /></Button>{/if}</div>
 		<Sheet.Root bind:open>
 			<Sheet.Trigger class="mobile-navigation rounded-md p-2" aria-label="Open navigation"><Menu class="size-6" /></Sheet.Trigger>
             <Sheet.Content side="right" class="mobile-menu-panel">
@@ -123,12 +202,19 @@
                                 <Accordion.Trigger class="mobile-section-trigger"><span class="mobile-section-label"><item.icon class="size-[18px]" strokeWidth={1.6} />{item.label}</span></Accordion.Trigger>
                                 <Accordion.Content class="mobile-section-content">
                                     <div class="mobile-menu-links">
-                                        {#if item.id === 'experiences'}
+                                        {#if item.id === 'tours'}
+                                            {#each menuTours as tour, i (tour.id)}<a data-motion="reveal" class="mobile-menu-link" href={`/tours/${encodeURIComponent(tour.slug)}`} onclick={closeMenu}><img src={menuPhotos[i]} alt="" /><span>{tour.title}<small class="mobile-tour-meta">{tourMeta(tour)}</small></span><ArrowUpRight class="size-3.5" /></a>{/each}
+                                            <a class="mobile-menu-link mobile-view-all" href="/tours" onclick={closeMenu}>View all tours <ArrowRight class="size-4" /></a>
+                                        {:else if item.id === 'stays'}
+                                            {#each STAY_STYLES as style (style.id)}{@const StyleIcon = STYLE_ICONS[style.id]}<a class="mobile-menu-link" href={`/stays?style=${style.id}`} onclick={closeMenu} style={styleVars(style.id)}><span class="mobile-stay-mark mobile-style-mark"><StyleIcon class="size-[18px]" strokeWidth={1.6} /></span><span>{style.label} stays<small class="mobile-tour-meta">{style.hint}</small></span><ArrowUpRight class="size-3.5" /></a>{/each}
+                                            {#each menuStays as stay (stay.id)}{@const photo = ownStayPhoto(stay)}<a data-motion="reveal" class="mobile-menu-link" href={`/stays/${encodeURIComponent(stay.slug)}`} onclick={closeMenu}>{#if photo}<img src={photo} alt="" />{:else}<span class="mobile-stay-mark"><BedDouble class="size-[18px]" strokeWidth={1.5} /></span>{/if}<span>{stay.name}{#if stayMeta(stay)}<small class="mobile-tour-meta">{stayMeta(stay)}</small>{/if}</span><ArrowUpRight class="size-3.5" /></a>{/each}
+                                            <a class="mobile-menu-link mobile-view-all" href="/stays" onclick={closeMenu}>View all stays <ArrowRight class="size-4" /></a>
+                                        {:else if item.id === 'experiences'}
                                             {#each activities as activity}<a data-motion="reveal" class="mobile-menu-link" href={enquiryHref} onclick={() => choose(activity.name)}><img src={safeUrl(activity.image_url_thumbnail || activity.image_url || activity.hero_image_url, '/images/safari-hero.jpg')} alt="" /><span>{activity.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
-                                            <a class="mobile-menu-link mobile-view-all" href="#experiences" onclick={closeMenu}>View all experiences <ArrowRight class="size-4" /></a>
+                                            <a class="mobile-menu-link mobile-view-all" href={anchor('experiences')} onclick={closeMenu}>View all experiences <ArrowRight class="size-4" /></a>
                                         {:else if item.id === 'destinations'}
                                             {#each destinations.slice(0, 8) as destination, i}<a data-motion="reveal" class="mobile-menu-link" href={enquiryHref} onclick={() => choose(destination.name)}><img src={destinationPhoto(destination, i)} alt="" /><span>{destination.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
-                                            <a class="mobile-menu-link mobile-view-all" href="#destinations" onclick={closeMenu}>Explore all destinations <ArrowRight class="size-4" /></a>
+                                            <a class="mobile-menu-link mobile-view-all" href={anchor('destinations')} onclick={closeMenu}>Explore all destinations <ArrowRight class="size-4" /></a>
                                         {:else if item.id === 'zanzibar'}
                                             {#each islandIdeas as idea}<a class="mobile-menu-link mobile-idea-link" href={enquiryHref} onclick={() => choose(idea.title)}><span>{idea.title}<small>{idea.description}</small></span><ArrowUpRight class="size-3.5" /></a>{/each}
                                         {:else}
@@ -140,7 +226,7 @@
                         {/each}
                     </Accordion.Root>
                 </div>
-                {#if visible.includes('enquiry')}<div class="mobile-menu-footer"><p>A journey, designed around you.</p><Button variant="safari" href="#request-quote" onclick={closeMenu} class="h-12 w-full">Plan my safari <ArrowRight class="size-4" /></Button></div>{/if}
+                {#if visible.includes('enquiry')}<div class="mobile-menu-footer"><p>A journey, designed around you.</p><Button variant="safari" href={anchor('request-quote')} onclick={closeMenu} class="h-12 w-full">Plan my safari <ArrowRight class="size-4" /></Button></div>{/if}
             </Sheet.Content>
 		</Sheet.Root>
 	</div>
@@ -179,6 +265,20 @@
 	.popular-experiences { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 15px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 10px; }
 	.popular-experiences > span { margin-right: 3px; color: var(--muted-foreground); }
 	:global(.popular-link) { padding: 5px 9px; border-radius: 20px; background: var(--secondary); font-size: 10px; }
+	:global(.tour-menu-link strong) { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+	.menu-empty { max-width: 420px; font-size: 12px; line-height: 1.8; color: var(--muted-foreground); }
+	/* Stays: the three styles in their own colours, then a few featured properties. */
+	.stay-style-links { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+	:global(.stay-style-link) { gap: 12px; min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; }
+	:global(.stay-style-link:hover) { background: var(--style-light); }
+	:global(.stay-style-link strong) { display: block; font-size: 12px; font-weight: 600; line-height: 1.45; }
+	:global(.stay-style-link small) { display: block; margin-top: 3px; color: var(--muted-foreground); font-size: 10px; line-height: 1.5; }
+	.stay-style-icon { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--style-light); color: var(--style-ink); }
+	.stay-menu-subheading { margin: 18px 0 8px; font-size: 9px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted-foreground); }
+	.stay-menu-mark { display: grid; place-items: center; flex-shrink: 0; width: 68px; height: 76px; border-radius: 9px; background: var(--navy); color: var(--sun); }
+	:global(.stay-menu-link) { padding-block: 6px; }
+	:global(.stay-menu-link > img) { height: 60px; }
+	:global(.stay-menu-link) .stay-menu-mark { height: 60px; }
 	.destination-menu { padding: 25px 26px 20px; }
 	.destination-columns { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 22px; }
 	.destination-column { min-width: 0; }
@@ -229,7 +329,10 @@
     .mobile-menu-link :global(svg) { flex-shrink: 0; margin-left: auto; color: var(--muted-foreground); }
     .mobile-view-all { margin-top: 5px; padding: 12px 10px 8px; min-height: 42px; font-size: 11px; font-weight: 600; }
     .mobile-idea-link { padding: 11px; }
-    .mobile-idea-link small { display: block; margin-top: 4px; font-size: 10px; color: var(--muted-foreground); }
+    .mobile-idea-link small, .mobile-tour-meta { display: block; margin-top: 4px; font-size: 10px; color: var(--muted-foreground); }
+    .mobile-menu-link .mobile-stay-mark { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; margin-left: 0; border-radius: 7px; background: var(--navy); color: var(--sun); }
+    .mobile-menu-link .mobile-style-mark { border-radius: 50%; background: var(--style-light); color: var(--style-ink); }
+    .mobile-stay-mark :global(svg) { margin-left: 0; color: inherit; }
     .mobile-menu-footer { flex-shrink: 0; padding: 18px 22px max(22px,env(safe-area-inset-bottom)); border-top: 1px solid var(--border); }
     .mobile-menu-footer > p { margin-bottom: 12px; color: var(--muted-foreground); font-size: 10px; text-align: center; }
 

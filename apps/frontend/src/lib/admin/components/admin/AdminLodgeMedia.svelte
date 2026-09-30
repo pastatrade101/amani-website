@@ -17,30 +17,35 @@
    * written, so a brand-new property has an id to attach these to.
    */
   import { ArrowDown, ArrowUp, ImagePlus, Star, Trash2 } from '@lucide/svelte';
-  import { api } from '$lib/admin/api/client';
+  import { api, apiRequest } from '$lib/admin/api/client';
   import MediaPicker from './MediaPicker.svelte';
   import { GALLERY_CATEGORIES, enumLabel } from '$lib/admin/accommodationEnums';
 
   type GalleryImage = { image_url: string; alt_text: string; caption: string; category: string; is_featured: boolean; is_cover: boolean };
-  type Amenity = { id: string; name: string; icon_key?: string | null };
+  type Amenity = { id: string; name: string; icon_key?: string | null; is_active?: boolean | null };
 
   let images: GalleryImage[] = [];
   let amenities: Amenity[] = [];
   let selected = new Set<string>();
   let loading = false;
   let error = '';
+  // Saving replaces the whole gallery, so an existing property whose gallery
+  // failed to load must not be saved with the empty list left in memory.
+  let loadFailed = false;
 
   const blank = (url: string): GalleryImage => ({ image_url: url, alt_text: '', caption: '', category: 'EXTERIOR', is_featured: false, is_cover: false });
 
   export const load = async (id: string | null) => {
     images = [];
     selected = new Set();
+    loadFailed = false;
+    error = '';
     if (!id) {
       // A new property still needs the amenity list so the boxes can be ticked
-      // before the first save.
+      // before the first save. /:id/media 404s without a real lodge id.
       try {
-        const res = await api.lodges.media('00000000-0000-0000-0000-000000000000').catch(() => null);
-        amenities = ((res?.data?.amenities ?? []) as Amenity[]) ?? [];
+        const res = await apiRequest<{ items: Amenity[] }>('/lodges/meta/amenities');
+        amenities = (res.data?.items ?? []).filter((amenity) => amenity.is_active !== false);
       } catch {
         amenities = [];
       }
@@ -48,7 +53,6 @@
     }
 
     loading = true;
-    error = '';
     try {
       const res = await api.lodges.media(id);
       const data = res.data ?? { images: [], amenity_ids: [], amenities: [] };
@@ -63,6 +67,7 @@
       amenities = (data.amenities ?? []) as Amenity[];
       selected = new Set((data.amenity_ids ?? []).map(String));
     } catch (err) {
+      loadFailed = true;
       error = err instanceof Error ? err.message : 'Unable to load gallery and amenities.';
     } finally {
       loading = false;
@@ -71,6 +76,11 @@
 
   /** Called by the parent once the lodge row exists. */
   export const save = async (id: string) => {
+    if (loadFailed) {
+      // Nothing added since the failed load: keep the stored gallery as it is.
+      if (!images.length && !selected.size) return;
+      throw new Error('The gallery could not be loaded, so these photos were not saved. Reopen the property and add them again.');
+    }
     await api.lodges.saveImages(id, images as unknown as Record<string, unknown>[]);
     await api.lodges.saveAmenities(id, [...selected]);
   };

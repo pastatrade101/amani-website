@@ -11,8 +11,10 @@
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { textContent } from '$lib/home-content';
 	import type { HomepageSection } from '$lib/types/api';
-	import type { ActionData } from '../../../routes/$types';
-	let { section, form, interest }: { section: HomepageSection; form: ActionData; interest: string } = $props();
+	// The result of the shared `enquire` action ($lib/server/enquiry), from whichever page hosts the form.
+	type EnquiryField = 'full_name' | 'email' | 'phone' | 'message' | 'travel_date' | 'travelers' | 'interest';
+	type EnquiryResult = { success?: boolean; message?: string; values?: Partial<Record<EnquiryField, string>> | null } | null | undefined;
+	let { section, form, interest }: { section: HomepageSection; form: EnquiryResult; interest: string } = $props();
 	let sending = $state(false);
 	let travelDate = $state<DateValue>();
 	let travelerCount = $state('2');

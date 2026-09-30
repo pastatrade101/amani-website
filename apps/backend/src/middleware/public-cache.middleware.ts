@@ -123,6 +123,14 @@ export const publicCache = (req: Request, res: Response, next: NextFunction) => 
     return next();
   }
 
+  // These routes answer the CMS (drafts included) and visitors differently for
+  // the same URL, so any HTTP cache downstream must key on the token too.
+  if (under(path, PUBLIC_PREFIXES)) res.vary('Authorization');
+
+  // Any Authorization header skips the cache both ways: a staff answer is never
+  // stored, and a stored visitor answer is never served to the CMS. Checking
+  // presence (not validity) is the safe side here — a bogus token only costs a
+  // live read, which the route answers as public.
   if (
     req.method !== 'GET' ||
     env.PUBLIC_CACHE_TTL_SECONDS <= 0 ||

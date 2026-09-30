@@ -6,6 +6,7 @@
 
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import { Copy, Eye, Plus, Save, Trash2 } from '@lucide/svelte';
   import { api } from '$lib/admin/api/client';
   import AdminEmptyState from '$lib/admin/components/admin/AdminEmptyState.svelte';
@@ -199,7 +200,23 @@
     }
   };
 
-  onMount(loadTours);
+  onMount(async () => {
+    await loadTours();
+    // Opened from the tour editor's "Edit prices": start on that tour, even
+    // when it is beyond the first page of the tour list.
+    const wanted = $page.url.searchParams.get('tour');
+    if (!wanted || selectedTourId) return;
+    if (!tours.some((tour) => tour.id === wanted)) {
+      try {
+        const res = await api.tours.get(wanted);
+        tours = [{ id: res.data.id, title: res.data.title, currency: res.data.currency || 'USD' }, ...tours];
+      } catch {
+        return;
+      }
+    }
+    selectedTourId = wanted;
+    await loadSeasons();
+  });
 </script>
 
 <div class="mx-auto grid w-full max-w-[1500px] gap-5 pb-24">

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { defaultSections, circuitFor, mergeSections, safeUrl, textContent, tourFilters } from './home-content.js';
+import { defaultSections, circuitFor, mergeSections, routeSentence, routeStops, safeUrl, textContent, tourDuration, tourDurationTitle, tourFilters, tourFromPrice, tourPhotos } from './home-content.js';
 
 test('a disabled CMS section does not leak fallback copy', () => {
 	const section = mergeSections([{ section_key: 'hero', is_active: false }]).find((item) => item.section_key === 'hero');
@@ -49,4 +49,46 @@ test('destinations use backend region/name fields and preserve unknown places', 
 });
 test('rich descriptions are rendered as text without raw HTML', () => {
 	assert.equal(textContent('<p>Wildlife &amp; beaches</p>'), 'Wildlife & beaches');
+});
+
+const place = (name: string, slug: string, sort_order: number) => ({ destination_id: slug, sort_order, is_primary: sort_order === 0, destinations: { id: slug, name, slug } });
+
+test('a tour route follows the saved order, shortens park names and counts the rest', () => {
+	const tour = { tour_destinations: [place('Ngorongoro Conservation Area', 'ngorongoro', 2), place('Tarangire National Park', 'tarangire', 0), place('Serengeti National Park', 'serengeti', 1), place('Zanzibar', 'zanzibar', 3), place('Lake Manyara National Park', 'manyara', 4)] };
+	assert.deepEqual(routeStops(tour), { stops: ['Tarangire', 'Serengeti', 'Ngorongoro'], more: 2 });
+	assert.deepEqual(routeStops({ destinations: { name: 'Serengeti National Park', slug: 'serengeti' } }), { stops: ['Serengeti'], more: 0 });
+	assert.deepEqual(routeStops({ tour_destinations: [], destinations: null }), { stops: [], more: 0 });
+});
+test('tour duration shows nights only when they are recorded', () => {
+	assert.equal(tourDuration(6, 5), '6 days · 5 nights');
+	assert.equal(tourDuration(2, 1), '2 days · 1 night');
+	assert.equal(tourDuration(1, 0), '1 day');
+	assert.equal(tourDuration(4, null), '4 days');
+	assert.equal(tourDuration(0, 3), '');
+});
+test('a tour advertises its lowest style price, then its own price, else on request', () => {
+	assert.equal(tourFromPrice({ currency: 'USD', price_from: 900, pricing_summary: { styles: ['budget', 'luxury'], from: 1450, currency: 'USD' } }), '$1,450');
+	assert.equal(tourFromPrice({ currency: 'USD', price_from: '900', pricing_summary: { styles: ['luxury'], from: null, currency: null } }), '$900');
+	assert.equal(tourFromPrice({ currency: 'USD', price_from: 0, pricing_summary: null }), null);
+	assert.equal(tourFromPrice({ currency: 'USD', price_from: null }), null);
+});
+test('image-less tours in one list get different photos, and a tour image always wins', () => {
+	const serengeti = { tour_destinations: [place('Serengeti National Park', 'serengeti', 0)] };
+	const photos = tourPhotos([serengeti, serengeti, { ...serengeti, main_image_url: 'https://cdn.example.com/tour.jpg' }, { destinations: null }]);
+	assert.equal(photos[0], '/images/serengeti.jpg');
+	assert.notEqual(photos[1], photos[0]);
+	assert.equal(photos[2], 'https://cdn.example.com/tour.jpg');
+	assert.equal(new Set([photos[0], photos[1], photos[3]]).size, 3);
+	assert.equal(tourPhotos([{ main_image_url: 'javascript:alert(1)' }])[0].startsWith('/images/'), true);
+});
+
+test('tour cards read "6 Days / 5 Nights" and "Tarangire, Serengeti & Ngorongoro"', () => {
+	assert.equal(tourDurationTitle(6, 5), '6 Days / 5 Nights');
+	assert.equal(tourDurationTitle(1, 0), '1 Day');
+	assert.equal(tourDurationTitle(null), '');
+	const link = (name: string, sort_order: number) => ({ destination_id: name, sort_order, is_primary: sort_order === 0, destinations: { id: name, name, slug: name.toLowerCase() } });
+	assert.equal(routeSentence({ tour_destinations: [link('Serengeti National Park', 1), link('Tarangire National Park', 0), link('Ngorongoro Crater', 2)] }), 'Tarangire, Serengeti & Ngorongoro Crater');
+	assert.equal(routeSentence({ tour_destinations: [link('Zanzibar', 0)] }), 'Zanzibar');
+	assert.equal(routeSentence({ tour_destinations: ['A', 'B', 'C', 'D', 'E'].map((name, i) => link(name, i)) }, 3), 'A, B, C +2 more');
+	assert.equal(routeSentence({}), '');
 });

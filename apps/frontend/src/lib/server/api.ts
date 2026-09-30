@@ -11,8 +11,10 @@ export async function apiRequest<T>(path: string, fetcher: typeof fetch, init: R
 	const headers = new Headers(init.headers);
 	headers.set('Accept', 'application/json');
 	if (init.body) headers.set('Content-Type', 'application/json');
+	// GETs wait up to 6s: an uncached tour or stay page makes several database
+	// round trips, and at 3s those pages fell over into the error page.
 	const response = await fetcher(`${baseUrl}/${path.replace(/^\/+/, '')}`, {
-		...init, headers, signal: AbortSignal.timeout(init.method === 'POST' ? 10000 : 3000), cache: 'no-store'
+		...init, headers, signal: AbortSignal.timeout(init.method === 'POST' ? 10000 : 6000), cache: 'no-store'
 	});
 	if (!response.ok) throw new ApiError(response.status);
 	const payload: ApiResponse<T> = await response.json();

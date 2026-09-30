@@ -3,6 +3,9 @@ import { z } from 'zod';
 const statusSchema = z.enum(['draft', 'published', 'hidden', 'archived']);
 const optionalUrl = z.union([z.string().url(), z.literal('')]).optional().nullable();
 
+// East African Community members; kept in step with apps/frontend/src/lib/countries.ts.
+export const EAST_AFRICA_COUNTRIES = ['Tanzania', 'Kenya', 'Uganda', 'Rwanda', 'Burundi', 'South Sudan', 'Democratic Republic of the Congo', 'Somalia'] as const;
+
 export const lodgeCreateSchema = z.object({
   name: z.string().min(2),
   slug: z.string().min(2).optional(),
@@ -10,7 +13,7 @@ export const lodgeCreateSchema = z.object({
   accommodation_level: z.enum(['BUDGET', 'MID_RANGE', 'LUXURY', 'PREMIUM_LUXURY']).default('MID_RANGE'),
   lodge_type: z.enum(['HOTEL','SAFARI_LODGE','TENTED_CAMP','MOBILE_CAMP','BEACH_RESORT','VILLA','GUEST_HOUSE','ECO_LODGE','BOUTIQUE_HOTEL']).default('SAFARI_LODGE'),
   short_description: z.string().max(500).optional().nullable(),
-  country: z.string().max(100).optional().nullable(),
+  country: z.enum(EAST_AFRICA_COUNTRIES).optional().nullable(),
   region: z.string().max(120).optional().nullable(),
   park_area: z.string().max(160).optional().nullable(),
   settings: z.array(z.enum(['INSIDE_NATIONAL_PARK','OUTSIDE_NATIONAL_PARK','CONSERVATION_AREA','PRIVATE_RESERVE','BEACHFRONT','ISLAND','CITY','COUNTRYSIDE','MOUNTAIN','REMOTE_WILDERNESS'])).max(10).optional(),

@@ -88,6 +88,21 @@ describe('public cache', () => {
     assert.equal(editor.body.read, 2);
   });
 
+  it('never stores a logged-in answer for visitors', async () => {
+    // A staff read can include drafts; the next anonymous read must not get it.
+    const editor = await get('/api/categories?status=all', { authorization: 'Bearer token' });
+    const visitor = await get('/api/categories?status=all');
+    assert.equal(editor.cache, null);
+    assert.equal(visitor.cache, 'MISS');
+    assert.equal(visitor.body.read, 2);
+  });
+
+  it('tells downstream caches that the answer depends on the token', async () => {
+    const res = await fetch(`${base}/api/categories`);
+    assert.match(res.headers.get('vary') ?? '', /authorization/i);
+    await res.json();
+  });
+
   it('leaves live routes such as departures alone', async () => {
     await get('/api/departures');
     const again = await get('/api/departures');
