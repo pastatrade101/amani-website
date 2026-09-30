@@ -45,6 +45,7 @@
   import ErrorState from '$lib/admin/components/public/ErrorState.svelte';
   import LoadingState from '$lib/admin/components/public/LoadingState.svelte';
   import { hasRichContent, toMetaText } from '$lib/admin/richText';
+  import { coversMonth, monthRange, seasonTone, type Season } from '$lib/seasons';
   import {
     defaultStyleLandingContent,
     parseStyleLandingJson,
@@ -323,6 +324,7 @@
     attemptedSave = false;
     slugManuallyEdited = false;
     modalOpen = true;
+    void loadSeasons();
     await loadMedia();
   };
 
@@ -360,6 +362,7 @@
     attemptedSave = false;
     slugManuallyEdited = true;
     modalOpen = true;
+    void loadSeasons();
     await loadMedia();
   };
 
@@ -373,6 +376,28 @@
     lottieSource = 'upload';
     activeTab = 'basics';
     attemptedSave = false;
+  };
+
+  // Best months are picked from the published Seasons (CMS → Seasons), so a
+  // category's timing always matches the "When should you go?" section.
+  let seasons: Season[] = [];
+  const loadSeasons = async () => {
+    if (seasons.length) return;
+    try {
+      const res = await api.seasons.list({ status: 'published', limit: 24 });
+      seasons = res.data.items as unknown as Season[];
+    } catch {
+      seasons = [];
+    }
+  };
+  const seasonMonths = (season: Season) =>
+    Array.from({ length: 12 }, (_, i) => i + 1).filter((month) => coversMonth(season, month));
+  const seasonSelected = (season: Season, picked: number[]) => seasonMonths(season).every((month) => picked.includes(month));
+  const toggleSeason = (season: Season) => {
+    const months = seasonMonths(season);
+    form.best_months = seasonSelected(season, form.best_months)
+      ? form.best_months.filter((month) => !months.includes(month))
+      : [...new Set([...form.best_months, ...months])].sort((a, b) => a - b);
   };
 
   const toggleMonth = (month: number) => {
@@ -583,9 +608,32 @@
     on:action={openCreateModal}
   />
 {:else}
-  <div class="overflow-hidden rounded-xl border border-ink/10 bg-surface shadow-sm">
+  <!-- Phones: one card per category, no sideways scrolling. -->
+  <div class="grid gap-3 md:hidden">
+    {#each rows as category (category.id)}
+      <article class="rounded-xl border border-ink/10 bg-surface p-4 shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h3 class="break-words font-semibold text-ink">{category.name}</h3>
+            <p class="mt-0.5 truncate text-xs text-ink/50">/{category.slug}</p>
+          </div>
+          <StatusBadge status={category.status} />
+        </div>
+        <p class="mt-2 line-clamp-2 text-xs leading-5 text-ink/60">{toMetaText(category.short_description || category.description || 'No description yet.', 160)}</p>
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <span class="text-[11px] text-ink/45">Sort {category.sort_order ?? 0} · {formatDate(category.updated_at ?? category.created_at)}</span>
+          <div class="flex gap-2">
+            <CmsButton variant="ghost" class="inline-flex h-9 items-center gap-2 rounded-xl border border-ink/10 bg-surface px-3 text-xs font-semibold text-ink shadow-sm" type="button" onclick={() => openEditModal(category)}><Edit size={14} />Edit</CmsButton>
+            <CmsButton variant="ghost" class="inline-flex h-9 items-center gap-2 rounded-xl border border-red-200 bg-surface px-3 text-xs font-semibold text-red-700 shadow-sm" type="button" aria-label={`Delete ${category.name}`} onclick={() => openDeleteConfirm(category)}><Trash2 size={14} /></CmsButton>
+          </div>
+        </div>
+      </article>
+    {/each}
+  </div>
+
+  <div class="hidden overflow-hidden rounded-xl border border-ink/10 bg-surface shadow-sm md:block">
     <div class="overflow-x-auto">
-      <CmsTable.Root class="w-full min-w-[920px] text-start text-sm">
+      <CmsTable.Root class="w-full text-start text-sm">
         <CmsTable.Header class="bg-sand/70 text-xs uppercase tracking-[0.08em] text-ink/60">
           <CmsTable.Row>
             <CmsTable.Head class="px-4 py-3 font-semibold">Name</CmsTable.Head>
@@ -599,11 +647,11 @@
         <CmsTable.Body class="divide-y divide-ink/10">
           {#each rows as category}
             <CmsTable.Row class="transition hover:bg-sand/25">
-              <CmsTable.Cell class="px-4 py-4">
-                <div class="font-semibold text-ink">{category.name}</div>
-                <p class="mt-1 line-clamp-1 text-xs text-ink/55">{toMetaText(category.description || 'No description yet.', 120)}</p>
+              <CmsTable.Cell class="w-[38%] max-w-0 px-4 py-4">
+                <div class="truncate font-semibold text-ink">{category.name}</div>
+                <p class="mt-1 truncate text-xs text-ink/55">{toMetaText(category.short_description || category.description || 'No description yet.', 120)}</p>
               </CmsTable.Cell>
-              <CmsTable.Cell class="px-4 py-4 text-ink/65">{category.slug}</CmsTable.Cell>
+              <CmsTable.Cell class="w-[20%] max-w-0 truncate px-4 py-4 text-ink/65">{category.slug}</CmsTable.Cell>
               <CmsTable.Cell class="px-4 py-4"><StatusBadge status={category.status} /></CmsTable.Cell>
               <CmsTable.Cell class="px-4 py-4 text-ink/65">{category.sort_order ?? 0}</CmsTable.Cell>
               <CmsTable.Cell class="px-4 py-4 text-ink/65">{formatDate(category.updated_at ?? category.created_at)}</CmsTable.Cell>
@@ -748,6 +796,23 @@
 
           <div class="grid gap-1.5">
             <span class="text-[13px] font-semibold text-ink/65">Best months</span>
+            {#if seasons.length}
+              <p class="text-xs text-ink/45">Pick by season — each one ticks all of its months. Fine-tune single months below.</p>
+              <div class="flex flex-wrap gap-2">
+                {#each seasons as season (season.id ?? season.name)}
+                  {@const picked = seasonSelected(season, form.best_months)}
+                  <CmsButton variant="ghost"
+                    class={`h-auto flex-col items-start gap-0.5 rounded-xl border px-3 py-2 text-left transition ${picked ? 'border-deep-green ring-2 ring-deep-green/20' : 'border-ink/12 hover:border-forest/40'} ${seasonTone(season.tone).card}`}
+                    type="button"
+                    aria-pressed={picked}
+                    onclick={() => toggleSeason(season)}
+                  >
+                    <span class="flex items-center gap-1.5 text-xs font-bold text-heading"><span class={`size-2.5 rounded-full ${seasonTone(season.tone).swatch}`}></span>{season.name}</span>
+                    <span class="text-[11px] font-medium text-ink/55">{monthRange(season)}</span>
+                  </CmsButton>
+                {/each}
+              </div>
+            {/if}
             <div class="flex flex-wrap gap-1.5">
               {#each MONTHS as month, monthIndex}
                 {@const monthNumber = monthIndex + 1}

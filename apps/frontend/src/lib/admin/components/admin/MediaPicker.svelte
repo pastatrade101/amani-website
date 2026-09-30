@@ -241,6 +241,14 @@
       placeholder="https://…"
       bind:value
       oninput={() => dispatch('change', value)}
+      onkeydown={(event) => {
+        // Enter confirms the pasted URL. Without this it submitted the whole
+        // editor form, saving a category before its last steps were filled in.
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          urlMode = false;
+        }
+      }}
     />
   {/if}
 </div>

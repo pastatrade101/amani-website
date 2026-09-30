@@ -526,9 +526,35 @@
     </ol>
   </section>
 
-  <div class="overflow-hidden rounded-xl border border-ink/10 bg-surface shadow-sm">
+  <!-- Phones: one card per season, no sideways scrolling. -->
+  <div class="grid gap-3 md:hidden">
+    {#each rows as season (season.id)}
+      {@const tone = seasonTone(season.tone)}
+      <article class="rounded-xl border border-ink/10 bg-surface p-4 shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex min-w-0 items-center gap-3">
+            <span class={`grid size-9 shrink-0 place-items-center rounded-full ${tone.card}`}><svelte:component this={seasonIcon(season.icon)} size={17} class={tone.icon} /></span>
+            <div class="min-w-0">
+              <h3 class="break-words font-semibold text-ink">{season.name}</h3>
+              <p class="mt-0.5 text-xs text-ink/50">{monthRange(season)}</p>
+            </div>
+          </div>
+          <StatusBadge status={season.status} />
+        </div>
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <span class="text-[11px] text-ink/45">Sort {season.sort_order ?? 0} · {formatDate(season.updated_at ?? season.created_at)}</span>
+          <div class="flex gap-2">
+            <CmsButton variant="ghost" class="inline-flex h-9 items-center gap-2 rounded-xl border border-ink/10 bg-surface px-3 text-xs font-semibold text-ink shadow-sm" type="button" onclick={() => openEditModal(season)}><Edit size={14} />Edit</CmsButton>
+            <CmsButton variant="ghost" class="inline-flex h-9 items-center gap-2 rounded-xl border border-red-200 bg-surface px-3 text-xs font-semibold text-red-700 shadow-sm" type="button" aria-label={`Delete ${season.name}`} onclick={() => openDeleteConfirm(season)}><Trash2 size={14} /></CmsButton>
+          </div>
+        </div>
+      </article>
+    {/each}
+  </div>
+
+  <div class="hidden overflow-hidden rounded-xl border border-ink/10 bg-surface shadow-sm md:block">
     <div class="overflow-x-auto">
-      <CmsTable.Root class="w-full min-w-[860px] text-start text-sm">
+      <CmsTable.Root class="w-full text-start text-sm">
         <CmsTable.Header class="bg-sand/70 text-xs uppercase tracking-[0.08em] text-ink/60">
           <CmsTable.Row>
             <CmsTable.Head class="px-4 py-3 font-semibold">Season</CmsTable.Head>
@@ -543,11 +569,11 @@
           {#each rows as season (season.id)}
             {@const tone = seasonTone(season.tone)}
             <CmsTable.Row class="transition hover:bg-sand/25">
-              <CmsTable.Cell class="px-4 py-4">
+              <CmsTable.Cell class="w-[40%] max-w-0 px-4 py-4">
                 <div class="flex items-center gap-3">
                   <span class={`grid size-9 shrink-0 place-items-center rounded-full ${tone.card}`}><svelte:component this={seasonIcon(season.icon)} size={17} class={tone.icon} /></span>
                   <div class="min-w-0">
-                    <div class="font-semibold text-ink">{season.name}</div>
+                    <div class="truncate font-semibold text-ink">{season.name}</div>
                     <p class="mt-1 line-clamp-1 text-xs text-ink/55">{season.best_for || season.description || 'No description yet.'}</p>
                   </div>
                 </div>
