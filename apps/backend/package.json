@@ -20,6 +20,7 @@
     "media:migrate-r2": "tsx src/scripts/migrate-to-r2.ts",
     "media:migrate-r2:prod": "node dist/scripts/migrate-to-r2.js",
     "media:downcap": "tsx src/scripts/downcap-originals.ts",
+    "media:copy-lodges": "tsx src/scripts/copy-lodge-images.ts",
     "media:downcap:prod": "node dist/scripts/downcap-originals.js",
     "content:prune": "tsx src/scripts/prune-content.ts",
     "content:destination-guides": "tsx src/scripts/import-destination-guides.ts",
