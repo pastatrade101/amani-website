@@ -74,6 +74,9 @@
 
 :root {
   --site-header-height: 86px;
+  /* Content width. 1280px left ~220px of empty margin a side on a 16" laptop,
+     so wide screens get more; the header uses the same value to stay aligned. */
+  --page-max: 1280px;
   --radius: 0.625rem;
   --navy: oklch(0.3 0.07 252);
   --sun: oklch(0.86 0.168 95);
@@ -169,7 +172,7 @@
   ::selection { background: var(--sun); color: var(--navy); }
 }
 @layer components {
-  .page-container { width: 100%; max-width: 1280px; padding-inline: 1rem; margin-inline: auto; }
+  .page-container { width: 100%; max-width: var(--page-max); padding-inline: 1rem; margin-inline: auto; }
   .section-heading { font-size: clamp(1.7rem, 2.8vw, 2.5rem); font-weight: 600; line-height: 1.22; letter-spacing: -.045em; color: var(--navy); }
   .section-description { font-size: 14px; line-height: 1.9; color: var(--muted-foreground); }
   .eyebrow { font-size: .65rem; font-weight: 600; letter-spacing: .19em; text-transform: uppercase; }
@@ -193,3 +196,5 @@ a[data-slot="button"]:hover svg:last-child { translate: 2px 0; }
 }
 
 @media (max-width: 1099px) { :root { --site-header-height: 76px; } }
+@media (min-width: 1440px) { :root { --page-max: 1400px; } }
+@media (min-width: 1680px) { :root { --page-max: 1560px; } }

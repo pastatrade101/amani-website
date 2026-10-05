@@ -268,7 +268,7 @@
 
 <style>
 	.site-header { position: sticky; top: 0; z-index: 50; box-shadow: 0 8px 24px -20px rgb(15 35 55 / .3); border-bottom: 1px solid var(--border); background: var(--background); }
-	.header-shell { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px; max-width: 1280px; height: var(--site-header-height); margin-inline: auto; padding-inline: 32px; }
+	.header-shell { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px; max-width: var(--page-max); height: var(--site-header-height); margin-inline: auto; padding-inline: 32px; }
 	:global(.desktop-navigation) { position: static; display: flex; flex: none; }
 	:global(.mega-menu-item) { position: static; }
 	.main-menu-control { display: flex; align-items: center; border-radius: 9px; }
