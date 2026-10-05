@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import { Menu, ArrowRight, ArrowUpRight, Search, Compass, Map, CalendarDays, Route, MessageCircle, Palmtree, Binoculars, BedDouble } from '@lucide/svelte';
+	import { destinationHref } from '$lib/destination-content';
 	import { siteInfo } from '$lib/site-info';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
@@ -48,11 +50,11 @@
 		...(visible.includes('safari_day') ? [{label:'A day on safari',description:'From first light to the evening camp.',href:anchor('safari-day'),icon:CalendarDays}] : []),
 		...(visible.includes('safari_packages') ? [{ label: 'Explore safari packages', description: 'Find an itinerary to make your own.', href: anchor('tanzania-safari-packages'), icon: Route }] : []),
 		...(visible.includes('when_to_go') ? [{ label: 'When to visit', description: 'Find the season that suits your journey.', href: anchor('when-to-go'), icon: CalendarDays }] : []),
-		...(visible.includes('destinations') ? [{ label: 'Where to go', description: 'Get to know Tanzania’s wild places.', href: anchor('destinations'), icon: Map }] : []),
+		...(visible.includes('destinations') ? [{ label: 'Where to go', description: 'Get to know Tanzania’s wild places.', href: '/destinations', icon: Map }] : []),
 		...(visible.includes('enquiry') ? [{ label: 'Talk to our local team', description: 'Let’s start with your safari ideas.', href: anchor('request-quote'), icon: MessageCircle }] : [])
 	]);
 	// /tours and /stays always exist, so their menus show even before anything is published.
-	let navigation = $derived(navItems.filter((item) => item.id === 'tours' || item.id === 'stays' ? true : item.id === 'plan' ? links.length > 0 : item.id === 'zanzibar' ? visible.includes('enquiry') : visible.includes(item.id)));
+	let navigation = $derived(navItems.filter((item) => item.id === 'tours' || item.id === 'stays' || item.id === 'destinations' ? true : item.id === 'plan' ? links.length > 0 : item.id === 'zanzibar' ? visible.includes('enquiry') : visible.includes(item.id)));
 	let enquiryHref = $derived(anchor(visible.includes('enquiry') ? 'request-quote' : visible.includes('experiences') ? 'experiences' : 'destinations'));
 	// On the home page the search panel exists only while safari packages are shown.
 	let searchHref = $derived((onPage ? onPage.includes('safari-search') : visible.includes('safari_packages')) ? '#safari-search' : '/tours#safari-search');
@@ -73,10 +75,34 @@
 		if (id === 'tours') return { href: '/tours', label: 'View all tours' };
 		if (id === 'stays') return { href: '/stays', label: 'View all stays' };
 		if (id === 'experiences') return { href: anchor('experiences'), label: 'View all experiences' };
-		if (id === 'destinations') return { href: anchor('destinations'), label: 'Explore all destinations' };
+		if (id === 'destinations') return { href: '/destinations', label: 'Explore all destinations' };
 		return { href: enquiryHref, label: 'Start planning' };
 	}
-	function closeMenu() { open = false; menu = ''; }
+	// Labels are real links; the adjacent chevron retains the accessible disclosure.
+	function mainLink(id: string) {
+		if (id === 'tours' || id === 'stays' || id === 'destinations') return `/${id}`;
+		if (id === 'experiences') return '/#experiences';
+		if (id === 'zanzibar') {
+			const island = destinations.find(place => place.name.trim().toLowerCase() === 'zanzibar');
+			return island ? destinationHref(island) : '/destinations?circuit=coast';
+		}
+		return enquiryHref;
+	}
+	let closeTimer: ReturnType<typeof setTimeout> | undefined;
+	function keepMenuOpen() { clearTimeout(closeTimer); }
+	function hoverMenu(event: PointerEvent, id: string) {
+		if (event.pointerType !== 'mouse') return;
+		keepMenuOpen();
+		menu = id;
+	}
+	function leaveNavigation(event: PointerEvent) {
+		if (event.pointerType !== 'mouse') return;
+		keepMenuOpen();
+		// Allow the pointer to cross the small gap between the labels and panel.
+		closeTimer = setTimeout(() => { menu = ''; }, 220);
+	}
+	onDestroy(keepMenuOpen);
+	function closeMenu() { keepMenuOpen(); open = false; menu = ''; }
 	function choose(name: string) { onInterest(name); closeMenu(); }
 </script>
 
@@ -90,11 +116,14 @@
 				<span class="leading-none"><span class="block text-[17px] font-bold">Key2africa</span><span class="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-primary/65">Safaris</span></span>
 			{/if}
 		</a>
-		<NavigationMenu.Root value={menu} onValueChange={(value) => menu = value} viewport={false} class="desktop-navigation" aria-label="Main navigation">
+		<NavigationMenu.Root value={menu} onValueChange={(value) => menu = value} viewport={false} onpointerenter={keepMenuOpen} onpointerleave={leaveNavigation} class="desktop-navigation" aria-label="Main navigation">
 			<NavigationMenu.List class="gap-1">
 				{#each navigation as item}
-					<NavigationMenu.Item value={item.id} class="mega-menu-item">
-						<NavigationMenu.Trigger class="main-menu-trigger">{item.label}</NavigationMenu.Trigger>
+					<NavigationMenu.Item value={item.id} class="mega-menu-item" onpointerenter={(event) => hoverMenu(event, item.id)}>
+                        <div class="main-menu-control" class:menu-open={menu === item.id}>
+                            <NavigationMenu.Link href={mainLink(item.id)} onclick={closeMenu} active={page.url.pathname === mainLink(item.id)} class="main-menu-link">{item.label}</NavigationMenu.Link>
+                            <NavigationMenu.Trigger class="main-menu-trigger" aria-label={`${item.label} menu`} />
+                        </div>
 						<NavigationMenu.Content class="mega-panel">
 							{#if item.id === 'tours'}
 								<div class="experience-menu">
@@ -171,8 +200,8 @@
 									<div class="destination-columns">
 										{#each destinationGroups as group}
 											<section class="destination-column">
-												<NavigationMenu.Link href={anchor('destinations')} onclick={closeMenu} class="destination-cover"><img src={group.image} alt="" /><span><strong>{group.title}</strong><small>{group.description}</small></span><ArrowUpRight class="size-4" /></NavigationMenu.Link>
-												<div class="destination-links">{#each destinations.filter((destination) => circuitFor(destination) === group.circuit).slice(0, 4) as destination}<NavigationMenu.Link href={enquiryHref} onclick={() => choose(destination.name)} class="destination-link">{destination.name}<ArrowRight class="size-3.5" /></NavigationMenu.Link>{/each}</div>
+												<NavigationMenu.Link href={`/destinations?circuit=${group.circuit}#destination-results`} onclick={closeMenu} class="destination-cover"><img src={group.image} alt="" /><span><strong>{group.title}</strong><small>{group.description}</small></span><ArrowUpRight class="size-4" /></NavigationMenu.Link>
+												<div class="destination-links">{#each destinations.filter((destination) => circuitFor(destination) === group.circuit).slice(0, 4) as destination}<NavigationMenu.Link href={destinationHref(destination)} onclick={closeMenu} class="destination-link">{destination.name}<ArrowRight class="size-3.5" /></NavigationMenu.Link>{/each}</div>
 											</section>
 										{/each}
 									</div>
@@ -217,8 +246,8 @@
                                             {#each activities as activity}<a data-motion="reveal" class="mobile-menu-link" href={enquiryHref} onclick={() => choose(activity.name)}><img src={safeUrl(activity.image_url_thumbnail || activity.image_url || activity.hero_image_url, '/images/safari-hero.jpg')} alt="" /><span>{activity.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
                                             <a class="mobile-menu-link mobile-view-all" href={anchor('experiences')} onclick={closeMenu}>View all experiences <ArrowRight class="size-4" /></a>
                                         {:else if item.id === 'destinations'}
-                                            {#each destinations.slice(0, 8) as destination, i}<a data-motion="reveal" class="mobile-menu-link" href={enquiryHref} onclick={() => choose(destination.name)}><img src={destinationPhoto(destination, i)} alt="" /><span>{destination.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
-                                            <a class="mobile-menu-link mobile-view-all" href={anchor('destinations')} onclick={closeMenu}>Explore all destinations <ArrowRight class="size-4" /></a>
+                                            {#each destinations.slice(0, 8) as destination, i}<a data-motion="reveal" class="mobile-menu-link" href={destinationHref(destination)} onclick={closeMenu}><img src={destinationPhoto(destination, i)} alt="" /><span>{destination.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
+                                            <a class="mobile-menu-link mobile-view-all" href="/destinations" onclick={closeMenu}>Explore all destinations <ArrowRight class="size-4" /></a>
                                         {:else if item.id === 'zanzibar'}
                                             {#each islandIdeas as idea}<a class="mobile-menu-link mobile-idea-link" href={enquiryHref} onclick={() => choose(idea.title)}><span>{idea.title}<small>{idea.description}</small></span><ArrowUpRight class="size-3.5" /></a>{/each}
                                         {:else}
@@ -241,8 +270,14 @@
 	.header-shell { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px; max-width: 1280px; height: var(--site-header-height); margin-inline: auto; padding-inline: 32px; }
 	:global(.desktop-navigation) { position: static; display: flex; flex: none; }
 	:global(.mega-menu-item) { position: static; }
-	:global(.main-menu-trigger) { height: 42px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; color: var(--navy); font-size: 13px; font-weight: 500; transition: background 160ms ease-out, color 160ms ease-out; }
-	:global(.main-menu-trigger:hover), :global(.main-menu-trigger[data-state="open"]), :global(.main-menu-trigger[data-open]), :global(.main-menu-trigger[data-popup-open]) { background: var(--secondary); }
+	.main-menu-control { display: flex; align-items: center; border-radius: 9px; }
+	.main-menu-control:hover, .main-menu-control.menu-open { background: var(--secondary); }
+	:global(.main-menu-link) { height: 44px; padding: 0 3px 0 12px; border-radius: 9px 0 0 9px; color: var(--navy); font-size: 13px; font-weight: 500; text-decoration: none; background: transparent; }
+	:global(.main-menu-link:hover), :global(.main-menu-link:focus), :global(.main-menu-link[data-active]) { background: transparent; }
+	:global(.main-menu-link:focus-visible), :global(.main-menu-trigger:focus-visible) { outline: 2px solid var(--sun); outline-offset: 2px; }
+	:global(.main-menu-trigger) { height: 44px; width: 30px; padding: 0; border: 0; border-radius: 0 9px 9px 0; background: transparent; color: var(--navy); }
+	:global(.main-menu-trigger > svg) { margin-left: 0; top: 0; }
+	:global(.main-menu-trigger:hover), :global(.main-menu-trigger[data-state="open"]), :global(.main-menu-trigger[data-open]), :global(.main-menu-trigger[data-popup-open]) { background: transparent; }
 	:global(.mega-panel) { position: absolute; top: 100%; left: 32px; right: 32px; width: auto; margin: 0; max-height: calc(100dvh - 150px); overflow-y: auto; border: 1px solid var(--border); border-radius: 0 0 20px 20px; padding: 0; background: var(--background); box-shadow: 0 24px 50px -20px oklch(.3 .07 252 / .28); transform: none; animation: menu-enter 180ms ease-out; }
 	@keyframes menu-enter { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 	.menu-eyebrow { display: block; font-size: 9px; font-weight: 600; line-height: 1.5; letter-spacing: .14em; }

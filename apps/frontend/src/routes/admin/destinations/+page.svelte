@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { destinationHref } from '$lib/destination-content';
+  import DestinationGuideEditor from '$lib/admin/components/admin/DestinationGuideEditor.svelte';
   import * as CmsDialog from '$lib/components/ui/dialog';
 
   import { Label as CmsLabel } from '$lib/components/ui/label';
@@ -31,6 +33,7 @@
   type MediaItem = { file_name: string; file_url: string; id: string; thumbnail_url?: string | null };
 
   type Destination = {
+    guide?: Record<string, any>[] | null;
     id: string;
     name: string;
     slug: string;
@@ -65,6 +68,7 @@
   };
 
   type DestinationForm = {
+    guide: Record<string, any>[];
     banner_image_url: string;
     country: string;
     description: string;
@@ -101,6 +105,7 @@
   };
 
   const emptyForm = (): DestinationForm => ({
+    guide: [],
     banner_image_url: '',
     country: 'Tanzania',
     description: '',
@@ -230,6 +235,7 @@
     }
     editingDestination = destination;
     form = {
+      guide: structuredClone(destination.guide ?? []),
       banner_image_url: destination.banner_image_url ?? '',
       country: destination.country ?? 'Tanzania',
       description: destination.description ?? '',
@@ -279,6 +285,7 @@
     const mainImage = form.main_image_url || null;
 
     return {
+      guide: form.guide,
       banner_image_url: form.banner_image_url || null,
       country: form.country.trim() || 'Tanzania',
       description: form.description || null,
@@ -490,6 +497,7 @@
         <div>
           <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-forest/70">{editingDestination ? 'Edit destination' : 'New destination'}</p>
           <h2 class="mt-2 text-2xl font-bold tracking-normal text-ink">{editingDestination ? editingDestination.name : 'Create Destination'}</h2>
+          {#if editingDestination?.status === 'published'}<a href={destinationHref(editingDestination)} target="_blank" rel="noopener noreferrer" class="mt-3 inline-block text-xs font-semibold underline underline-offset-4">View public destination page ↗</a>{/if}
         </div>
         <CmsButton variant="ghost" class="grid h-10 w-10 place-items-center rounded-2xl border border-ink/10 bg-surface text-ink shadow-sm transition hover:bg-sand" type="button" aria-label="Close modal" onclick={closeModal}>
           <X size={18} />
@@ -520,6 +528,8 @@
 
         <AdminTextArea label="Short description" name="short_description" bind:value={form.short_description} rows={3} placeholder="Concise destination summary for cards and search." />
         <AdminRichText label="Description" name="description" bind:value={form.description} rows={10} placeholder="Destination overview for the public page." />
+
+        <DestinationGuideEditor bind:blocks={form.guide} />
 
         <div class="rounded-2xl border border-ink/10 bg-sand/20 p-4">
           <p class="text-sm font-bold text-ink">Health &amp; safety</p>

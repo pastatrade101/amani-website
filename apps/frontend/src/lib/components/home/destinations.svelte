@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { destinationHref } from '$lib/destination-content';
 	import { ArrowUpRight } from '@lucide/svelte';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import type { Destination, HomepageSection } from '$lib/types/api';
@@ -17,7 +18,7 @@
 			<Tabs.Content value={circuit.id} class="mt-6">
 				<div class="destination-grid">
 					{#each items.filter((item) => circuitFor(item) === circuit.id).slice(0, 6) as item, index}
-						{@const href = !reference && showPackages ? `/?destination_id=${encodeURIComponent(item.id)}#tanzania-safari-packages` : canEnquire ? '#request-quote' : '#destinations'}
+						{@const href = !reference ? destinationHref(item) : canEnquire ? '#request-quote' : '#destinations'}
 						<a data-motion="card" data-motion-hover="card" {href} onclick={() => { if (reference) onInterest(item.name); }} class={`destination-cell cell-${index} group relative block min-h-60 overflow-hidden rounded-2xl bg-navy`}>
 							<img src={destinationPhoto(item, index)} alt={item.name} loading="lazy" class="absolute inset-0 size-full object-cover transition-transform duration-[350ms] ease-out group-hover:scale-[1.04] motion-reduce:transition-none" />
 							<div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/10 to-transparent"></div>
@@ -28,6 +29,7 @@
 			</Tabs.Content>
 		{/each}
 	</Tabs.Root>
+	<div class="mt-8 text-center"><a href="/destinations" class="inline-flex min-h-12 items-center gap-3 rounded-lg bg-navy px-6 text-sm font-semibold text-white">Explore all destinations <ArrowUpRight size={16}/></a></div>
 </section>
 <style>
 	/* Mobile first: every region visible at once as a 2-column grid of full

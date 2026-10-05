@@ -48,6 +48,15 @@ test('built frontend matches the Express contracts and fails safely', { timeout:
       { section_key: 'faq', extra_data: { faqs: [{question:'A question from the Homepage CMS?',answer:'An answer from your team.'}] } }
     ];
     else if (url.pathname === '/api/destinations') data = page([{ id, name: 'Live Serengeti', slug: 'serengeti', country: 'Tanzania' }]);
+    else if (url.pathname === '/api/destinations/serengeti' || url.pathname === '/api/destinations/draft-place') data = {
+      id, name:'Live Serengeti', slug:'serengeti', status:url.pathname.endsWith('draft-place')?'draft':'published', country:'Tanzania',
+      description:'<p>CMS destination overview</p><script>alert("unsafe")</script>', meta_title:'CMS destination SEO',
+      guide:[{type:'facts',title:'At a glance',items:[{label:'Best for',value:'Wildlife watching'}]},
+        {type:'richtext',heading:'A deeper look',body:'<p>Complete guide content from CMS.</p>'},
+        {type:'table',title:'When to travel',columns:['Season','Experience'],rows:[['June','Open plains']]},
+        {type:'faq',items:[{q:'Can we visit?',a:'Yes, speak with our team.'}]}],
+      safety_overview:'CMS safety overview', score_wildlife:0
+    };
     else if (url.pathname === '/api/reviews') data = page([{id:'review-1',author_name:'Approved Guest',message:'A review from the real CMS contract.',rating:4,status:'approved',platform:'Google'},{id:'review-2',author_name:'Pending Guest',message:'This review must stay private.',rating:5,status:'pending'}]);
     else if (url.pathname === '/api/faqs') data = page([]);
     else if (url.pathname === '/api/activities') data = page([]);
@@ -155,7 +164,23 @@ test('built frontend matches the Express contracts and fails safely', { timeout:
     assert.notEqual(adminRequests.at(-1).forwarded,'untrusted-client-value');
     assert.equal((await fetch(`${origin}/api/auth/login`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:'wrong@example.invalid',password:'wrong'})})).status,401);
 
+    const destinationIndex = await fetch(`${origin}/destinations`);
+    assert.equal(destinationIndex.status,200);
+    const indexHtml=await destinationIndex.text();
+    assert.ok(indexHtml.includes('href="/destinations/serengeti"'));
+    assert.ok(indexHtml.includes('Find a destination'));
+    assert.ok(!(await (await fetch(`${origin}/destinations?search=missing`)).text()).includes('class="destination-card '));
+    const destinationPage=await fetch(`${origin}/destinations/serengeti`);
+    assert.equal(destinationPage.status,200);
+    const destinationHtml=await destinationPage.text();
+    for(const text of ['CMS destination SEO','CMS destination overview','Wildlife watching','Complete guide content from CMS.','When to travel','Can we visit?','CMS safety overview','0/10']) assert.ok(destinationHtml.includes(text),text);
+    assert.ok(!destinationHtml.includes('<script>alert("unsafe")</script>'));
+    assert.equal((await fetch(`${origin}/destinations/draft-place`)).status,404);
+    assert.equal((await fetch(`${origin}/destinations/missing`)).status,404);
+
     unavailable = true;
+    assert.equal((await fetch(`${origin}/destinations/serengeti`)).status,503);
+    assert.ok((await (await fetch(`${origin}/destinations`)).text()).includes('We couldn’t load our destination collection'));
     const fallback = await (await fetch(origin)).text();
     assert.ok(fallback.includes('Tanzania Safari Tours'));
     assert.ok(!fallback.includes('Approved Guest'));

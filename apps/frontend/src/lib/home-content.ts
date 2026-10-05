@@ -169,6 +169,8 @@ export function tourPhotos(tours: Pick<Tour, 'main_image_url' | 'main_image_url_
 
 export function circuitFor(destination: Destination): string {
 	const location = `${destination.region ?? ''} ${destination.name} ${destination.slug}`.toLowerCase();
+	// Southern/western Serengeti are areas within the Northern Circuit.
+	if (/serengeti|ndutu/.test(location)) return 'northern';
 	if (/zanzibar|pemba|mafia|coast|stone town|saadani|dar es salaam/.test(location)) return 'coast';
 	if (/southern|ruaha|nyerere|mikumi|udzungwa|rufiji|iringa|selous/.test(location)) return 'southern';
 	if (/western|mahale|katavi|tanganyika|gombe|rubondo|kigoma/.test(location)) return 'western';

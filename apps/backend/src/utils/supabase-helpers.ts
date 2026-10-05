@@ -18,6 +18,8 @@ type ListOptions = {
   orderBy?: string;
   ascending?: boolean;
   filters?: string[];
+  /** Internal relation lookup; public requests cannot supply this allow-list. */
+  ids?: string[];
   /** Runs after the rows are fetched, before they are sent. */
   afterFetch?: (items: Array<Record<string, unknown>>) => Promise<void>;
   /**
@@ -162,6 +164,7 @@ export const listRecords = async (req: Request, res: Response, options: ListOpti
     .order(options.orderBy ?? 'created_at', { ascending: options.ascending ?? false });
 
   if (options.softDelete ?? true) query = query.is('deleted_at', null);
+  if (options.ids) query = query.in('id', options.ids);
   if (search && options.searchColumns?.length) {
     query = query.or(options.searchColumns.map((column) => `${column}.ilike.%${search}%`).join(','));
   }

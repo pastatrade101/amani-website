@@ -102,13 +102,25 @@ const fetchActivity = async (id: string) => {
 };
 
 export const listActivities = asyncHandler(async (req, res) => {
+  const destination = typeof req.query.destination_id === 'string' ? req.query.destination_id : '';
+  let ids: string[] | undefined;
+  if (destination && destination !== 'all' && destination !== 'null') {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(destination)) throw new AppError('Invalid destination.', 400);
+    const [primary, linked] = await Promise.all([
+      supabase.from('activities').select('id').eq('destination_id', destination),
+      supabase.from('activity_destinations').select('activity_id').eq('destination_id', destination)
+    ]);
+    if (primary.error || (linked.error && !isMissingLink(linked.error))) throw new AppError('Unable to load destination experiences.', 500);
+    ids = [...new Set([...(primary.data ?? []).map(row => row.id), ...(linked.data ?? []).map(row => row.activity_id)])];
+  }
   return listRecords(req, res, {
     table: 'activities',
     select: listSelect,
     searchColumns: ['name', 'description', 'why_we_recommend', 'location_label'],
     statusColumn: 'status',
     defaultStatus: 'published',
-    filters: ['destination_id', 'category', 'difficulty', 'is_featured']
+    ids,
+    filters: [...(ids ? [] : ['destination_id']), 'category', 'difficulty', 'is_featured']
   });
 });
 

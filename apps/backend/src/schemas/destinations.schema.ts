@@ -33,9 +33,9 @@ export const destinationCreateSchema = z.object({
   meta_description: z.string().optional().nullable(),
   og_image_url: optionalUrl,
   // Long-form destination guide (jsonb): an ordered array of typed content blocks.
-  // Validated loosely — a block only needs a string `type` — so the editorial schema
+  // Validated loosely — legacy title/body blocks and typed editor blocks are both accepted — so the editorial schema
   // can evolve without backend changes. Rendered by the frontend DestinationGuide.
-  guide: z.array(z.object({ type: z.string() }).passthrough()).optional().nullable(),
+  guide: z.array(z.object({ type: z.string().optional() }).passthrough()).optional().nullable(),
   guide_reviewed_at: z.string().optional().nullable()
 });
 

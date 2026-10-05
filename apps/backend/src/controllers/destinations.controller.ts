@@ -1,3 +1,4 @@
+import { isStaffRequest } from '../utils/staff';
 import { asyncHandler } from '../utils/async-handler';
 import {
   createRecord,
@@ -33,7 +34,7 @@ export const listDestinations = asyncHandler(async (req, res) => {
 });
 
 export const getDestination = asyncHandler(async (req, res) => {
-  return getRecordBySlug(res, 'destinations', req.params.slug, '*', { locale: localeOf(req.query.locale) });
+  return getRecordBySlug(res, 'destinations', req.params.slug, '*', { locale: localeOf(req.query.locale), ...(isStaffRequest(req) ? {} : { status: 'published' }) });
 });
 
 export const createDestination = asyncHandler(async (req, res) => {
