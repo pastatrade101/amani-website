@@ -14,10 +14,10 @@
 		{#each slides as slide, i}<img src={slide.src} alt={slide.alt} aria-hidden={i !== index % slides.length} data-motion="hero-image" data-active={i === index % slides.length} width="1920" height="1088" fetchpriority={i === 0 ? 'high' : 'auto'} class="hero-image absolute inset-0 size-full object-cover object-[70%_center] md:object-center" />{/each}
 	</div>
 	<div class="absolute inset-0 -z-10 bg-linear-to-r from-black/75 via-black/45 to-black/5 max-md:bg-black/50" aria-hidden="true"></div>
-	<div class="mx-auto w-full max-w-7xl px-8 py-20 sm:px-12 lg:px-16">
-		<div class="max-w-[570px] text-white">
+	<div class="page-container py-20">
+		<div class="max-w-[570px] text-white min-[1440px]:max-w-[640px]">
 			<p data-motion="hero" class="text-xs font-semibold tracking-[0.25em] md:text-sm">{section.subtitle}</p><div data-motion="line" data-motion-delay="0.15" class="hero-rule mt-3 h-0.5 w-16 bg-sun"></div>
-			<h1 data-motion="hero-title" aria-label={section.title || undefined} class="mt-5 text-[42px] font-semibold leading-[1.08] tracking-[-.045em] sm:text-5xl md:text-6xl lg:text-[70px]">{#each (section.title || '').split(/\s+/).filter(Boolean) as word}<span class="hero-word-mask" aria-hidden="true"><span data-motion-word>{word}</span></span>{' '}{/each}</h1>
+			<h1 data-motion="hero-title" aria-label={section.title || undefined} class="mt-5 text-[42px] font-semibold leading-[1.08] tracking-[-.045em] sm:text-5xl md:text-6xl lg:text-[70px] min-[1440px]:text-[76px]">{#each (section.title || '').split(/\s+/).filter(Boolean) as word}<span class="hero-word-mask" aria-hidden="true"><span data-motion-word>{word}</span></span>{' '}{/each}</h1>
 			<p data-motion="hero" data-motion-delay="0.12" class="mt-5 max-w-[480px] text-sm leading-[1.9] text-white/85 md:text-base">{textContent(section.content)}</p>
 			<div data-motion="hero" data-motion-delay="0.24" class="hero-actions mt-7 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
 				{#if canEnquire}<Button variant="safari" href={safeUrl(section.button_url)} class="hero-cta h-12 min-h-12 rounded-lg px-6 text-sm font-bold">{section.button_text || 'Plan My Safari'} <ArrowRight class="ml-1" /></Button>{/if}
@@ -27,10 +27,12 @@
 		</div>
 	</div>
 	{#if slides.length > 1}
-		<button type="button" onclick={() => go(-1)} class="absolute top-1/2 left-2 hidden size-8 sm:grid -translate-y-1/2 place-items-center rounded-full border border-white/40 bg-black/20 text-white md:left-5 md:size-10" aria-label="Previous slide"><ChevronLeft class="size-5" /></button>
-		<button type="button" onclick={() => go(1)} class="absolute top-1/2 right-2 hidden size-8 sm:grid -translate-y-1/2 place-items-center rounded-full border border-white/40 bg-black/20 text-white md:right-5 md:size-10" aria-label="Next slide"><ChevronRight class="size-5" /></button>
-		<div class="absolute inset-x-0 bottom-7 flex justify-center gap-1">
-			{#each slides as slide, i}<button type="button" onclick={() => index = i} aria-label={`Show slide ${i + 1}`} aria-current={i === index ? 'true' : undefined} class="grid h-8 min-w-8 place-items-center"><span class={`block h-1.5 rounded-full ${i === index ? 'w-7 bg-sun' : 'w-1.5 bg-white/60'}`}></span></button>{/each}
+		<div class="absolute inset-x-0 bottom-7 flex items-center justify-center gap-2">
+			<button type="button" onclick={() => go(-1)} class="hidden size-9 place-items-center rounded-full border border-white/40 bg-black/20 text-white transition-colors hover:bg-black/35 sm:grid" aria-label="Previous slide"><ChevronLeft class="size-5" /></button>
+			<div class="flex gap-1">
+				{#each slides as slide, i}<button type="button" onclick={() => index = i} aria-label={`Show slide ${i + 1}`} aria-current={i === index ? 'true' : undefined} class="grid h-8 min-w-8 place-items-center"><span class={`block h-1.5 rounded-full ${i === index ? 'w-7 bg-sun' : 'w-1.5 bg-white/60'}`}></span></button>{/each}
+			</div>
+			<button type="button" onclick={() => go(1)} class="hidden size-9 place-items-center rounded-full border border-white/40 bg-black/20 text-white transition-colors hover:bg-black/35 sm:grid" aria-label="Next slide"><ChevronRight class="size-5" /></button>
 		</div>
 	{/if}
 </section>
