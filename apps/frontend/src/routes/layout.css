@@ -177,6 +177,8 @@
   .section-description { font-size: 14px; line-height: 1.9; color: var(--muted-foreground); }
   .eyebrow { font-size: .65rem; font-weight: 600; letter-spacing: .19em; text-transform: uppercase; }
   .gold-line { height: 3px; width: 50px; background: var(--sun); border-radius: 3px; }
+  /* Tour and stay cards: 1 on phones, 2 from 640px, 3 from 1024px, 4 from 1440px. */
+  .card-grid { display: grid; gap: 1.5rem; grid-template-columns: minmax(0, 1fr); }
 }
 @media (min-width: 768px) { .page-container { padding-inline: 2rem; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
@@ -196,5 +198,7 @@ a[data-slot="button"]:hover svg:last-child { translate: 2px 0; }
 }
 
 @media (max-width: 1099px) { :root { --site-header-height: 76px; } }
-@media (min-width: 1440px) { :root { --page-max: 1400px; } }
+@media (min-width: 640px) { .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1440px) { :root { --page-max: 1400px; } .card-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (min-width: 1680px) { :root { --page-max: 1560px; } }

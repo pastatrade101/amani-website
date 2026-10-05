@@ -114,7 +114,7 @@
 				</div>
 				{#if filtered}<Button href="/stays#stay-results" variant="outline">Clear filters</Button>{/if}
 			</div>
-			<div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+			<div class="card-grid mt-8">
 				{#each data.stays as stay (stay.id)}
 					<StayCard {stay} destination={placeFor(stay.destination_id)} />
 				{:else}

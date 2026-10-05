@@ -256,7 +256,7 @@
 					</div>
 					{#if place}<Button href={`/tours?destination_id=${encodeURIComponent(place.id)}#tour-results`} variant="outline" class="h-11">All safaris to {placeShort} <ArrowRight class="size-4" /></Button>{/if}
 				</div>
-				<ul class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+				<ul class="card-grid mt-8">
 					{#each tours as tour, i (tour.id)}
 						{@const note = overnightNote(tour)}
 						<li class="flex flex-col gap-3">
@@ -321,7 +321,7 @@
 					</div>
 					{#if place}<Button href={staysHref({}, { destination_id: place.id })} variant="outline" class="h-11">See all stays in {placeShort} <ArrowRight class="size-4" /></Button>{/if}
 				</div>
-				<div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+				<div class="card-grid mt-8">
 					{#each nearby as other (other.id)}
 						<StayCard stay={other} destination={placeDetails} />
 					{/each}

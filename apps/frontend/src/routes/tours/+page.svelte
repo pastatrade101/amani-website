@@ -105,7 +105,7 @@
 				{#if filtered}<Button href="/tours#tour-results" variant="outline">Clear filters</Button>{/if}
 			</div>
 			<SavedTours />
-			<div class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+			<div class="card-grid mt-8">
 				{#each data.tours as tour, i (tour.id)}
 					<TourCard {tour} photo={photos[i]} />
 				{:else}
