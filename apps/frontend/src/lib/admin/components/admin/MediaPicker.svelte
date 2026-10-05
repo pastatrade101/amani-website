@@ -335,7 +335,7 @@
             {#each filtered as m (m.id)}
               <CmsButton variant="ghost"
                 type="button"
-                class={`group overflow-hidden rounded-xl border bg-surface text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-sm ${(multiple ? selectedUrls.has(m.file_url) : value === m.file_url) ? 'border-goldfinch-gold ring-2 ring-goldfinch-gold/45' : 'border-ink/10 hover:border-forest/35'}`}
+                class={`group flex h-auto flex-col items-stretch justify-start gap-0 overflow-hidden whitespace-normal rounded-xl border bg-surface p-0 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-sm ${(multiple ? selectedUrls.has(m.file_url) : value === m.file_url) ? 'border-goldfinch-gold ring-2 ring-goldfinch-gold/45' : 'border-ink/10 hover:border-forest/35'}`}
                 onclick={() => select(m.file_url, m)}
               >
                 <span class="relative block aspect-[4/3] w-full overflow-hidden bg-sand/35">
