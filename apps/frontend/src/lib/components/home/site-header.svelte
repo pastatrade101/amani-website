@@ -42,6 +42,10 @@
 		{ title: 'Honeymoon in Zanzibar', description: 'A little time, just for two.' }
 	];
 	let links = $derived([
+		...(visible.includes('cost_ranges') ? [{label:'Safari costs',description:'Understand your options and budget.',href:anchor('cost-ranges'),icon:Compass}] : []),
+		...(visible.includes('safari_duration') ? [{label:'How long to stay',description:'Find a route that fits your time.',href:anchor('safari-duration'),icon:Route}] : []),
+		...(visible.includes('safari_inclusions') ? [{label:'What’s included',description:'Know the details before you travel.',href:anchor('safari-inclusions'),icon:Binoculars}] : []),
+		...(visible.includes('safari_day') ? [{label:'A day on safari',description:'From first light to the evening camp.',href:anchor('safari-day'),icon:CalendarDays}] : []),
 		...(visible.includes('safari_packages') ? [{ label: 'Explore safari packages', description: 'Find an itinerary to make your own.', href: anchor('tanzania-safari-packages'), icon: Route }] : []),
 		...(visible.includes('when_to_go') ? [{ label: 'When to visit', description: 'Find the season that suits your journey.', href: anchor('when-to-go'), icon: CalendarDays }] : []),
 		...(visible.includes('destinations') ? [{ label: 'Where to go', description: 'Get to know Tanzania’s wild places.', href: anchor('destinations'), icon: Map }] : []),

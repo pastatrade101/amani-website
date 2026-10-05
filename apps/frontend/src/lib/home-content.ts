@@ -1,7 +1,9 @@
+import { guideSections } from './homepage-guides';
 import { formatPrice } from './safari-pricing.js';
 import type { Destination, HomepageSection, Tour } from './types/api.js';
 
 export const defaultSections: HomepageSection[] = [
+	...guideSections,
 	{ section_key: 'hero', title: 'Tanzania Safari Tours', subtitle: 'DISCOVER. EXPLORE. BELONG.', content: 'Follow the wild. Find your quiet. Discover Tanzania on a private journey from the Serengeti plains to the shores of Zanzibar — thoughtfully planned around you.', button_text: 'Plan My Safari', button_url: '#request-quote', sort_order: 0 },
 	{ section_key: 'why_us', title: 'More than a safari. A connection to Tanzania.', subtitle: 'THE KEY2AFRICA APPROACH', content: 'The best journeys feel personal. We bring local insight and thoughtful planning to the moments you’ve been dreaming of, and the ones you haven’t imagined yet.', button_text: 'Create my Tanzania journey', button_url: '#request-quote', sort_order: 5 },
 	{ section_key: 'experiences', title: 'Moments that become your favourite stories.', subtitle: 'EXPERIENCE SOMETHING EXTRAORDINARY', content: 'Feel the thrill of the wild, the stillness of the plains and the freedom to explore your way.', sort_order: 10 },

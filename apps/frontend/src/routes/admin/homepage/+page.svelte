@@ -1,4 +1,6 @@
 <script lang="ts">
+  import HomeGuideFields from '$lib/admin/components/admin/HomeGuideFields.svelte';
+  import { guideSections, guideKeys, guideRows, sectionDefault, type GuideRow } from '$lib/homepage-guides';
   import * as CmsDialog from '$lib/components/ui/dialog';
 
   import { Button as CmsButton } from '$lib/components/ui/button';
@@ -272,8 +274,8 @@
     },
     {
       key: 'cost_ranges',
-      label: 'Typical costs',
-      surface: 'orphan',
+      label: 'Safari cost guide',
+      surface: 'public',
       description: 'Homepage price guide band. Use the cost range rows editor for trip type, starting price and note.',
       fields: ['title', 'subtitle', 'extra: ranges'],
       preset: {
@@ -451,12 +453,25 @@
     }
   ];
 
+  for (const section of guideSections) {
+    const existing = sectionRegistry.find(item => item.key === section.section_key);
+    const entry: SectionRegistryItem = {
+      key: section.section_key,
+      label: ({ why_tanzania: 'Why Tanzania', safari_duration: 'Safari length guide', safari_inclusions: 'Inclusions & exclusions', safari_day: 'A day on safari', cost_ranges: 'Safari cost guide', reviews_section: 'Traveller reviews' } as Record<string,string>)[section.section_key],
+      surface: 'public',
+      description: section.section_key === 'reviews_section' ? 'Shows approved records from Admin → Reviews. With no approved reviews, this section stays hidden.' : 'Editable homepage guide. Manage its heading, introduction, image and content rows here; visibility and order apply on the homepage.',
+      fields: ['title', 'subtitle', 'image', 'button', 'extra: eyebrow, content rows'],
+      preset: { title: section.title || '', subtitle: section.content || '', button_text: section.button_text || '', button_url: section.button_url || '', sort_order: String(section.sort_order), extra_data: { ...section.extra_data, eyebrow: section.subtitle } }
+    };
+    if (existing) Object.assign(existing,entry); else sectionRegistry.push(entry);
+  }
+
   const sectionSuggestions = sectionRegistry.filter((item) => item.surface !== 'orphan');
   const publicSectionItems = sectionRegistry.filter((item) => item.surface === 'public');
   const sectionLookup = new Map(sectionRegistry.map((item) => [item.key, item]));
   /** These keys used to be offered here but have no matching section in / now. */
   const REDUNDANT_HOME_KEYS = new Set([
-    'intro', 'planning_process', 'top_destinations', 'cost_ranges', 'testimonials',
+    'intro', 'planning_process', 'top_destinations', 'testimonials',
     'partners', 'final_cta', 'why_choose_us', 'faq_preview', 'ai_advisor_cta'
   ]);
   /** Not homepage content: it is read by the admin login page and must survive. */
@@ -825,6 +840,8 @@
   const howStepsToExtra = () => howSteps.slice(0, 4).map((step) => ({ title: step.title.trim(), text: step.text.trim() }));
 
   const hydrateReferenceEditors = (key: string, ed: Record<string, unknown>) => {
+    guideItems = guideKeys.includes(key) ? guideRows({section_key:key,extra_data:ed}) : [];
+    guideNote = String(ed.note ?? sectionDefault(key)?.extra_data?.note ?? '');
     sectionEyebrow = String(ed.eyebrow ?? '');
     secondaryCtaText = String(ed.secondary_cta_text ?? '');
     secondaryCtaUrl = String(ed.secondary_cta_url ?? '');
@@ -917,6 +934,8 @@
   // ── cost ranges repeater (stored in extra_data.ranges) ────────────────────
   type CostRow = { label: string; from: string; note: string };
   let costRanges: CostRow[] = [];
+  let guideItems: GuideRow[] = [];
+  let guideNote = '';
   const addCostRange = () => {
     costRanges = [...costRanges, { label: '', from: '', note: '' }];
   };
@@ -1030,15 +1049,7 @@
     try {
       const res = await api.homepage.get({ all: true });
       const loaded = res.data as unknown as Section[];
-      const obsolete = loaded.filter((section) => REDUNDANT_HOME_KEYS.has(section.section_key));
-      if (obsolete.length) {
-        const results = await Promise.allSettled(obsolete.map((section) => api.homepage.removeSection(section.id)));
-        const removed = obsolete.filter((_, index) => results[index].status === 'fulfilled');
-        if (removed.length) showToast(`Removed ${removed.length} obsolete homepage section${removed.length === 1 ? '' : 's'}.`);
-        const failed = obsolete.filter((_, index) => results[index].status === 'rejected');
-        if (failed.length) showToast(`Could not remove ${failed.length} obsolete homepage section${failed.length === 1 ? '' : 's'}.`, 'error');
-      }
-      rows = loaded.filter((section) => !REDUNDANT_HOME_KEYS.has(section.section_key));
+      rows = loaded;
     } catch (err) {
       error = err instanceof Error ? err.message : 'Unable to load homepage sections.';
     } finally {
@@ -1371,6 +1382,9 @@
     if (form.section_key.trim() === 'hero') {
       extra = { ...extra, hero_slides: heroSlidesToExtra(), hero_image_fit: heroImageFit };
     }
+
+    if (guideKeys.includes(form.section_key.trim())) extra = { ...extra, rows: guideItems.map(row => ({label:row.label.trim(),title:row.title.trim(),text:row.text.trim()})).filter(row => row.title) };
+    if (['safari_inclusions','cost_ranges'].includes(form.section_key.trim())) extra = { ...extra, note: guideNote.trim() };
 
     saving = true;
     const payload = {
@@ -2116,13 +2130,17 @@
           </div>
         {/if}
 
+        {#if guideKeys.includes(form.section_key.trim()) || form.section_key.trim() === 'cost_ranges'}
+          <HomeGuideFields sectionKey={form.section_key.trim()} bind:rows={guideItems} bind:note={guideNote}/>
+        {/if}
+
         <!-- typical cost ranges repeater -->
         {#if form.section_key.trim() === 'cost_ranges'}
           <div class="grid gap-3 rounded-xl border border-ink/10 bg-sand/25 p-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-forest/70">Typical cost ranges</p>
-                <p class="mt-1 text-xs text-ink/50">The "What trips typically cost" band on the homepage. Each row: trip type, a "from" price, and an optional note. (Built-in defaults show until you add rows.)</p>
+                <p class="mt-1 text-xs text-ink/50">The "What trips typically cost" band on the homepage. Each row: trip type, a "from" price, and an optional note. Include the currency, duration and per-person basis in the price text. An empty list displays no price cards.</p>
               </div>
               <CmsButton variant="ghost" type="button" class="inline-flex h-9 items-center gap-1.5 rounded-xl border border-ink/10 bg-surface px-3 text-xs font-semibold text-ink shadow-sm transition hover:border-goldfinch-gold/35 hover:bg-sand/70" onclick={addCostRange}>
                 <Plus size={14} />Add row

@@ -1,3 +1,4 @@
+import { approvedReviews, type GuestReview } from '$lib/homepage-guides';
 import { apiGet } from '$lib/server/api';
 import { enquire } from '$lib/server/enquiry';
 import { mergeSections, tourFilters } from '$lib/home-content';
@@ -13,7 +14,7 @@ export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
 	// that list; only a search or later page needs its own request (sent first,
 	// so the search stays the last tours request).
 	const browsing = !filters.search && !filters.destination_id && !filters.category_id && query.get('page') === '1';
-	const [stays, latest, homepage, destinations, activities, categories, tours, seasons] = await Promise.allSettled([
+	const [stays, latest, homepage, destinations, activities, categories, tours, seasons, reviews, faqs] = await Promise.allSettled([
 		apiGet<Paginated<Stay>>('lodges?status=published&limit=4', fetch),
 		browsing ? Promise.resolve(null) : apiGet<Paginated<Tour>>('tours?status=published&limit=6', fetch),
 		apiGet<HomepageSection[]>('homepage', fetch),
@@ -21,10 +22,14 @@ export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
 		apiGet<Paginated<Activity>>('activities?status=published&limit=12', fetch),
 		apiGet<Paginated<Category>>('categories?status=published&limit=100', fetch),
 		apiGet<Paginated<Tour>>(`tours?${query}`, fetch),
-		apiGet<Paginated<Season>>('seasons?status=published&limit=24', fetch)
+		apiGet<Paginated<Season>>('seasons?status=published&limit=24', fetch),
+		apiGet<Paginated<GuestReview>>('reviews?status=approved&limit=3', fetch),
+		apiGet<Paginated<{question:string;answer:string}>>('faqs?status=published&entity_type=null&destination_id=null&limit=12', fetch)
 	]);
 	return {
 		siteOrigin: url.origin,
+		reviews: reviews.status === 'fulfilled' ? approvedReviews(reviews.value.items) : [],
+		faqs: faqs.status === 'fulfilled' ? faqs.value.items : null,
 		sections: mergeSections(homepage.status === 'fulfilled' && Array.isArray(homepage.value) ? homepage.value : []),
 		destinations: destinations.status === 'fulfilled' ? destinations.value.items.filter((item) => !item.country || item.country.toLowerCase() === 'tanzania') : referenceDestinations,
 		activities: activities.status === 'fulfilled' ? activities.value.items : referenceActivities,

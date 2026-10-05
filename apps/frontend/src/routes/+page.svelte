@@ -1,4 +1,6 @@
 <script lang="ts">
+	import SafariGuide from '$lib/components/home/safari-guide.svelte';
+	import { guideSections } from '$lib/homepage-guides';
 	import { ArrowRight } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import SiteHeader from '$lib/components/home/site-header.svelte';
@@ -62,7 +64,7 @@
 		{:else if section.section_key === 'how_it_works'}
 			<Planning {section} canEnquire={visible.includes('enquiry')} />
 		{:else if section.section_key === 'faq'}
-			<Faq {section} canEnquire={visible.includes('enquiry')} />
+			<Faq {section} faqs={data.faqs} canEnquire={visible.includes('enquiry')} />
 		{:else if section.section_key === 'experiences'}
 			<Experiences items={data.activities} {section} onInterest={chooseInterest} canEnquire={visible.includes('enquiry')} />
 		{:else if section.section_key === 'destinations'}
@@ -87,6 +89,8 @@
 			</section>
 		{:else if section.section_key === 'when_to_go'}
 			<Seasons {section} seasons={data.seasons} />
+		{:else if guideSections.some(item => item.section_key === section.section_key)}
+			<SafariGuide {section} canEnquire={visible.includes('enquiry')} onInterest={chooseInterest} reviews={data.reviews} />
 		{:else if section.section_key === 'enquiry'}
 			<Enquiry {section} {form} {interest} />
 		{/if}

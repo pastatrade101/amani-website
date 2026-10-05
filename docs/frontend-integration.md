@@ -60,3 +60,12 @@ The Key2africa workspace uses a light shell with navy navigation states and yell
 Category and safari editors share section navigation and a persistent save bar. Inactive panels stay mounted to preserve unfinished rich text and translations. A draft category can be created without its optional landing-page document; publishing still requires the backend's complete landing-page contract. Once configured, all builder sections remain editable, and replacing the page with a template requires confirmation.
 
 To provision the initial administrator, set `ADMIN_NAME`, `ADMIN_EMAIL`, and a random `ADMIN_PASSWORD` of at least 16 characters in the ignored backend `.env`, then run `npm run admin:create --workspace @amani/backend`. The script refuses to overwrite an existing account. Never put these values in frontend environment variables or commit `.env`.
+
+
+## Homepage safari planning guides
+
+The homepage also renders `why_tanzania`, `cost_ranges`, `safari_duration`, `safari_inclusions`, `safari_day` and `reviews_section`. They use the existing `homepage_sections` API/table; no migration is required. In Admin → Homepage, use the matching missing-section preset to create a record, then edit, reorder or hide it. The shared editorial defaults are in `src/lib/homepage-guides.ts`. Existing records always take precedence, including explicitly empty row lists and inactive markers. Opening the Homepage CMS never deletes records.
+
+The introduction, duration, inclusions and day guides store ordered `{label,title,text}` rows in `extra_data.rows`. Their friendly editor supports adding, removing and reordering rows. The existing cost editor stores `{label,from,note}` in `extra_data.ranges`; enter currency, duration and the per-person basis in `from`. No numerical prices are invented by the fallback content. The exclusions/price-context note uses `extra_data.note`. Images and CTA fields use the existing section columns. Duration and cost CTAs pass the visitor’s choice into the enquiry form.
+
+Reviews come only from `/reviews?status=approved&limit=3` and render the recorded rating and source URL without inventing a verification badge. Empty or unavailable reviews hide the section. Homepage FAQ rows override the general published FAQ collection; the small editorial fallback appears only if that collection is unavailable. All sections honour CMS visibility and order.

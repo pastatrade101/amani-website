@@ -39,8 +39,17 @@ test('built frontend matches the Express contracts and fails safely', { timeout:
       } else data = {name:'Test admin',role:'super_admin'};
       res.end(JSON.stringify({success:true,message:'OK',data})); return;
     }
-    if (url.pathname === '/api/homepage') data = [{ section_key: 'hero', title: 'Live Tanzania Adventures' }, { section_key: 'when_to_go', is_active: false }];
+    if (url.pathname === '/api/homepage') data = [
+      { section_key: 'hero', title: 'Live Tanzania Adventures' },
+      { section_key: 'when_to_go', is_active: false },
+      { section_key: 'cost_ranges', title: 'CMS safari costs', extra_data: { ranges: [{label:'Private safari',from:'USD 1,900 / 5 days / person',note:'Your own CMS price'}] } },
+      { section_key: 'safari_duration', extra_data: { rows: [{label:'9 days',title:'The CMS slow route',text:'Take time to explore.'}] } },
+      { section_key: 'safari_day', is_active: false },
+      { section_key: 'faq', extra_data: { faqs: [{question:'A question from the Homepage CMS?',answer:'An answer from your team.'}] } }
+    ];
     else if (url.pathname === '/api/destinations') data = page([{ id, name: 'Live Serengeti', slug: 'serengeti', country: 'Tanzania' }]);
+    else if (url.pathname === '/api/reviews') data = page([{id:'review-1',author_name:'Approved Guest',message:'A review from the real CMS contract.',rating:4,status:'approved',platform:'Google'},{id:'review-2',author_name:'Pending Guest',message:'This review must stay private.',rating:5,status:'pending'}]);
+    else if (url.pathname === '/api/faqs') data = page([]);
     else if (url.pathname === '/api/activities') data = page([]);
     else if (url.pathname === '/api/categories') data = page([{ id, name: 'Private Safaris', slug: 'private' }]);
     else if (url.pathname === '/api/tours') data = page(url.searchParams.get('search') === 'no match' ? [] : [{ id, title: 'Live API Safari', slug: 'live-safari', duration_days: 5, price_from: 900, currency: 'USD', main_image_url: '/images/serengeti.jpg' }]);
@@ -88,6 +97,14 @@ test('built frontend matches the Express contracts and fails safely', { timeout:
     assert.equal(schema['@graph'][0].url, `${origin}/`);
     assert.equal(schema['@graph'][1].legalName, 'Key2africa Tours and Safaris ltd');
     assert.ok(!/<[^>]*data-motion=[^>]*style="[^"]*opacity:\s*0/.test(html), 'Content remains visible without JavaScript');
+    assert.ok(html.includes('CMS safari costs'));
+    assert.ok(html.includes('USD 1,900 / 5 days / person'));
+    assert.ok(html.includes('The CMS slow route'));
+    assert.ok(html.includes('A question from the Homepage CMS?'));
+    assert.ok(html.includes('Approved Guest'));
+    assert.ok(!html.includes('Pending Guest'));
+    assert.ok(!html.includes('id="safari-day"'));
+    assert.ok(html.includes('id="safari-inclusions"'));
     assert.ok(html.includes('Live API Safari'));
     assert.ok(html.includes('$900'));
     assert.ok(!html.includes('id="when-to-go"'), 'Disabled CMS section stays hidden');
@@ -141,6 +158,9 @@ test('built frontend matches the Express contracts and fails safely', { timeout:
     unavailable = true;
     const fallback = await (await fetch(origin)).text();
     assert.ok(fallback.includes('Tanzania Safari Tours'));
+    assert.ok(!fallback.includes('Approved Guest'));
+    assert.ok(!fallback.includes('id="reviews-section"'));
+    assert.ok(fallback.includes('Tailored quote'));
     assert.ok(fallback.includes('Explore Great Migration'));
     assert.ok(!fallback.includes('$900'), 'No fabricated price when API is unavailable');
     const alias = await fetch(`${origin}/tanzania-safari?search=lion`, { redirect: 'manual' });
