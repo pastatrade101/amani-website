@@ -77,3 +77,16 @@ Reviews come only from `/reviews?status=approved&limit=3` and render the recorde
 The detail page reads the full destination record, SEO metadata, photos, description, destination ratings, health/safety fields and every guide block. The Destination CMS now includes an ordered guide editor for text, headings, facts, photos, comparison tables, callouts, field notes and FAQs. Existing legacy title/body/items blocks are retained. Guide HTML uses the existing public rich-text sanitizer. Separate published FAQs attached to the destination are included without repeating identical guide questions. Related tours, stays and activities are restricted to the selected destination; missing collections are omitted rather than replaced with reference content. Activity links include secondary destinations as well as the primary destination.
 
 Anonymous destination detail API requests reject draft/archived records; authenticated staff retain editor access. Missing destinations return 404, service failures return 503, and the index has empty/error states. Image failures try the other CMS images before a neutral card placeholder or a decorative hero fallback. No database migration is required.
+
+
+### Turie homepage sections
+
+The supplied Turie template’s numbered feature panels, rounded testimonial cards,
+vertical photo columns and destination icon tiles are adapted as native Svelte components
+using the existing navy/gold theme and shadcn dialogs/selects/buttons.
+
+- Homepage → Why us: heading, introduction, CTA and `extra_data.features` titles, text and media-library icons. Missing icons use local outline illustrations.
+- Homepage → Gallery preview: visibility, position, heading, description and optional CTA. Enable this section to display it; existing disabled sections remain disabled.
+- Gallery: publish image records and set title, alt text, caption and sort order. The homepage uses up to 24 published images, hides an empty gallery, and includes photo dialogs, previous/next and pause controls. Reduced-motion preferences disable animation.
+- Reviews: only approved records appear. Full review text remains available in an accessible dialog.
+- Destinations: published destination names, descriptions and regions populate the search dropdown. Contextual icons reflect the destination type.

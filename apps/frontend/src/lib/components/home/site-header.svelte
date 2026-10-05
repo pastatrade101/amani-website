@@ -1,4 +1,5 @@
 <script lang="ts">
+ import DestinationIcon from './destination-icon.svelte';
 	import { onDestroy } from 'svelte';
 	import { Menu, ArrowRight, ArrowUpRight, Search, Compass, Map, CalendarDays, Route, MessageCircle, Palmtree, Binoculars, BedDouble } from '@lucide/svelte';
 	import { destinationHref } from '$lib/destination-content';
@@ -201,7 +202,7 @@
 										{#each destinationGroups as group}
 											<section class="destination-column">
 												<NavigationMenu.Link href={`/destinations?circuit=${group.circuit}#destination-results`} onclick={closeMenu} class="destination-cover"><img src={group.image} alt="" /><span><strong>{group.title}</strong><small>{group.description}</small></span><ArrowUpRight class="size-4" /></NavigationMenu.Link>
-												<div class="destination-links">{#each destinations.filter((destination) => circuitFor(destination) === group.circuit).slice(0, 4) as destination}<NavigationMenu.Link href={destinationHref(destination)} onclick={closeMenu} class="destination-link">{destination.name}<ArrowRight class="size-3.5" /></NavigationMenu.Link>{/each}</div>
+												<div class="destination-links">{#each destinations.filter((destination) => circuitFor(destination) === group.circuit).slice(0, 4) as destination}<NavigationMenu.Link href={destinationHref(destination)} onclick={closeMenu} class="destination-link"><span class="flex items-center gap-2"><DestinationIcon name={`${destination.name} ${destination.region || ''}`} compact />{destination.name}</span><ArrowRight class="size-3.5" /></NavigationMenu.Link>{/each}</div>
 											</section>
 										{/each}
 									</div>

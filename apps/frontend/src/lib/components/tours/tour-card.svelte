@@ -25,15 +25,15 @@
 			<Heart class={`size-5 transition-colors ${saved ? 'fill-[#e5484d] text-[#e5484d]' : 'text-navy'}`} strokeWidth={1.8} />
 		</button>
 	</div>
-	<div class="flex flex-1 flex-col p-5 sm:p-6">
+	<div class="flex flex-1 flex-col p-5">
 		<!-- Safety nets for unexpected data; the editor's limits keep real titles inside them.
 		     Three lines, not two: the tours already live need three at every card width. -->
-		<h3 class="line-clamp-3 text-lg leading-snug font-bold tracking-[-.02em] wrap-anywhere text-navy sm:text-xl"><a {href} class="tour-link">{tour.title}</a></h3>
-		{#if route}<p class="mt-2 line-clamp-1 text-sm leading-6 wrap-anywhere text-muted-foreground">{route}</p>{/if}
-		<dl class="mt-auto pt-5">
+		<h3 class="tour-title line-clamp-3 wrap-anywhere text-navy"><a {href} class="tour-link">{tour.title}</a></h3>
+		{#if route}<p class="mt-2 line-clamp-1 text-[13px] leading-5 wrap-anywhere text-muted-foreground">{route}</p>{/if}
+		<dl class="mt-auto pt-4">
 			<div class="card-row">
 				<dt><Users class="size-[18px]" strokeWidth={1.7} aria-hidden="true" />Price</dt>
-				<dd class="font-bold">{price ? `From ${price} pp` : 'On request'}</dd>
+				<dd class="font-semibold">{price ? `From ${price} pp` : 'On request'}</dd>
 			</div>
 			{#if duration}
 				<div class="card-row">
@@ -48,18 +48,18 @@
 
 <style>
 	/* One link per card: the title link covers the whole card; only the heart sits above it. */
+	.tour-title { font-size: 17px; font-weight: 600; line-height: 1.45; letter-spacing: -.015em; }
 	.tour-link::after { content: ''; position: absolute; inset: 0; z-index: 1; }
 	.tour-link:focus-visible { outline: none; }
 	:global(.tour-card:has(.tour-link:focus-visible)) { outline: 3px solid var(--sun); outline-offset: 4px; }
 	.save-button { position: absolute; top: 0.85rem; right: 0.85rem; z-index: 2; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 999px; background: rgb(255 255 255 / .95); box-shadow: 0 8px 20px -12px rgb(15 35 55 / .55); transition: transform 160ms ease-out; }
 	.save-button:hover { transform: scale(1.06); }
 	.save-button:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
-	.card-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--border); padding: 0.9rem 0; }
-	.card-row dt { display: flex; align-items: center; gap: 0.6rem; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted-foreground); }
-	.card-row dd { min-width: 0; text-align: right; font-size: 15px; color: var(--navy); }
-	.tour-cta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 3rem; margin-top: 0.5rem; border-radius: 0.75rem; background: var(--sun); color: var(--navy); font-size: 15px; font-weight: 700; }
+	.card-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--border); padding: 0.75rem 0; }
+	.card-row dt { display: flex; align-items: center; gap: 0.6rem; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-foreground); }
+	.card-row dd { min-width: 0; text-align: right; font-size: 14px; color: var(--navy); }
+	.tour-cta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 3rem; margin-top: 0.5rem; border-radius: 0.75rem; background: var(--sun); color: var(--navy); font-size: 14px; font-weight: 600; }
 	.tour-cta :global(svg) { transition: translate 180ms ease-out; }
 	:global(.tour-card:hover) .tour-cta :global(svg) { translate: 3px 0; }
-	@media (min-width: 640px) { .card-row dd { font-size: 16px; } .tour-cta { height: 3.25rem; font-size: 16px; } }
 	@media (prefers-reduced-motion: reduce) { .save-button, .tour-cta :global(svg) { transition: none; } .save-button:hover { transform: none; } :global(.tour-card:hover) .tour-cta :global(svg) { translate: none; } }
 </style>

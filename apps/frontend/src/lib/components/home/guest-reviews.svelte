@@ -12,8 +12,8 @@
 </script>
 
 <div class="review-grid">
-  {#each reviews as review, i (review.id)}
-    <article class="review-card" class:ink={i % 3 === 1} data-motion="card">
+  {#each reviews as review (review.id)}
+    <article class="review-card" data-motion="card">
       <div class="review-top">
         <div class="rating" aria-label={`${review.rating} out of 5 stars`}>
           <div class="stars" aria-hidden="true">{#each Array(5) as _, j}<Star size={14} fill={j < review.rating ? 'currentColor' : 'none'} />{/each}</div>
@@ -24,7 +24,7 @@
       <blockquote>{excerpt(review.message)}</blockquote>
       <div class="review-bottom">
         <div class="review-author">
-          <span class="initial" aria-hidden="true">{review.author_name.trim().slice(0, 1).toUpperCase()}</span>
+          <span class="author-quote" aria-hidden="true"><Quote size={20} fill="currentColor" /></span><span class="initial" aria-hidden="true">{review.author_name.trim().slice(0, 1).toUpperCase()}</span>
           <div><h3>{review.author_name}</h3><p>{review.country || 'Safari guest'}</p></div>
         </div>
         <Dialog.Root>
@@ -48,21 +48,18 @@
 </div>
 
 <style>
+ .author-quote{display:grid;place-items:center;width:46px;height:46px;border:3px solid white;border-radius:50%;background:#14314d;color:#f6d21b;margin-right:-24px;z-index:1;flex-shrink:0}.review-author .initial{margin-right:4px}.review-card:hover .author-quote{background:#f6d21b;color:#14314d}.author-quote{transition:background .25s ease,color .25s ease}
   .review-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
-  .review-card { --card-ink: #17334c; --card-muted: #627181; --card-line: #17334c1c; display: flex; flex-direction: column; min-width: 0; height: 328px; padding: 25px; color: var(--card-ink); background: #faf8f1; border: 1px solid #e8e4d9; border-radius: 20px 20px 20px 5px; box-shadow: 0 8px 24px #17334c08; }
-  .review-card.ink { --card-ink: #fff; --card-muted: #b8cad8; --card-line: #ffffff26; background: #17334c; border-color: #17334c; }
+  .review-card { --card-ink: #17334c; --card-muted: #627181; --card-line: #17334c1c; display: flex; flex-direction: column; min-width: 0; height: 328px; padding: 28px; color: var(--card-ink); background: white; border: 1px solid #edf0f1; border-radius: 30px; box-shadow: 0 8px 30px #17334c08; }
   .review-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .rating { min-width: 0; }
   .stars { display: flex; gap: 3px; color: #9a7416; }
-  .ink .stars { color: #f6d21b; }
   .rating>span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--card-muted); margin-top: 7px; }
   .quote-mark { display: grid; place-items: center; width: 42px; height: 42px; flex-shrink: 0; border: 1px solid var(--card-line); border-radius: 50%; color: #927427; }
-  .ink .quote-mark { color: #f6d21b; }
   .review-card>blockquote { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; flex-shrink: 0; overflow: hidden; overflow-wrap: anywhere; font-size: 15px; line-height: 1.7; font-weight: 450; margin: 18px 0 16px; }
   .review-bottom { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--card-line); }
   .review-author { display: flex; gap: 11px; align-items: center; min-width: 0; }
-  .initial { display: grid; place-items: center; height: 36px; width: 36px; flex-shrink: 0; background: #ede6cf; border-radius: 50%; color: #17334c; font-size: 13px; font-weight: 600; }
-  .ink .initial { background: #f6d21b; }
+  .initial { display: grid; place-items: center; height: 46px; width: 46px; flex-shrink: 0; background: #ede6cf; border-radius: 50%; color: #17334c; font-size: 13px; font-weight: 600; }
   .review-author>div { min-width: 0; }
   .review-author h3 { color: var(--card-ink); font-size: 13px; font-weight: 600; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; }
   .review-author p { color: var(--card-muted); font-size: 11px; line-height: 1.5; margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

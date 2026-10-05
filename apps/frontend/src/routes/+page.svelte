@@ -1,4 +1,5 @@
 <script lang="ts">
+	import TravelGallery from '$lib/components/home/travel-gallery.svelte';
 	import SafariGuide from '$lib/components/home/safari-guide.svelte';
 	import { guideSections } from '$lib/homepage-guides';
 	import { ArrowRight } from '@lucide/svelte';
@@ -59,6 +60,8 @@
 		{#if section.section_key === 'hero'}
 			<Hero {section} canEnquire={visible.includes('enquiry')} showPackages={visible.includes('safari_packages')} />
 			{#if visible.includes('safari_packages')}<SearchPanel destinations={data.destinationsAreReference ? [] : data.destinations} categories={data.categories} filters={data.filters} />{/if}
+		{:else if section.section_key === 'gallery_preview'}
+			<TravelGallery {section} photos={data.gallery} />
 		{:else if section.section_key === 'why_us'}
 			<WhyKey2africa {section} canEnquire={visible.includes('enquiry')} />
 		{:else if section.section_key === 'how_it_works'}

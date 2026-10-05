@@ -238,7 +238,7 @@
       key: 'why_us',
       label: 'Why us',
       surface: 'public',
-      description: 'Centered six-point value section with illustrated media-library icons and a planning CTA.',
+      description: 'Turie-inspired numbered cards with illustrated icons, a sticky introduction and your planning CTA.',
       fields: ['title', 'subtitle', 'button', 'extra: eyebrow, title_highlight, features'],
       preset: {
         title: 'A Local Team to Help You Make Sense of Tanzania',
@@ -370,7 +370,7 @@
       key: 'gallery_preview',
       label: 'Gallery preview',
       surface: 'public',
-      description: 'Catchy homepage gallery section. Cards come from published Admin Gallery image records.',
+      description: 'Moving photo columns from the Turie theme. Images, captions and order come from published Admin Gallery image records. Hidden when no images are published.',
       fields: ['title', 'subtitle', 'button', 'extra: eyebrow'],
       preset: {
         title: 'See the journeys before you choose',
@@ -1880,7 +1880,7 @@
           <div class="grid gap-5 rounded-xl border border-ink/10 bg-sand/25 p-4">
             <div>
               <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-forest/70">Why Key2africa layout</p>
-              <p class="mt-1 text-xs leading-5 text-ink/50">Exactly six points render in the centered homepage layout. Each icon can use the supplied artwork or any image from the media library.</p>
+              <p class="mt-1 text-xs leading-5 text-ink/50">These points appear as numbered cards beside your introduction. Each icon can use the supplied artwork or any image from the media library.</p>
             </div>
             <AdminFormInput label="Italic gold word in heading" name="why_title_highlight" bind:value={whyTitleHighlight} placeholder="Tanzania" />
             <div class="grid gap-4 sm:grid-cols-2">
