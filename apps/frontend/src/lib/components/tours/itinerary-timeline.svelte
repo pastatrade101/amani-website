@@ -2,7 +2,7 @@
 	import { ArrowRight, ChevronDown, ChevronUp } from '@lucide/svelte';
 	import SafariStyleSelector from '$lib/components/pricing/safari-style-selector.svelte';
 	import ItineraryDayHeading from './itinerary-day-heading.svelte';
-	import ItineraryStayCell from './itinerary-stay-cell.svelte';
+	import ItineraryOvernight from './itinerary-overnight.svelte';
 	import RichText from './rich-text.svelte';
 	import { SAFARI_STYLES, SAFARI_STYLE_THEME, type SafariStyle } from '$lib/safari-pricing';
 	import { sanitizeRichText } from '$lib/tour-html';
@@ -29,13 +29,13 @@
 			const activities = activityList(day.activities);
 			const overnight = overnightLabel(day, style);
 			const meals = mealsLabel(day.meals);
-			const photos = dayPhotos(day, style);
+			// A stay with a public page has its own card (with its photo), so the gallery does not repeat it.
+			const photos = dayPhotos(day, style, 3, !stayHref(day, style));
 			return {
 				day,
 				key: `${uid}-${index}`,
 				activities,
 				overnight,
-				stayLink: stayHref(day, style),
 				meals,
 				photos,
 				perStyle: hasStylePerStay(day),
@@ -109,20 +109,12 @@
 									</div>
 								{/if}
 								{#if entry.overnight || entry.meals}
-									<div class="stay-panel">
-										{#if entry.overnight}
-											<ItineraryStayCell
-												kind="overnight"
-												label="Overnight"
-												value={entry.overnight}
-												href={entry.stayLink}
-												badge={entry.perStyle && styles.length > 1 ? { color: SAFARI_STYLE_THEME[style].primary, name: styleName } : null}
-											/>
-										{/if}
-										{#if entry.meals}
-											<ItineraryStayCell kind="meals" label="Meals" value={entry.meals} />
-										{/if}
-									</div>
+									<ItineraryOvernight
+										{day}
+										{style}
+										meals={entry.meals}
+										badge={entry.perStyle && styles.length > 1 ? { color: SAFARI_STYLE_THEME[style].primary, name: styleName } : null}
+									/>
 								{/if}
 								{#if entry.photos.length}
 									<ul class="day-photos" style={`--count:${entry.photos.length}`} aria-label={`Photos for day ${day.day_number}`}>
@@ -158,8 +150,6 @@
 	.meta-value { margin-top: 0.2rem; font-size: 15px; font-weight: 700; color: var(--navy); overflow-wrap: anywhere; }
 	/* Long unbroken words wrap inside the chip instead of widening the card. */
 	.activity-chip { border-radius: 999px; border: 1px solid var(--border); padding: 0.2rem 0.65rem; font-size: 12px; color: var(--navy); overflow-wrap: anywhere; }
-	/* The cells (itinerary-stay-cell) are phone-sized; the panel lays them out. */
-	.stay-panel { display: grid; gap: 0.9rem; margin-top: 1.25rem; border-radius: 1rem; background: color-mix(in oklch, var(--sun) 9%, white); padding: 0.9rem 1rem; }
 	/* Phones: a swipeable row that snaps photo by photo; from sm: one row of up to three. */
 	.day-photos { display: flex; gap: 0.75rem; margin-top: 1.25rem; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
 	.day-photos::-webkit-scrollbar { display: none; }
@@ -180,8 +170,6 @@
 		.day-head :global(.day-summary) { font-size: 14px; }
 		.day-chevron { width: 2.5rem; height: 2.5rem; }
 		.day-body { padding: 0 1.5rem 1.5rem; }
-		.stay-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 1rem 1.25rem; }
-		.stay-panel :global(.stay-value) { font-size: 15px; }
 		.day-photos { display: grid; grid-template-columns: repeat(var(--count), minmax(0, 1fr)); overflow: visible; }
 		.day-photos > li:only-child img { aspect-ratio: 21 / 9; }
 	}

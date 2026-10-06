@@ -218,25 +218,56 @@ export function tourCategories(tours: Pick<StayTour, 'category_id' | 'tour_categ
 	return [...seen].map(([id, name]) => ({ id, name }));
 }
 
+export type StayGalleryPhoto = { id: string; src: string; alt: string; caption: string; category: string };
+
 /**
  * The stay page's photos: the gallery (cover first, then CMS order) plus the
- * hero and card images when they are not already in it. Captions and alt
- * text come from the CMS; missing alt text names the property.
+ * hero and card images when they are not already in it. Captions, alt text
+ * and categories come from the CMS; missing alt text names the property. A
+ * hero or card image that is also in the gallery keeps the gallery's words.
  */
-export function stayGallery(stay: Pick<StayDetail, 'name' | 'images' | 'hero_image_url' | 'image_url' | 'cover_image_url'>): { id: string; src: string; alt: string; caption: string }[] {
+export function stayGallery(stay: Pick<StayDetail, 'name' | 'images' | 'hero_image_url' | 'image_url' | 'cover_image_url'>): StayGalleryPhoto[] {
 	const gallery = [...(stay.images ?? [])]
 		.sort((a, b) => Number(Boolean(b.is_cover)) - Number(Boolean(a.is_cover)) || (a.sort_order ?? 0) - (b.sort_order ?? 0))
-		.map((image) => ({ id: image.id, url: image.image_url, alt: image.alt_text?.trim() ?? '', caption: image.caption?.trim() ?? '' }));
-	const extras = [stay.hero_image_url, stay.image_url, stay.cover_image_url].map((url, index) => ({ id: `own-${index}`, url: url ?? '', alt: '', caption: '' }));
+		.map((image) => ({ id: image.id, url: image.image_url, alt: image.alt_text?.trim() ?? '', caption: image.caption?.trim() ?? '', category: image.category?.trim().toUpperCase() ?? '' }));
+	const extras = [stay.hero_image_url, stay.image_url, stay.cover_image_url].map((url, index) => {
+		const match = url ? gallery.find((image) => image.url === url) : undefined;
+		return { id: `own-${index}`, url: url ?? '', alt: match?.alt ?? '', caption: match?.caption ?? '', category: match ? match.category : 'HERO' };
+	});
 	// A chosen hero leads; otherwise the gallery cover does.
 	const ordered = stay.hero_image_url ? [extras[0], ...gallery, ...extras.slice(1)] : [...gallery, ...extras];
 	const seen = new Set<string>();
-	const photos: { id: string; src: string; alt: string; caption: string }[] = [];
+	const photos: StayGalleryPhoto[] = [];
 	for (const photo of ordered) {
 		const src = safeUrl(photo.url, '');
 		if (!src || src.startsWith('#') || seen.has(src)) continue;
 		seen.add(src);
-		photos.push({ id: photo.id, src, alt: photo.alt || photo.caption || `${stay.name}: photo ${photos.length + 1}`, caption: photo.caption });
+		photos.push({ id: photo.id, src, alt: photo.alt || photo.caption || `${stay.name}: photo ${photos.length + 1}`, caption: photo.caption, category: photo.category });
 	}
 	return photos;
+}
+
+/** Gallery filters. OTHER and uncategorised photos only show under "All". */
+export const PHOTO_GROUPS: { id: string; label: string; categories: string[] }[] = [
+	{ id: 'rooms', label: 'Rooms', categories: ['ROOM', 'BATHROOM'] },
+	{ id: 'spaces', label: 'Spaces', categories: ['INTERIOR', 'COMMON_AREA'] },
+	{ id: 'dining', label: 'Dining', categories: ['DINING', 'FOOD'] },
+	{ id: 'pool-spa', label: 'Pool & spa', categories: ['POOL', 'SPA', 'BEACH'] },
+	{ id: 'setting', label: 'Setting', categories: ['EXTERIOR', 'AERIAL', 'LANDSCAPE', 'HERO'] },
+	{ id: 'experiences', label: 'Experiences', categories: ['WILDLIFE', 'EXPERIENCE'] }
+];
+
+/** The groups that have photos, in PHOTO_GROUPS order. */
+export function photoGroups(photos: Pick<StayGalleryPhoto, 'category'>[]): { id: string; label: string; count: number }[] {
+	return PHOTO_GROUPS.map((group) => ({ id: group.id, label: group.label, count: photos.filter((photo) => group.categories.includes(photo.category)).length })).filter((group) => group.count > 0);
+}
+
+/** "Dining" for DINING or FOOD; empty for OTHER and unknown categories. */
+export const photoGroupLabel = (category: string): string => PHOTO_GROUPS.find((group) => group.categories.includes(String(category ?? '').toUpperCase()))?.label ?? '';
+
+/** The second photo for the "Why we recommend it" band: an outside view if there is one, -1 without two photos. */
+export function whyPhotoIndex(photos: Pick<StayGalleryPhoto, 'category'>[]): number {
+	if (photos.length < 2) return -1;
+	const outside = photos.findIndex((photo, index) => index > 0 && ['EXTERIOR', 'AERIAL', 'LANDSCAPE', 'POOL'].includes(photo.category));
+	return outside > 0 ? outside : 1;
 }

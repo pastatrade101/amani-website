@@ -103,7 +103,7 @@
 			<div data-motion="reveal" class="flex flex-wrap items-end justify-between gap-5">
 				<div class="min-w-0 max-w-2xl">
 					<p class="eyebrow text-muted-foreground">{filtered ? 'YOUR SEARCH' : 'ALL STAYS'}</p>
-					<h2 id="stay-results-title" class="section-heading mt-3">{heading}</h2>
+					<h2 id="stay-results-title" class="lux-heading mt-3">{heading}</h2>
 					{#if chips.length}
 						<ul class="mt-4 flex flex-wrap gap-2" aria-label="Active filters">
 							{#each chips as chip (chip.key)}
@@ -114,7 +114,8 @@
 				</div>
 				{#if filtered}<Button href="/stays#stay-results" variant="outline">Clear filters</Button>{/if}
 			</div>
-			<div class="card-grid mt-8">
+			<!-- Three columns at most, so the tall cards keep their proportions. -->
+			<div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
 				{#each data.stays as stay (stay.id)}
 					<StayCard {stay} destination={placeFor(stay.destination_id)} />
 				{:else}

@@ -11,17 +11,20 @@
 		loading = 'lazy',
 		priority = false,
 		note = '',
+		srcset = '',
+		sizes = '',
 		class: className = ''
-	}: { stay: Stay; destination?: Destination | null; loading?: 'lazy' | 'eager'; priority?: boolean; note?: string; class?: string } = $props();
+	}: { stay: Stay; destination?: Destination | null; loading?: 'lazy' | 'eager'; priority?: boolean; note?: string; srcset?: string; sizes?: string; class?: string } = $props();
 	let photo = $derived(stayPhoto(stay, destination));
 </script>
 
 {#if photo.kind === 'own'}
-	<img src={photo.src} alt={stay.name} {loading} decoding="async" fetchpriority={priority ? 'high' : undefined} width="640" height="400" class={`size-full object-cover ${className}`} />
+	<!-- srcset describes the stay's own photo, so stand-ins never get it. -->
+	<img src={photo.src} srcset={srcset || undefined} sizes={srcset && sizes ? sizes : undefined} alt={stay.name} {loading} decoding="async" fetchpriority={priority ? 'high' : undefined} width="640" height="400" class={`size-full object-cover ${className}`} />
 {:else if photo.kind === 'place'}
 	<!-- Described by the label below, which names the place. -->
 	<img src={photo.src} alt="" {loading} decoding="async" fetchpriority={priority ? 'high' : undefined} width="640" height="400" class={`size-full object-cover ${className}`} />
-	<span class="place-label"><MapPin class="size-3.5 shrink-0" aria-hidden="true" /><span><span class="sr-only">Photo of the area: </span>{photo.place}{#if note}<span class="place-note">{` · ${note}`}</span>{/if}</span></span>
+	<span class="place-label"><MapPin class="size-3.5 shrink-0" aria-hidden="true" /><span><span class="sr-only">{'Photo of the area: '}</span>{photo.place}{#if note}<span class="place-note">{` · ${note}`}</span>{/if}</span></span>
 {:else}
 	<span class="stay-placeholder" role="img" aria-label={`${stay.name}: photos coming soon`}>
 		<span class="placeholder-mark"><BedDouble class="size-6" strokeWidth={1.4} aria-hidden="true" /></span>

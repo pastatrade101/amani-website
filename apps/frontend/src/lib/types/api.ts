@@ -1,3 +1,5 @@
+import type { ImageVariants } from '$lib/admin/img';
+
 /** Public fields from the existing Express controllers and Zod schemas. */
 export type Paginated<T> = {
 	items: T[];
@@ -97,6 +99,12 @@ export type StayLodge = {
 	status?: string | null;
 	/** With status 'published', the stay has a public page at /stays/{slug}. */
 	show_property_publicly?: boolean | null;
+	/** Small WebP the API attaches for uploaded photos. */
+	image_url_thumbnail?: string | null;
+	hero_image_url_thumbnail?: string | null;
+	short_description?: string | null;
+	park_area?: string | null;
+	region?: string | null;
 };
 
 /** Where travellers sleep on a day, for one safari style. */
@@ -197,6 +205,9 @@ export type Stay = {
 	image_url_thumbnail?: string;
 	/** Gallery cover, attached by the API when the property has one. */
 	cover_image_url?: string | null;
+	/** Responsive WebP/AVIF ladders the API attaches for uploaded images. */
+	image_url_variants?: ImageVariants | null;
+	hero_image_url_variants?: ImageVariants | null;
 	is_featured?: boolean;
 	/** Published tours whose itinerary sleeps here. */
 	tour_count?: number;
@@ -207,7 +218,7 @@ export type Stay = {
 	best_for?: string[] | null;
 };
 
-export type StayImage = { id: string; image_url: string; alt_text?: string | null; caption?: string | null; sort_order?: number; is_cover?: boolean };
+export type StayImage = { id: string; image_url: string; alt_text?: string | null; caption?: string | null; sort_order?: number; is_cover?: boolean; category?: string | null; is_featured?: boolean };
 export type StayAmenity = { id: string; name: string; icon_key?: string | null; sort_order?: number };
 export type StayRate = { season_name: string; valid_from?: string | null; valid_until?: string | null; currency?: string | null; rack_rate?: number | null; double_rate?: number | null; pricing_basis?: string | null; meal_plan?: string | null };
 

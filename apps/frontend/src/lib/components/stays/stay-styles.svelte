@@ -14,7 +14,7 @@
 		<div data-motion="reveal" class="max-w-2xl">
 			<p class="eyebrow text-muted-foreground">CHOOSE YOUR STYLE</p>
 			<div class="gold-line mt-4"></div>
-			<h2 id="stay-styles-title" class="section-heading mt-5">Three ways to stay</h2>
+			<h2 id="stay-styles-title" class="lux-heading mt-5">Three ways to stay</h2>
 			<p class="section-description mt-4 max-w-xl">Every safari can be planned in Budget, Midrange or Luxury comfort. Choose yours to see the lodges and camps that fit it.</p>
 		</div>
 		<ul class="mt-9 grid gap-4 md:grid-cols-3 md:gap-6">

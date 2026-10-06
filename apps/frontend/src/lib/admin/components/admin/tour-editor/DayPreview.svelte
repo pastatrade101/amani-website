@@ -40,7 +40,7 @@
 </div>
 
 <style>
-  /* itinerary-timeline's phone .day-card, .day-head, .day-chevron and .stay-panel. */
+  /* itinerary-timeline's phone .day-card, .day-head and .day-chevron; the stay panel is the editor's own. */
   .day-preview { width: 343px; max-width: 100%; border: 1px solid var(--border); border-radius: 1.25rem; background: var(--card); box-shadow: 0 14px 34px -28px rgb(15 35 55 / 0.4); }
   .day-preview-head { display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; text-align: left; }
   .day-preview-chevron { display: grid; flex-shrink: 0; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 999px; background: color-mix(in oklch, var(--sun) 18%, white); color: var(--navy); }

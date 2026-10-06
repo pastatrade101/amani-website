@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { BedDouble, UtensilsCrossed } from '@lucide/svelte';
 
-	// One cell of a day's stay panel: "Overnight" or "Meals". Phone-sized here;
-	// itinerary-timeline sizes the value up from sm. The admin day editor
-	// previews the Overnight line with this same component.
+	// One "Overnight" or "Meals" cell, used by the admin day editor's preview.
+	// The public itinerary shows the overnight as a card (itinerary-overnight).
 	let {
 		kind,
 		label,

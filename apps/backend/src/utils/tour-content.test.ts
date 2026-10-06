@@ -352,7 +352,7 @@ describe('reading a tour back', () => {
         safari_style: 'midrange',
         lodge_id: 'legacy-lodge',
         accommodation: null,
-        lodge: { id: 'legacy-lodge', name: 'Old Lodge', slug: 'old-lodge', lodge_type: null, accommodation_level: null, hero_image_url: null, image_url: null, status: null }
+        lodge: { id: 'legacy-lodge', name: 'Old Lodge', slug: 'old-lodge', lodge_type: null, accommodation_level: null, hero_image_url: null, image_url: null, status: null, show_property_publicly: null, short_description: null, park_area: null, region: null }
       }
     ]);
     assert.deepEqual(first.image_urls, []);

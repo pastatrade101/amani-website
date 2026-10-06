@@ -4,6 +4,9 @@
 @import "@fontsource/poppins/500.css";
 @import "@fontsource/poppins/600.css";
 @import "@fontsource/poppins/700.css";
+@import "@fontsource/cormorant-garamond/500.css";
+@import "@fontsource/cormorant-garamond/600.css";
+@import "@fontsource/cormorant-garamond/500-italic.css";
 @import "tw-animate-css";
 @import "$lib/admin/admin-theme.css";
 
@@ -25,6 +28,8 @@
 
 @theme inline {
   --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  /* Editorial serif for large headings, quotes and fact values (22px and up only). */
+  --font-display: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --color-sun: var(--sun);
   --color-sun-foreground: var(--sun-foreground);
   --color-success: var(--success);
@@ -81,6 +86,8 @@
   --navy: oklch(0.3 0.07 252);
   --sun: oklch(0.86 0.168 95);
   --sun-foreground: oklch(0.3 0.07 252);
+  /* Sun as text: ~5:1 on cream. #D9A900 stays for icons only. */
+  --gold-ink: oklch(.5 .1 85);
   --success: oklch(0.65 0.17 150);
   --success-foreground: oklch(0.98 0.01 150);
   --background: oklch(1 0 0);
@@ -177,6 +184,9 @@
   .section-description { font-size: 14px; line-height: 1.9; color: var(--muted-foreground); }
   .eyebrow { font-size: .65rem; font-weight: 600; letter-spacing: .19em; text-transform: uppercase; }
   .gold-line { height: 3px; width: 50px; background: var(--sun); border-radius: 3px; }
+  .lux-heading { font-family: var(--font-display); font-weight: 500; font-size: clamp(2rem, 3.6vw, 3.1rem); line-height: 1.08; letter-spacing: -.01em; color: var(--navy); text-wrap: balance; }
+  /* Cormorant's old-style figures read as letters ("01" looks like "oI"); headings and facts need lining ones. */
+  .lux-heading, .font-display { font-variant-numeric: lining-nums; }
   /* Tour and stay cards: 1 on phones, 2 from 640px, 3 from 1024px, 4 from 1440px. */
   .card-grid { display: grid; gap: 1.5rem; grid-template-columns: minmax(0, 1fr); }
 }

@@ -69,15 +69,17 @@ const photoUrl = (value?: string | null) => {
 
 /**
  * Up to `limit` photos for a day: its own photos, else its single legacy
- * photo, else the photos of the lodge it stays at in this style.
+ * photo, else the photos of the lodge it stays at in this style (skipped with
+ * `lodgeFallback` false, when the overnight card already shows that lodge).
  */
-export function dayPhotos(day: Pick<ItineraryDay, 'title' | 'image_urls' | 'image_url' | 'stays' | 'lodge' | 'accommodation'>, style: SafariStyle, limit = 3): DayPhoto[] {
+export function dayPhotos(day: Pick<ItineraryDay, 'title' | 'image_urls' | 'image_url' | 'stays' | 'lodge' | 'accommodation'>, style: SafariStyle, limit = 3, lodgeFallback = true): DayPhoto[] {
 	const title = clean(day.title);
 	const own = (day.image_urls ?? []).map(photoUrl).filter(Boolean);
 	const single = photoUrl(day.image_url);
 	let photos: DayPhoto[];
 	if (own.length) photos = own.map((src) => ({ src, alt: title }));
 	else if (single) photos = [{ src: single, alt: title }];
+	else if (!lodgeFallback) photos = [];
 	else {
 		const lodge = stayFor(day, style)?.lodge;
 		photos = [lodge?.hero_image_url, lodge?.image_url].map(photoUrl).filter(Boolean).map((src) => ({ src, alt: clean(lodge?.name) || title }));

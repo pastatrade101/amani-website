@@ -332,7 +332,12 @@ const stayLodge = (lodge: unknown): Row | null => {
     accommodation_level: value.accommodation_level ?? null,
     hero_image_url: value.hero_image_url ?? null,
     image_url: value.image_url ?? null,
-    status: value.status ?? null
+    status: value.status ?? null,
+    // The tour page links a stay only when it is public, and its overnight card reads these.
+    show_property_publicly: value.show_property_publicly ?? null,
+    short_description: value.short_description ?? null,
+    park_area: value.park_area ?? null,
+    region: value.region ?? null
   };
 };
 

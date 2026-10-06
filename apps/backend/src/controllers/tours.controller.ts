@@ -60,10 +60,16 @@ const dayLodgeColumns = 'id,name,slug,lodge_type,accommodation_level,hero_image_
 const dayDestinationEmbed = 'destination:destinations!itinerary_days_destination_id_fkey(id,name,slug)';
 // Hinted by constraint name: itinerary_day_stays is a second path between days
 // and lodges, so an unhinted lodges embed would be ambiguous (PGRST201).
-// status + show_property_publicly tell the tour page whether a stay page exists to link to.
-const dayStaysEmbed = `stays:itinerary_day_stays!itinerary_day_stays_itinerary_day_id_fkey(safari_style,lodge_id,accommodation,lodge:lodges!itinerary_day_stays_lodge_id_fkey(${dayLodgeColumns},status,show_property_publicly))`;
+// status + show_property_publicly tell the tour page whether a stay page exists to link to;
+// the short description and area fill the itinerary's overnight card.
+const dayStayLodgeColumns = `${dayLodgeColumns},status,show_property_publicly,short_description,park_area,region`;
+const dayStaysEmbed = `stays:itinerary_day_stays!itinerary_day_stays_itinerary_day_id_fkey(safari_style,lodge_id,accommodation,lodge:lodges!itinerary_day_stays_lodge_id_fkey(${dayStayLodgeColumns}))`;
+// The same stays, before the lodge-location migration (no park_area or region).
+const dayStayLodgeColumnsBasic = `${dayLodgeColumns},status,show_property_publicly`;
+const dayStaysEmbedBasic = `stays:itinerary_day_stays!itinerary_day_stays_itinerary_day_id_fkey(safari_style,lodge_id,accommodation,lodge:lodges!itinerary_day_stays_lodge_id_fkey(${dayStayLodgeColumnsBasic}))`;
 const itineraryEmbeds = {
-  stays: `itinerary_days(${dayColumns},summary,image_urls,destination_id,travel_mode,${dayDestinationEmbed},${dayLodgeEmbed(`${dayLodgeColumns},status,show_property_publicly`)},${dayStaysEmbed})`,
+  stays: `itinerary_days(${dayColumns},summary,image_urls,destination_id,travel_mode,${dayDestinationEmbed},${dayLodgeEmbed(dayStayLodgeColumns)},${dayStaysEmbed})`,
+  staysBasic: `itinerary_days(${dayColumns},summary,image_urls,destination_id,travel_mode,${dayDestinationEmbed},${dayLodgeEmbed(dayStayLodgeColumnsBasic)},${dayStaysEmbedBasic})`,
   // Before the itinerary stays migration.
   route: `itinerary_days(${dayColumns},destination_id,travel_mode,${dayDestinationEmbed},${dayLodgeEmbed(dayLodgeColumns)})`,
   // Before the route migration.
@@ -75,6 +81,7 @@ const seasonsEmbed = 'tour_pricing_seasons(id,safari_style,season_type,season_na
 // so the page keeps rendering between deploying code and running its SQL.
 const detailSelects = [
   `${select}, ${itineraryEmbeds.stays}, ${contentEmbeds}, ${seasonsEmbed}, ${activitiesEmbed}`,
+  `${select}, ${itineraryEmbeds.staysBasic}, ${contentEmbeds}, ${seasonsEmbed}, ${activitiesEmbed}`,
   `${select}, ${itineraryEmbeds.route}, ${contentEmbeds}, ${seasonsEmbed}, ${activitiesEmbed}`,
   `${select}, ${itineraryEmbeds.legacy}, ${contentEmbeds}, ${seasonsEmbed}, ${activitiesEmbed}`,
   `${select}, ${itineraryEmbeds.legacy}, ${contentEmbeds}, ${activitiesEmbed}`,
@@ -367,15 +374,30 @@ export const getTour = asyncHandler(async (req, res) => {
   // These touch different fields (image variants, locale list, translated
   // text), so they run side by side: the uncached page load sat close to the
   // website's API timeout when they ran one after another.
+  const lodges = days
+    .flatMap((day) => [day.lodge, ...(Array.isArray(day.stays) ? (day.stays as Row[]).map((stay) => stay.lodge) : [])])
+    .filter((lodge): lodge is Record<string, unknown> => Boolean(lodge) && typeof lodge === 'object');
   await Promise.all([
     attachTourDetailImages(record),
     attachAvailableLocales('tours', [record]),
     localizeRecords('tours', [record], locale),
-    days.length ? localizeRecords('itinerary_days', days, locale) : null
+    days.length ? localizeRecords('itinerary_days', days, locale) : null,
+    localizeLodgeSummaries(lodges, locale)
   ]);
 
   return sendSuccess(res, 'Record fetched successfully.', record);
 });
+
+// Only the words the itinerary's overnight card shows: merging a lodge's whole
+// translation would add its full description to every day that stays there.
+const localizeLodgeSummaries = async (lodges: Array<Record<string, unknown>>, locale: string | undefined) => {
+  if (!lodges.length) return;
+  const copies: Array<Record<string, unknown>> = lodges.map((lodge) => ({ id: lodge.id }));
+  await localizeRecords('lodges', copies, locale);
+  copies.forEach((copy, index) => {
+    for (const key of ['name', 'short_description']) if (typeof copy[key] === 'string' && copy[key]) lodges[index][key] = copy[key];
+  });
+};
 
 export const createTour = asyncHandler(async (req, res) => {
   const { payload, destinationIds, syncDestinations } = prepareTourPayload(req.body);

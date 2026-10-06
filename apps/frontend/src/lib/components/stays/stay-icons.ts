@@ -5,6 +5,7 @@ import {
 	Bath,
 	BedDouble,
 	Binoculars,
+	Camera,
 	Car,
 	Caravan,
 	Check,
@@ -17,11 +18,13 @@ import {
 	Flower2,
 	Gem,
 	GlassWater,
+	Heart,
 	Hotel,
 	House,
 	Leaf,
 	LockKeyhole,
 	Luggage,
+	Mountain,
 	Plug,
 	ShieldCheck,
 	Shirt,
@@ -30,7 +33,9 @@ import {
 	Sun,
 	Tent,
 	TreePalm,
+	User,
 	Users,
+	UsersRound,
 	UtensilsCrossed,
 	WavesLadder,
 	Wifi,
@@ -93,3 +98,18 @@ const AMENITY_ICONS: Record<string, Icon> = {
 };
 
 export const amenityIcon = (key: unknown): Icon => AMENITY_ICONS[String(key ?? '').trim().toLowerCase()] ?? Check;
+
+/** The CMS "best for" codes (same list as bestForLabels in stay-content). */
+const BEST_FOR_ICONS: Record<string, Icon> = {
+	COUPLES: Heart,
+	HONEYMOON: Gem,
+	FAMILIES: Users,
+	GROUPS: UsersRound,
+	SOLO_TRAVELERS: User,
+	SENIORS: Armchair,
+	LUXURY_TRAVELERS: Crown,
+	ADVENTURE_TRAVELERS: Mountain,
+	PHOTOGRAPHERS: Camera
+};
+
+export const bestForIcon = (code: string): Icon => BEST_FOR_ICONS[String(code ?? '').trim().toUpperCase()] ?? Check;
