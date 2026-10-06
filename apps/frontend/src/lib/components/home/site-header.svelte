@@ -1,7 +1,7 @@
 <script lang="ts">
  import DestinationIcon from './destination-icon.svelte';
 	import { onDestroy } from 'svelte';
-	import { Menu, ArrowRight, ArrowUpRight, Search, Compass, Map, CalendarDays, Route, MessageCircle, Palmtree, Binoculars, BedDouble } from '@lucide/svelte';
+	import { Menu, ArrowRight, ArrowUpRight, Search, Compass, Map, Binoculars, BedDouble } from '@lucide/svelte';
 	import { destinationHref } from '$lib/destination-content';
 	import { siteInfo } from '$lib/site-info';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -23,7 +23,7 @@
 	let { visible, activities, destinations, onInterest, tours = [], categories = [], stays = [], onPage }: { visible: string[]; activities: Activity[]; destinations: Destination[]; onInterest: (name: string) => void; tours?: Tour[]; categories?: Category[]; stays?: Stay[]; onPage?: string[] } = $props();
 	// Without onPage this is the home page; elsewhere a section missing from the page links home.
 	const anchor = (id: string) => (!onPage || onPage.includes(id) ? `#${id}` : `/#${id}`);
-	const navItems = [{ id: 'tours', label: 'Tours', icon: Binoculars }, { id: 'stays', label: 'Stays', icon: BedDouble }, { id: 'experiences', label: 'Experiences', icon: Compass }, { id: 'destinations', label: 'Destinations', icon: Map }, { id: 'zanzibar', label: 'Zanzibar', icon: Palmtree }, { id: 'plan', label: 'Plan your trip', icon: Route }];
+	const navItems = [{ id: 'tours', label: 'Tours', icon: Binoculars }, { id: 'stays', label: 'Stays', icon: BedDouble }, { id: 'experiences', label: 'Experiences', icon: Compass }, { id: 'destinations', label: 'Destinations', icon: Map }];
 	const experienceGroups = [
 		{ title: 'Wildlife & safari', description: 'Big cats, open plains and extraordinary encounters.', image: '/images/safari-hero.jpg' },
 		{ title: 'A little adventure', description: 'Balloon flights and journeys beyond the everyday.', image: '/images/activity-balloon.jpg' },
@@ -36,26 +36,8 @@
 		{ title: 'Western circuit', circuit: 'western', image: '/images/itinerary-crater.jpg', description: 'Forests, lakes and wild horizons' },
 		{ title: 'Zanzibar & coast', circuit: 'coast', image: '/images/zanzibar-menu.jpg', description: 'Your Indian Ocean escape' }
 	];
-	const islandIdeas = [
-		{ title: 'Zanzibar beach holidays', description: 'Find your stretch of paradise.' },
-		{ title: 'Safari + Zanzibar', description: 'Wildlife adventures, then ocean air.' },
-		{ title: 'Stone Town', description: 'Wander the island’s historic heart.' },
-		{ title: 'Spice tours', description: 'Discover the flavours of Zanzibar.' },
-		{ title: 'Island experiences', description: 'Sail, snorkel and explore.' },
-		{ title: 'Honeymoon in Zanzibar', description: 'A little time, just for two.' }
-	];
-	let links = $derived([
-		...(visible.includes('cost_ranges') ? [{label:'Safari costs',description:'Understand your options and budget.',href:anchor('cost-ranges'),icon:Compass}] : []),
-		...(visible.includes('safari_duration') ? [{label:'How long to stay',description:'Find a route that fits your time.',href:anchor('safari-duration'),icon:Route}] : []),
-		...(visible.includes('safari_inclusions') ? [{label:'What’s included',description:'Know the details before you travel.',href:anchor('safari-inclusions'),icon:Binoculars}] : []),
-		...(visible.includes('safari_day') ? [{label:'A day on safari',description:'From first light to the evening camp.',href:anchor('safari-day'),icon:CalendarDays}] : []),
-		...(visible.includes('safari_packages') ? [{ label: 'Explore safari packages', description: 'Find an itinerary to make your own.', href: anchor('tanzania-safari-packages'), icon: Route }] : []),
-		...(visible.includes('when_to_go') ? [{ label: 'When to visit', description: 'Find the season that suits your journey.', href: anchor('when-to-go'), icon: CalendarDays }] : []),
-		...(visible.includes('destinations') ? [{ label: 'Where to go', description: 'Get to know Tanzania’s wild places.', href: '/destinations', icon: Map }] : []),
-		...(visible.includes('enquiry') ? [{ label: 'Talk to our local team', description: 'Let’s start with your safari ideas.', href: anchor('request-quote'), icon: MessageCircle }] : [])
-	]);
 	// /tours and /stays always exist, so their menus show even before anything is published.
-	let navigation = $derived(navItems.filter((item) => item.id === 'tours' || item.id === 'stays' || item.id === 'destinations' ? true : item.id === 'plan' ? links.length > 0 : item.id === 'zanzibar' ? visible.includes('enquiry') : visible.includes(item.id)));
+	let navigation = $derived(navItems.filter((item) => item.id === 'tours' || item.id === 'stays' || item.id === 'destinations' || visible.includes(item.id)));
 	let enquiryHref = $derived(anchor(visible.includes('enquiry') ? 'request-quote' : visible.includes('experiences') ? 'experiences' : 'destinations'));
 	// On the home page the search panel exists only while safari packages are shown.
 	let searchHref = $derived((onPage ? onPage.includes('safari-search') : visible.includes('safari_packages')) ? '#safari-search' : '/tours#safari-search');
@@ -83,10 +65,6 @@
 	function mainLink(id: string) {
 		if (id === 'tours' || id === 'stays' || id === 'destinations') return `/${id}`;
 		if (id === 'experiences') return '/#experiences';
-		if (id === 'zanzibar') {
-			const island = destinations.find(place => place.name.trim().toLowerCase() === 'zanzibar');
-			return island ? destinationHref(island) : '/destinations?circuit=coast';
-		}
 		return enquiryHref;
 	}
 	let closeTimer: ReturnType<typeof setTimeout> | undefined;
@@ -207,13 +185,6 @@
 										{/each}
 									</div>
 								</div>
-							{:else if item.id === 'zanzibar'}
-								<div class="island-menu">
-									<NavigationMenu.Link href={enquiryHref} onclick={() => choose('Zanzibar beach holiday')} class="menu-feature"><img src="/images/zanzibar-menu.jpg" alt="A dhow sailing beside Zanzibar’s white sand beach" /><div class="feature-copy"><span class="menu-eyebrow">AFTER THE ADVENTURE</span><h2>A slower rhythm.<br />An ocean of possibility.</h2><span class="feature-cta">Discover Zanzibar <ArrowUpRight class="size-4" /></span></div></NavigationMenu.Link>
-									<div class="island-options"><div class="menu-heading"><p class="menu-eyebrow">BAREFOOT DAYS AWAIT</p><h2>Make time for the coast</h2></div><div class="island-links">{#each islandIdeas as idea}<NavigationMenu.Link href={enquiryHref} onclick={() => choose(idea.title)} class="idea-link"><span><strong>{idea.title}</strong><small>{idea.description}</small></span><ArrowUpRight class="size-4" /></NavigationMenu.Link>{/each}</div></div>
-								</div>
-							{:else}
-								<div class="planning-menu"><div><div class="menu-heading"><p class="menu-eyebrow">A GREAT JOURNEY STARTS HERE</p><h2>A little inspiration. A plan that’s yours.</h2></div><div class="planning-links">{#each links as link}<NavigationMenu.Link href={link.href} onclick={closeMenu} class="planning-link"><span class="planning-icon"><link.icon class="size-5" strokeWidth={1.6} /></span><span><strong>{link.label}</strong><small>{link.description}</small></span><ArrowUpRight class="size-4" /></NavigationMenu.Link>{/each}</div></div><aside class="planning-aside"><Compass class="size-8" strokeWidth={1.4} /><h2>Your ideas.<br />Our local knowledge.</h2><p>We’ll help you bring the pieces together, from the first game drive to your final sunset.</p>{#if visible.includes('enquiry')}<Button href={anchor('request-quote')} onclick={closeMenu} variant="safari" class="mt-5 h-11 w-full">Let’s plan your safari <ArrowRight class="size-4" /></Button>{/if}</aside></div>
 							{/if}
 							<div class="menu-footer"><span><Compass class="size-4" /> Tanzania, with a local perspective.</span><NavigationMenu.Link href={footerLink(item.id).href} onclick={closeMenu} class="menu-footer-link">{footerLink(item.id).label}<ArrowRight class="size-4" /></NavigationMenu.Link></div>
 						</NavigationMenu.Content>
@@ -249,10 +220,6 @@
                                         {:else if item.id === 'destinations'}
                                             {#each destinations.slice(0, 8) as destination, i}<a data-motion="reveal" class="mobile-menu-link" href={destinationHref(destination)} onclick={closeMenu}><img src={destinationPhoto(destination, i)} alt="" /><span>{destination.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
                                             <a class="mobile-menu-link mobile-view-all" href="/destinations" onclick={closeMenu}>Explore all destinations <ArrowRight class="size-4" /></a>
-                                        {:else if item.id === 'zanzibar'}
-                                            {#each islandIdeas as idea}<a class="mobile-menu-link mobile-idea-link" href={enquiryHref} onclick={() => choose(idea.title)}><span>{idea.title}<small>{idea.description}</small></span><ArrowUpRight class="size-3.5" /></a>{/each}
-                                        {:else}
-                                            {#each links as link}<a class="mobile-menu-link mobile-idea-link" href={link.href} onclick={closeMenu}><span>{link.label}<small>{link.description}</small></span><ArrowUpRight class="size-3.5" /></a>{/each}
                                         {/if}
                                     </div>
                                 </Accordion.Content>
@@ -285,7 +252,7 @@
 	.menu-heading { margin-bottom: 18px; }
 	.menu-heading .menu-eyebrow { color: var(--muted-foreground); }
 	.menu-heading h2 { margin-top: 5px; font-size: 20px; font-weight: 600; letter-spacing: -.04em; line-height: 1.4; }
-	.experience-menu, .island-menu { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 28px; padding: 26px; }
+	.experience-menu { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 28px; padding: 26px; }
 	:global(.menu-feature) { position: relative; display: block; min-height: 285px; overflow: hidden; border-radius: 12px; padding: 0; color: white; isolation: isolate; }
 	:global(.menu-feature)::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(5 20 28 / .03) 10%, rgb(5 20 28 / .85) 100%); }
 	:global(.menu-feature > img) { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform 240ms ease-out; }
@@ -294,13 +261,13 @@
 	.feature-copy .menu-eyebrow { color: var(--sun); font-size: 8px; }
 	.feature-copy h2 { margin-top: 9px; font-size: 21px; font-weight: 600; line-height: 1.35; letter-spacing: -.035em; }
 	.feature-cta { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 13px; border-top: 1px solid rgb(255 255 255 / .3); font-size: 11px; font-weight: 600; }
-	.experience-options, .island-options { min-width: 0; padding-top: 3px; }
+	.experience-options { min-width: 0; padding-top: 3px; }
 	.experience-links { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
 	:global(.experience-link) { display: flex; align-items: center; gap: 13px; min-width: 0; padding: 10px; border: 1px solid transparent; border-radius: 12px; }
 	:global(.experience-link:hover) { border-color: var(--border); background: var(--secondary); }
 	:global(.experience-link > img) { width: 68px; height: 76px; flex-shrink: 0; border-radius: 9px; object-fit: cover; }
-	:global(.experience-link strong), :global(.idea-link strong), :global(.planning-link strong) { display: block; font-size: 12px; font-weight: 600; line-height: 1.45; }
-	:global(.experience-link small), :global(.idea-link small), :global(.planning-link small) { display: block; margin-top: 5px; color: var(--muted-foreground); font-size: 10px; line-height: 1.6; }
+	:global(.experience-link strong) { display: block; font-size: 12px; font-weight: 600; line-height: 1.45; }
+	:global(.experience-link small) { display: block; margin-top: 5px; color: var(--muted-foreground); font-size: 10px; line-height: 1.6; }
 	:global(.menu-arrow) { margin-left: auto; flex-shrink: 0; color: var(--muted-foreground); }
 	.popular-experiences { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 15px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 10px; }
 	.popular-experiences > span { margin-right: 3px; color: var(--muted-foreground); }
@@ -332,17 +299,6 @@
 	:global(.destination-link) { display: flex; justify-content: space-between; gap: 6px; padding: 7px 6px; margin-left: -6px; font-size: 11px; border-radius: 6px; line-height: 1.5; }
 	:global(.destination-link > svg) { flex-shrink: 0; opacity: 0; transition: opacity 150ms ease-out; }
 	:global(.destination-link:hover > svg), :global(.destination-link:focus-visible > svg) { opacity: 1; }
-	.island-links { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 16px; }
-	:global(.idea-link) { justify-content: space-between; padding: 13px 10px; border-radius: 10px; }
-	:global(.idea-link > svg) { flex-shrink: 0; }
-	.planning-menu { display: grid; grid-template-columns: minmax(0,1fr) 280px; gap: 32px; padding: 28px; }
-	.planning-links { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
-	:global(.planning-link) { gap: 13px; padding: 16px 10px; border-radius: 10px; }
-	:global(.planning-link > svg) { flex-shrink: 0; margin-left: auto; }
-	.planning-icon { display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 12px; background: var(--secondary); }
-	.planning-aside { border-radius: 12px; background: oklch(.97 .025 95); padding: 23px; }
-	.planning-aside h2 { margin-top: 16px; font-size: 19px; font-weight: 600; line-height: 1.4; letter-spacing: -.04em; }
-	.planning-aside p { margin-top: 10px; font-size: 11px; line-height: 1.7; color: var(--muted-foreground); }
 	.menu-footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 13px 26px; border-top: 1px solid var(--border); background: oklch(.985 .003 250); }
 	.menu-footer > span { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--muted-foreground); }
 	:global(.menu-footer-link) { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 11px; font-weight: 600; background: transparent; }
@@ -368,8 +324,7 @@
     .mobile-menu-link img { width: 40px; height: 40px; flex-shrink: 0; object-fit: cover; border-radius: 7px; }
     .mobile-menu-link :global(svg) { flex-shrink: 0; margin-left: auto; color: var(--muted-foreground); }
     .mobile-view-all { margin-top: 5px; padding: 12px 10px 8px; min-height: 42px; font-size: 11px; font-weight: 600; }
-    .mobile-idea-link { padding: 11px; }
-    .mobile-idea-link small, .mobile-tour-meta { display: block; margin-top: 4px; font-size: 10px; color: var(--muted-foreground); }
+    .mobile-tour-meta { display: block; margin-top: 4px; font-size: 10px; color: var(--muted-foreground); }
     .mobile-menu-link .mobile-stay-mark { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; margin-left: 0; border-radius: 7px; background: var(--navy); color: var(--sun); }
     .mobile-menu-link .mobile-style-mark { border-radius: 50%; background: var(--style-light); color: var(--style-ink); }
     .mobile-stay-mark :global(svg) { margin-left: 0; color: inherit; }

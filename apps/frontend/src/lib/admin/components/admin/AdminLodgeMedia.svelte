@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Input as CmsInput } from '$lib/components/ui/input';
-  import * as CmsSelect from '$lib/components/ui/native-select';
+  import * as Select from '$lib/components/ui/select';
   import { Label as CmsLabel } from '$lib/components/ui/label';
   import { Checkbox as CmsCheckbox } from '$lib/components/ui/checkbox';
   import { Button as CmsButton } from '$lib/components/ui/button';
@@ -93,7 +93,14 @@
 
   const addPicked = (url: string, item?: { alt_text?: string | null; caption?: string | null; title?: string | null }) => {
     if (!url) return;
-    if (!images.some((image) => image.image_url === url)) {
+    const added = images.find((image) => image.image_url === url);
+    // A library pick reports the URL first (change) and the record second
+    // (select), so the alt text arrives for a photo that is already listed.
+    if (added && item && !added.alt_text) {
+      added.alt_text = String(item.alt_text ?? item.title ?? '');
+      images = images;
+    }
+    if (!added) {
       const next = blank(url);
       next.alt_text = String(item?.alt_text ?? item?.title ?? '');
       next.caption = String(item?.caption ?? '');
@@ -181,9 +188,14 @@
                 bind:value={image.caption}
               />
               <div class="grid grid-cols-[1fr_auto] gap-2">
-                <CmsSelect.Root class="h-9 rounded-md border border-ink/15 bg-black/[0.02] px-2 text-[12px]" bind:value={image.category} aria-label={`Category for photo ${index + 1}`}>
-                  {#each GALLERY_CATEGORIES as category}<CmsSelect.Option value={category}>{enumLabel(category)}</CmsSelect.Option>{/each}
-                </CmsSelect.Root>
+                <Select.Root type="single" bind:value={image.category}>
+                  <Select.Trigger class="h-9 w-full min-w-0 rounded-md border border-ink/15 bg-black/[0.02] px-2 text-[12px]" aria-label={`Category for photo ${index + 1}`}><span class="truncate">{enumLabel(image.category)}</span></Select.Trigger>
+                  <!-- No scroll lock: the editor scrolls inside its dialog, and a lock
+                       restores the old position after closing, jumping the list. -->
+                  <Select.Content class="cms-select-content" preventScroll={false}>
+                    {#each GALLERY_CATEGORIES as category}<Select.Item value={category} label={enumLabel(category)}>{enumLabel(category)}</Select.Item>{/each}
+                  </Select.Content>
+                </Select.Root>
                 <CmsLabel class="flex items-center gap-1.5 text-[11px] font-semibold text-ink/60"><CmsCheckbox  bind:checked={image.is_featured}/> Featured</CmsLabel>
               </div>
             </div>

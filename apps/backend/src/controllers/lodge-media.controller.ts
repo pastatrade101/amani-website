@@ -14,6 +14,9 @@ import { asyncHandler } from '../utils/async-handler';
 
 type Row = Record<string, unknown>;
 
+/** Mirrors the lodge_images.category values the admin editor offers. */
+const GALLERY_CATEGORIES = new Set(['HERO', 'EXTERIOR', 'ROOM', 'INTERIOR', 'BATHROOM', 'DINING', 'POOL', 'SPA', 'LANDSCAPE', 'WILDLIFE', 'EXPERIENCE', 'FOOD', 'AERIAL', 'BEACH', 'COMMON_AREA', 'OTHER']);
+
 const softly = async <T>(run: () => Promise<T>, fallback: T): Promise<T> => {
   try {
     return await run();
@@ -25,17 +28,20 @@ const softly = async <T>(run: () => Promise<T>, fallback: T): Promise<T> => {
 /** Ordered gallery for one property. Empty when the table is not there yet. */
 export const imagesForLodge = async (lodgeId: string): Promise<Row[]> =>
   softly(async () => {
-    const { data, error } = await supabase
-      .from('lodge_images')
-      // Keep the public gallery compatible with the original gallery table.
-      // category/is_featured were added later and must not make the whole
-      // gallery disappear when that optional migration has not run yet.
-      .select('id,image_url,alt_text,caption,sort_order,is_cover')
-      .eq('lodge_id', lodgeId)
-      .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: true });
+    const read = (columns: string) =>
+      supabase
+        .from('lodge_images')
+        .select(columns)
+        .eq('lodge_id', lodgeId)
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
+    // category/is_featured were added later and must not make the whole
+    // gallery disappear when that optional migration has not run yet, so the
+    // original columns are the fallback.
+    let { data, error } = await read('id,image_url,alt_text,caption,sort_order,is_cover,category,is_featured');
+    if (error) ({ data, error } = await read('id,image_url,alt_text,caption,sort_order,is_cover'));
     if (error) return [];
-    return (data ?? []) as Row[];
+    return (data ?? []) as unknown as Row[];
   }, []);
 
 // Gallery covers for lists (attachCovers) and the tours that stay at a
@@ -116,7 +122,9 @@ export const replaceLodgeImages = asyncHandler(async (req, res) => {
     alt_text: image.alt_text ? String(image.alt_text) : null,
     caption: image.caption ? String(image.caption) : null,
     sort_order: index,
-    is_cover: index === coverAt && incoming.length > 0
+    is_cover: index === coverAt && incoming.length > 0,
+    category: GALLERY_CATEGORIES.has(String(image.category ?? '').toUpperCase()) ? String(image.category).toUpperCase() : 'EXTERIOR',
+    is_featured: image.is_featured === true
   }));
 
   // Delete-then-insert is safe here in a way it is not for tour inclusions:
@@ -126,7 +134,11 @@ export const replaceLodgeImages = asyncHandler(async (req, res) => {
   if (del.error) throw notMigrated();
 
   if (rows.length) {
-    const ins = await supabase.from('lodge_images').insert(rows);
+    let ins = await supabase.from('lodge_images').insert(rows);
+    // Without the optional category/is_featured columns, keep the photos.
+    if (ins.error && /category|is_featured/.test(ins.error.message ?? '')) {
+      ins = await supabase.from('lodge_images').insert(rows.map(({ category: _category, is_featured: _featured, ...row }) => row));
+    }
     if (ins.error) throw new AppError('Unable to save the gallery.', 500, [ins.error]);
   }
 
