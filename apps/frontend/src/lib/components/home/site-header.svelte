@@ -12,6 +12,7 @@
 	import { safeUrl, circuitFor, destinationPhoto, tourDuration, tourFromPrice, tourPhotos } from '$lib/home-content';
 	import { SAFARI_STYLE_THEME } from '$lib/safari-pricing';
 	import { ownStayPhoto, STAY_STYLES, stayLocation, stayTypeLabel } from '$lib/stay-content';
+	import { PLANNER_PATH, planHref } from '$lib/planner/plan-href';
 	import type { Activity, Category, Destination, Stay, Tour } from '$lib/types/api';
 	import { page } from '$app/state';
 
@@ -40,6 +41,8 @@
 	let navigation = $derived(navItems.filter((item) => item.id === 'tours' || item.id === 'stays' || item.id === 'destinations' || visible.includes(item.id)));
 	let enquiryHref = $derived(anchor(visible.includes('enquiry') ? 'request-quote' : visible.includes('experiences') ? 'experiences' : 'destinations'));
 	// On the home page the search panel exists only while safari packages are shown.
+	// "Plan my safari" opens the trip planner from every page but the planner itself.
+	let onPlanner = $derived(page.url.pathname === PLANNER_PATH);
 	let searchHref = $derived((onPage ? onPage.includes('safari-search') : visible.includes('safari_packages')) ? '#safari-search' : '/tours#safari-search');
 	// Featured tours first, otherwise the API's newest-first order.
 	let menuTours = $derived([...tours].sort((a, b) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured))).slice(0, 4));
@@ -192,7 +195,7 @@
 				{/each}
 			</NavigationMenu.List>
 		</NavigationMenu.Root>
-		<div class="header-actions"><Button href={searchHref} variant="ghost" size="icon" aria-label="Search safaris" class="rounded-full"><Search class="size-5" /></Button>{#if visible.includes('enquiry')}<Button variant="safari" href={anchor('request-quote')} class="h-11 px-5 text-[13px]">Plan my safari <ArrowRight class="size-4" /></Button>{/if}</div>
+		<div class="header-actions"><Button href={searchHref} variant="ghost" size="icon" aria-label="Search safaris" class="rounded-full"><Search class="size-5" /></Button>{#if !onPlanner}<Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" class="h-11 px-5 text-[13px]">Plan my safari <ArrowRight class="size-4" /></Button>{/if}</div>
 		<Sheet.Root bind:open>
 			<Sheet.Trigger class="mobile-navigation rounded-md p-2" aria-label="Open navigation"><Menu class="size-6" /></Sheet.Trigger>
             <Sheet.Content side="right" class="mobile-menu-panel">
@@ -227,7 +230,7 @@
                         {/each}
                     </Accordion.Root>
                 </div>
-                {#if visible.includes('enquiry')}<div class="mobile-menu-footer"><p>A journey, designed around you.</p><Button variant="safari" href={anchor('request-quote')} onclick={closeMenu} class="h-12 w-full">Plan my safari <ArrowRight class="size-4" /></Button></div>{/if}
+                {#if !onPlanner}<div class="mobile-menu-footer"><p>A journey, designed around you.</p><Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" onclick={closeMenu} class="h-12 w-full">Plan my safari <ArrowRight class="size-4" /></Button></div>{/if}
             </Sheet.Content>
 		</Sheet.Root>
 	</div>

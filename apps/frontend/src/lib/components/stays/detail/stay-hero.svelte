@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ArrowRight, ChevronRight, Images, MapPin } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { planHref } from '$lib/planner/plan-href';
 	import StayPhoto from '../stay-photo.svelte';
 	import { srcsetFor, variantsOf } from '$lib/admin/img';
 	import { safeUrl } from '$lib/home-content';
@@ -88,7 +89,7 @@
 						{#if photos.length > 1}
 							<button type="button" onclick={(event) => onOpenPhotos(0, event.currentTarget)} class="inline-flex h-12 items-center gap-2 rounded-full bg-white/10 px-5 text-sm font-medium text-white ring-1 ring-white/30 backdrop-blur transition-colors hover:bg-white/20"><Images class="size-4" aria-hidden="true" />View all {photos.length} photos</button>
 						{/if}
-						{#if canEnquire}<Button variant="safari" href="#request-quote" onclick={onEnquire} class="h-12 rounded-full px-6 text-sm">Enquire about this stay <ArrowRight class="size-4" /></Button>{/if}
+						{#if canEnquire}<Button variant="safari" href={planHref({ stay: stay.slug, from: 'stay_page' })} data-cta="plan_my_trip" data-cta-location="stay_page" onclick={onEnquire} class="h-12 rounded-full px-6 text-sm">Enquire about this stay <ArrowRight class="size-4" /></Button>{/if}
 					</div>
 				{/if}
 			</div>
@@ -104,7 +105,7 @@
 				{#if location}<p data-motion="hero" data-motion-delay="0.1" class="mt-5 inline-flex items-start gap-2 text-sm text-muted-foreground md:text-base"><MapPin class="mt-0.5 size-4 shrink-0 text-[#D9A900]" aria-hidden="true" />{location}</p>{/if}
 				<div data-motion="line" data-motion-delay="0.1" class="gold-line mx-auto mt-6" style="transform-origin: center"></div>
 				{#if lead}<p data-motion="hero" data-motion-delay="0.15" class="mx-auto mt-7 max-w-[40ch] font-display text-[22px] leading-[1.45] text-navy/90 sm:text-[26px]">{lead}</p>{/if}
-				{#if canEnquire}<div data-motion="hero" data-motion-delay="0.2" class="mt-8"><Button variant="safari" href="#request-quote" onclick={onEnquire} class="h-12 rounded-full px-6 text-sm">Enquire about this stay <ArrowRight class="size-4" /></Button></div>{/if}
+				{#if canEnquire}<div data-motion="hero" data-motion-delay="0.2" class="mt-8"><Button variant="safari" href={planHref({ stay: stay.slug, from: 'stay_page' })} data-cta="plan_my_trip" data-cta-location="stay_page" onclick={onEnquire} class="h-12 rounded-full px-6 text-sm">Enquire about this stay <ArrowRight class="size-4" /></Button></div>{/if}
 			</div>
 			{#if standIn?.kind === 'place'}
 				<div data-motion="image" class="relative mt-10 aspect-[4/3] overflow-hidden rounded-2xl bg-navy sm:aspect-[16/9] lg:aspect-[21/9]">

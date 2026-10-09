@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ArrowRight, ChevronRight, Clock, MapPin, Route, Tag, Users } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { planHref } from '$lib/planner/plan-href';
 	import { formatPrice } from '$lib/safari-pricing';
 	import { durationLabel, groupSizeLabel } from '$lib/tour-itinerary';
 	import type { TourDetail } from '$lib/types/api';
@@ -60,7 +61,7 @@
 			</ul>
 			{#if canEnquire || hasPrices}
 				<div data-motion="hero" data-motion-delay="0.24" class="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-					{#if canEnquire}<Button variant="safari" href="#request-quote" onclick={onEnquire} class="h-12 rounded-lg px-6 text-sm font-bold">Enquire about this safari <ArrowRight class="ml-1" /></Button>{/if}
+					{#if canEnquire}<Button variant="safari" href={planHref({ tour: tour.slug, from: 'tour_page' })} data-cta="plan_my_trip" data-cta-location="tour_page" onclick={onEnquire} class="h-12 rounded-lg px-6 text-sm font-bold">Enquire about this safari <ArrowRight class="ml-1" /></Button>{/if}
 					{#if hasPrices}<Button href="#prices" variant="outline" class="h-12 rounded-lg border-white bg-transparent px-6 text-sm font-semibold text-white hover:bg-white/10 hover:text-white">See prices</Button>{/if}
 				</div>
 			{/if}

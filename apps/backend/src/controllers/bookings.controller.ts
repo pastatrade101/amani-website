@@ -161,7 +161,7 @@ export const createBooking = asyncHandler(async (req, res) => {
     entityType: 'booking_requests',
     entityId: String(created.id),
     phone: String(created.phone ?? ''),
-    message: `Hi ${String(created.full_name ?? 'there').split(' ')[0]} 👋\n\nThank you for your enquiry with Goldfinch Adventures.\nYour reference is ${String(created.booking_code ?? '')}.\n\nOur travel team will assist you here on WhatsApp.`,
+    message: `Hi ${String(created.full_name ?? 'there').split(' ')[0]} 👋\n\nThank you for your enquiry with Key2africa Safaris.\nYour reference is ${String(created.booking_code ?? '')}.\n\nOur travel team will assist you here on WhatsApp.`,
     templateKey: 'inquiry_received',
     templateParameters: [String(created.full_name ?? 'there').split(' ')[0], String(created.booking_code ?? '')],
     dedupeKey: `lead_created:${created.id}`

@@ -11,6 +11,9 @@
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { textContent } from '$lib/home-content';
 	import type { HomepageSection } from '$lib/types/api';
+	import { trackEvent } from '$lib/admin/analytics';
+	import { campaignTags, lastCta } from '$lib/tracking/attribution';
+	import { newTransactionId } from '$lib/tracking/data-layer';
 	// The result of the shared `enquire` action ($lib/server/enquiry), from whichever page hosts the form.
 	type EnquiryField = 'full_name' | 'email' | 'phone' | 'message' | 'travel_date' | 'travelers' | 'interest';
 	type EnquiryResult = { success?: boolean; message?: string; values?: Partial<Record<EnquiryField, string>> | null } | null | undefined;
@@ -20,6 +23,9 @@
 	let travelerCount = $state('2');
 	let calendarOpen = $state(false);
 	const dateFormat = new DateFormatter('en', { dateStyle: 'medium' });
+	// The lead, once the server has it: generate_lead in Google with lead_source
+	// enquiry_form. Only the form's name and campaign tags, never what was typed.
+	const enquirySent = () => trackEvent('form_submitted', { form_name: 'enquiry_form', form_type: 'enquiry', lead_type: 'enquiry_form', lead_source: 'enquiry_form', transaction_id: newTransactionId() }, { cta_clicked: lastCta(), ...campaignTags() });
 	$effect(() => {
 		try { travelDate = form?.values?.travel_date ? parseDate(form.values.travel_date) : undefined; } catch { travelDate = undefined; }
 		travelerCount = form?.values?.travelers || '2';
@@ -31,7 +37,7 @@
 			<div class="mt-8 grid gap-5 text-sm"><p class="flex items-center gap-3"><MapPin class="size-5" /> Local knowledge, personal attention</p><p class="flex items-center gap-3"><Compass class="size-5" /> A journey shaped around your interests</p><p class="flex items-center gap-3"><Check class="size-5" /> An enquiry, with no obligation to book</p></div>
 			<img src="/images/itinerary-game-drive.jpg" alt="A safari vehicle on a Tanzania game drive" loading="lazy" class="mt-9 h-44 w-full max-w-md rounded-2xl object-cover" />
 		</div>
-		<form data-motion="reveal" data-motion-delay="0.12" method="POST" action="?/enquire#request-quote" use:enhance={() => { sending = true; return async ({ update, result }) => { try { await update({ reset: result.type === 'success' && result.data?.success === true, invalidateAll: false }); } finally { sending = false; } }; }} class="enquiry-form grid gap-5 rounded-2xl border border-border bg-white p-6 shadow-[0_20px_60px_-30px_rgba(16,45,65,.2)] sm:p-8">
+		<form data-motion="reveal" data-motion-delay="0.12" method="POST" action="?/enquire#request-quote" use:enhance={() => { sending = true; return async ({ update, result }) => { try { const sent = result.type === 'success' && result.data?.success === true; await update({ reset: sent, invalidateAll: false }); if (sent) enquirySent(); } finally { sending = false; } }; }} class="enquiry-form grid gap-5 rounded-2xl border border-border bg-white p-6 shadow-[0_20px_60px_-30px_rgba(16,45,65,.2)] sm:p-8">
 			<div class="mb-1"><h3 class="text-xl font-semibold tracking-tight">Your journey starts here</h3><p class="mt-2 text-xs leading-6 text-muted-foreground">A few details are all we need to start planning together.</p></div>
 			{#if form?.message}<p role={form.success ? 'status' : 'alert'} class={`rounded-xl p-4 text-sm leading-6 ${form.success ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-900'}`}>{form.message}</p>{/if}
 			<div class="grid gap-5 sm:grid-cols-2"><div class="grid gap-2"><Label for="full-name">Your name</Label><Input id="full-name" name="full_name" autocomplete="name" required minlength={2} maxlength={150} value={form?.values?.full_name ?? ''} placeholder="Full name" class="h-11" /></div><div class="grid gap-2"><Label for="email">Email address</Label><Input id="email" name="email" type="email" autocomplete="email" required maxlength={254} value={form?.values?.email ?? ''} placeholder="you@example.com" class="h-11" /></div></div>

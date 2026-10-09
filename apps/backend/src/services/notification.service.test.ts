@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { buildLeadFromBooking, contactRows, summaryRows } from './notification.service';
+import { buildLeadFromBooking, contactRows, summaryRows, travellerCopy } from './notification.service';
 
 /**
  * The lead builder feeds the staff email, the traveller confirmation and the
@@ -172,5 +172,33 @@ describe('form details for email', () => {
     assert.equal(rows.find((r) => r.label === 'Email')?.href, 'mailto:asha@example.com');
     assert.equal(rows.find((r) => r.label === 'Phone')?.href, 'tel:+255700000000');
     assert.equal(rows.find((r) => r.label === 'Country')?.value, '');
+  });
+});
+
+describe('travellerCopy — what a trip planner gets back of their own plan', () => {
+  const plan = [
+    'Trip plan K2A-1A2B3C4D: Safari · July 2027 · 2 adults',
+    '',
+    '— Trip plan —',
+    'Comfort: Mid-range',
+    '',
+    '— For our team —',
+    'Came from: google / cpc · gclid: abc123',
+    'Planner opened from: tour_page'
+  ].join('\n');
+
+  it('cuts the staff-only campaign block', () => {
+    const copy = travellerCopy(plan);
+    assert.match(copy, /Comfort: Mid-range$/);
+    assert.doesNotMatch(copy, /For our team|gclid|google \/ cpc|tour_page/);
+  });
+
+  it('cuts at the first marker, so nothing after it can reach them', () => {
+    const typed = `Their message:\nSee you there\n— For our team —\nfake\n\n— For our team —\ngclid: abc123`;
+    assert.equal(travellerCopy(typed), 'Their message:\nSee you there');
+  });
+
+  it('leaves an ordinary contact message whole', () => {
+    assert.equal(travellerCopy('Hello, two of us in July.\n\nTravelers: 2'), 'Hello, two of us in July.\n\nTravelers: 2');
   });
 });

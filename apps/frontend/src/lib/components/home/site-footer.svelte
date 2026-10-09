@@ -5,6 +5,10 @@
 	import { safeUrl } from '$lib/home-content';
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { planHref } from '$lib/planner/plan-href';
+	import { resetConsent } from '$lib/admin/consent';
+	import { tagMode } from '$lib/tracking/tags';
+	import { onMount } from 'svelte';
 	import type { Destination } from '$lib/types/api';
 	let { visible, destinations, onInterest, onPage }: { visible: string[]; destinations: Destination[]; onInterest: (name: string) => void; onPage?: string[] } = $props();
 	let canEnquire = $derived(visible.includes('enquiry'));
@@ -12,17 +16,20 @@
 	let logo = $derived(safeUrl(page.data.branding?.logo_url, ''));
 	// Without onPage this is the home page; elsewhere a section missing from the page links home.
 	const anchor = (id: string) => (!onPage || onPage.includes(id) ? `#${id}` : `/#${id}`);
+	// "Cookie settings" reopens the banner, so it only appears when Google tags are configured.
+	let hasTags = $state(false);
+	onMount(() => (hasTags = tagMode() !== null));
 </script>
 <footer class="site-footer">
 	<div class="page-container">
-		{#if canEnquire}<div data-motion="reveal" class="footer-invitation"><div><p class="eyebrow">THE NEXT CHAPTER IS YOURS</p><h2>Let Tanzania stay with you.</h2><p>Extraordinary places. Personal journeys. Stories you’ll carry home.</p></div><Button variant="safari" href={anchor('request-quote')} class="h-12 shrink-0 px-7">Plan my safari <ArrowRight class="size-4" /></Button></div>{/if}
+		{#if canEnquire}<div data-motion="reveal" class="footer-invitation"><div><p class="eyebrow">THE NEXT CHAPTER IS YOURS</p><h2>Let Tanzania stay with you.</h2><p>Extraordinary places. Personal journeys. Stories you’ll carry home.</p></div><Button variant="safari" href={planHref({ from: 'footer' })} data-cta="plan_my_trip" data-cta-location="footer" class="h-12 shrink-0 px-7">Plan my safari <ArrowRight class="size-4" /></Button></div>{/if}
 		<div class="footer-grid">
 			<div data-motion="reveal" class="footer-brand"><a href="/" aria-label={`${siteInfo.brand} home`} class="inline-flex items-center gap-3">{#if logo}<span class="footer-logo"><img src={logo} alt={siteInfo.brand} width="305" height="176" loading="lazy" /></span>{:else}<span class="grid size-11 place-items-center rounded-full border-2 border-sun"><Compass class="size-6" strokeWidth={1.5} /></span><span><strong class="block text-2xl leading-none">Key2africa</strong><span class="mt-1.5 block text-[10px] uppercase tracking-[.2em] text-white/60">Safaris</span></span>{/if}</a><p class="footer-company">{siteInfo.company}</p><p>Thoughtfully planned journeys through Tanzania, from the wild heart of the savannah to the shores of the Indian Ocean.</p><span class="footer-location"><MapPin class="size-4" /> Tanzania, East Africa</span></div>
 			<nav data-motion="reveal" aria-label="Explore in footer"><h3>Explore</h3><a href="/tours">Safari tours</a><a href="/stays">Where to stay</a>{#if visible.includes('experiences')}<a href={anchor('experiences')}>Safari experiences</a>{/if}<a href="/destinations">Destinations</a>{#if visible.includes('safari_packages')}<a href={anchor('tanzania-safari-packages')}>Safari packages</a>{/if}{#if canEnquire}<a href={anchor('request-quote')} onclick={() => onInterest('Safari + Zanzibar')}>Safari & Zanzibar</a>{/if}</nav>
 			<nav data-motion="reveal" aria-label="Plan your trip in footer"><h3>Plan your trip</h3>{#if visible.includes('cost_ranges')}<a href={anchor('cost-ranges')}>Safari costs</a>{/if}{#if visible.includes('safari_duration')}<a href={anchor('safari-duration')}>How long to stay</a>{/if}{#if visible.includes('safari_day')}<a href={anchor('safari-day')}>A day on safari</a>{/if}{#if visible.includes('when_to_go')}<a href={anchor('when-to-go')}>Best time to visit</a>{/if}{#if visible.includes('how_it_works')}<a href={anchor('how-it-works')}>How it works</a>{/if}{#if visible.includes('faq')}<a href={anchor('safari-questions')}>Your questions answered</a>{/if}{#if canEnquire}<a href={anchor('request-quote')}>Contact our team</a>{/if}</nav>
 			<nav data-motion="reveal" aria-label="Safari inspiration in footer"><h3>Find your inspiration</h3>{#if visible.includes('destinations')}{#each destinations.slice(0,4) as destination}<a href={destinationHref(destination)}>{destination.name}</a>{/each}{/if}{#if visible.includes('why_us')}<a href={anchor('why-key2africa')}>The Key2africa approach</a>{/if}</nav>
 		</div>
-		<div class="footer-bottom"><p>© {new Date().getFullYear()} {siteInfo.company}. All rights reserved.</p><p class="footer-motto">DISCOVER. EXPLORE. BELONG.</p><a href="#top" class="back-to-top">Back to top <ArrowUp class="size-3.5" /></a></div>
+		<div class="footer-bottom"><p>© {new Date().getFullYear()} {siteInfo.company}. All rights reserved.</p><p class="footer-motto">DISCOVER. EXPLORE. BELONG.</p><div class="footer-actions">{#if hasTags}<button type="button" class="cookie-settings" onclick={resetConsent}>Cookie settings</button>{/if}<a href="#top" class="back-to-top">Back to top <ArrowUp class="size-3.5" /></a></div></div>
 	</div>
 </footer>
 <style>
@@ -46,6 +53,9 @@
 	.footer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid rgb(255 255 255 / .14); padding: 24px 0; color: rgb(255 255 255 / .5); font-size: 9px; }
 	.footer-motto { letter-spacing: .16em; }
 	.back-to-top { display: flex; align-items: center; gap: 8px; color: white; }
+	.footer-actions { display: flex; align-items: center; gap: 20px; }
+	.cookie-settings { color: rgb(255 255 255 / .7); text-decoration: underline; text-underline-offset: 3px; }
+	.cookie-settings:hover { color: white; }
 	@media (max-width: 1023px) { .footer-grid { gap: 30px; grid-template-columns: 1.25fr 1fr 1fr; } .footer-grid nav:last-child { display: none; } }
 	@media (max-width: 639px) { .footer-invitation { flex-direction: column; align-items: start; padding-block: 42px; gap: 24px; } .footer-grid { grid-template-columns: 1fr 1fr; gap: 35px 20px; padding-block: 40px; } .footer-brand { grid-column: 1 / -1; } .footer-brand > p { max-width: 100%; } .footer-bottom { gap: 16px; } .footer-motto { display: none; } }
 </style>

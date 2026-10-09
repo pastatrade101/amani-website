@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ArrowRight, Compass, ExternalLink, MapPin } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { planHref } from '$lib/planner/plan-href';
 	import { mapUrl, nightlyRate, stayCoordinates, stayStyleLabel, stayTypeLabel } from '$lib/stay-content';
 	import type { StayDetail } from '$lib/types/api';
 
@@ -25,7 +26,7 @@
 			{#if coordinates}<li><a href={mapUrl(coordinates)} target="_blank" rel="noopener noreferrer" class="map-link"><MapPin class="size-4" aria-hidden="true" />View on the map<ExternalLink class="ml-auto size-3.5" aria-hidden="true" /><span class="sr-only"> (opens Google Maps in a new tab)</span></a></li>{/if}
 		</ul>
 	{/if}
-	{#if canEnquire}<Button variant="safari" href="#request-quote" onclick={onEnquire} class="mt-6 h-12 w-full rounded-full text-sm">Enquire about this stay <ArrowRight class="size-4" /></Button>{/if}
+	{#if canEnquire}<Button variant="safari" href={planHref({ stay: stay.slug, from: 'stay_page' })} data-cta="plan_my_trip" data-cta-location="stay_page" onclick={onEnquire} class="mt-6 h-12 w-full rounded-full text-sm">Enquire about this stay <ArrowRight class="size-4" /></Button>{/if}
 	{#if tours}<a href="#safaris" class="mt-4 block text-center text-sm text-muted-foreground underline decoration-border decoration-2 underline-offset-4 hover:text-navy hover:decoration-sun">Included on {tours} {tours === 1 ? 'safari' : 'safaris'}</a>{/if}
 </aside>
 

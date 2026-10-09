@@ -5,16 +5,69 @@ import { cleanSearch, getPagination, getQueryString, paginationMeta } from '../u
 import { getRecordById, softDeleteRecord } from '../utils/supabase-helpers';
 import { notifyContactMessage } from '../services/notification.service';
 
+type ContactSource = 'contact_form' | 'plan_my_trip';
+
+/**
+ * Splits the request into the row to insert and the fields that only steer the
+ * emails. contact_messages has no columns for source, reference or the
+ * captcha token, so leaving any of them in would fail the insert.
+ */
+export const splitContactBody = (body: Record<string, unknown>) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { source, reference, captcha_token, ...row } = body;
+  return {
+    row,
+    source: (source === 'plan_my_trip' ? 'plan_my_trip' : 'contact_form') as ContactSource,
+    reference: typeof reference === 'string' ? reference : ''
+  };
+};
+
+/** How long a resent trip plan counts as the same request. */
+export const DUPLICATE_WINDOW_MS = 30 * 60 * 1000;
+
+const likeEscape = (value: string) => value.replace(/[\\%_]/g, '\\$&');
+
+/**
+ * A trip plan already saved under this reference. The planner sends one
+ * reference per page load, so a second send (a double tap, a retry after a
+ * slow network) finds the first row instead of emailing everyone twice. Not
+ * race-proof — there is no unique column to lean on — but it catches the
+ * retries that actually happen.
+ */
+export const findRecentPlan = async (email: string, reference: string, now = Date.now(), client = supabase) => {
+  if (!email || !reference) return null;
+  const { data } = await client
+    .from('contact_messages')
+    .select('id')
+    .ilike('email', likeEscape(email))
+    .ilike('subject', `%${likeEscape(reference)}%`)
+    .gte('created_at', new Date(now - DUPLICATE_WINDOW_MS).toISOString())
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data as Record<string, unknown> | null) ?? null;
+};
+
 export const createContactMessage = asyncHandler(async (req, res) => {
+  const { row, source, reference } = splitContactBody(req.body as Record<string, unknown>);
+
+  if (reference) {
+    const existing = await findRecentPlan(String(row.email ?? ''), reference);
+    // Only the id and reference: anyone holding an email and a reference could
+    // resend them, and must not get the stored enquiry back.
+    if (existing) return sendSuccess(res, 'Contact message already received.', { id: existing.id, reference }, 201);
+  }
+
   const { data, error } = await supabase
     .from('contact_messages')
-    .insert({ ...req.body, status: 'new' })
+    .insert({ ...row, status: 'new' })
     .select('*')
     .single();
 
   if (error) throw new AppError('Unable to submit contact message.', 500, [error]);
   // Fire-and-forget: the message is saved, and email must never fail the form.
-  void notifyContactMessage(data as Record<string, unknown>);
+  void notifyContactMessage(data as Record<string, unknown>, { source, reference });
   return sendSuccess(res, 'Contact message submitted successfully.', data, 201);
 });
 

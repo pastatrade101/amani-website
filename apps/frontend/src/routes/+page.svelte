@@ -4,6 +4,7 @@
 	import { guideSections } from '$lib/homepage-guides';
 	import { ArrowRight } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { planHref } from '$lib/planner/plan-href';
 	import SiteHeader from '$lib/components/home/site-header.svelte';
 	import WhyKey2africa from '$lib/components/home/why-key2africa.svelte';
 	import Planning from '$lib/components/home/planning.svelte';
@@ -83,7 +84,7 @@
 						{:else}
                             <div data-motion="image" class="col-span-full grid overflow-hidden rounded-2xl border border-border bg-white md:grid-cols-2">
                                 <img src="/images/tanzania-hero-3.jpg" alt="Hot air balloons drifting over the Serengeti at sunrise" loading="lazy" class="h-60 w-full object-cover md:h-full md:min-h-80" />
-                                <div class="flex flex-col items-start justify-center p-7 md:p-10"><span class="eyebrow text-muted-foreground">MADE AROUND YOU</span><h3 class="mt-4 max-w-md text-2xl font-semibold tracking-tight md:text-3xl">{data.toursUnavailable ? 'Your safari starts with a conversation' : 'No safaris match your search yet'}</h3><p class="mt-4 max-w-md text-sm leading-7 text-muted-foreground">{data.toursUnavailable ? 'We can’t display our published itineraries right now. Share the places and experiences on your wish list, and let’s plan a personal Tanzania journey.' : 'Try a different destination or style, or let us create a trip around your interests.'}</p>{#if visible.includes('enquiry')}<Button variant="safari" href="#request-quote" class="mt-6 h-12 px-6">Create my safari <ArrowRight class="size-4" /></Button>{/if}</div>
+                                <div class="flex flex-col items-start justify-center p-7 md:p-10"><span class="eyebrow text-muted-foreground">MADE AROUND YOU</span><h3 class="mt-4 max-w-md text-2xl font-semibold tracking-tight md:text-3xl">{data.toursUnavailable ? 'Your safari starts with a conversation' : 'No safaris match your search yet'}</h3><p class="mt-4 max-w-md text-sm leading-7 text-muted-foreground">{data.toursUnavailable ? 'We can’t display our published itineraries right now. Share the places and experiences on your wish list, and let’s plan a personal Tanzania journey.' : 'Try a different destination or style, or let us create a trip around your interests.'}</p>{#if visible.includes('enquiry')}<Button variant="safari" href={planHref({ from: 'home_tours' })} data-cta="plan_my_trip" data-cta-location="home_tours" class="mt-6 h-12 px-6">Create my safari <ArrowRight class="size-4" /></Button>{/if}</div>
                             </div>
 						{/each}
 					</div>

@@ -13,6 +13,7 @@
   import { destinationHref, destinationImage } from '$lib/destination-content';
   import { safeUrl, textContent } from '$lib/home-content';
   import { siteInfo } from '$lib/site-info';
+  import { planHref } from '$lib/planner/plan-href';
   import type { PageProps } from './$types';
   let {data,form}:PageProps=$props();
   let interest=$state('Help me choose a destination');
@@ -42,7 +43,7 @@
     <DestinationImage urls={[hero,data.featured?.main_image_url,data.featured?.image_url]} alt={data.featured?.name||'Discover our destinations'} fallback="/images/tanzania-hero-2.jpg" hero/>
     <div class="page-container destination-hero-inner">
       <nav aria-label="Breadcrumb" class="destination-breadcrumb"><a href="/">Home</a><ChevronRight size={12}/><span aria-current="page">Destinations</span></nav>
-      <div class="destination-hero-main"><div class="destination-hero-copy"><p class="eyebrow">{content?.subtitle||'THE PLACES THAT STAY WITH YOU'}</p><h1>{title}</h1><p class="destination-hero-description">{description}</p><div class="destination-hero-actions"><Button href="#destination-results" variant="safari">Explore destinations <ArrowDown size={16}/></Button>{#if enquiry}<Button href="#request-quote" variant="outline" class="border-white/60 bg-transparent text-white hover:bg-white/10 hover:text-white">Help me choose <ArrowUpRight size={16}/></Button>{/if}</div></div>
+      <div class="destination-hero-main"><div class="destination-hero-copy"><p class="eyebrow">{content?.subtitle||'THE PLACES THAT STAY WITH YOU'}</p><h1>{title}</h1><p class="destination-hero-description">{description}</p><div class="destination-hero-actions"><Button href="#destination-results" variant="safari">Explore destinations <ArrowDown size={16}/></Button>{#if enquiry}<Button href={planHref({from:'destinations'})} data-cta="plan_my_trip" data-cta-location="destinations" variant="outline" class="border-white/60 bg-transparent text-white hover:bg-white/10 hover:text-white">Help me choose <ArrowUpRight size={16}/></Button>{/if}</div></div>
       {#if data.featured}<a class="destination-featured" href={destinationHref(data.featured)}><p>Your next discovery</p><strong>{data.featured.name}</strong><span>{data.featured.region||data.featured.country}<ArrowUpRight size={19}/></span></a>{/if}</div>
     </div>
   </section>
@@ -60,7 +61,7 @@
     {:else}<div class="destination-empty"><h2>{data.unavailable?'Your next journey is still out there.':'Let’s try a different direction.'}</h2><p>{data.unavailable?'We couldn’t load our destination collection. Please try again shortly, or ask our team for ideas.':'No destinations match this view. Clear the filters to explore all our published places.'}</p><Button href="/destinations#destination-results" variant="outline">{data.unavailable?'Try again':'See all destinations'}</Button></div>{/if}
     {#if data.pageCount>1}<nav class="mt-10 flex items-center justify-center gap-4" aria-label="Destination pages"><Button href={href(data.page-1)} disabled={data.page<=1} variant="outline">Previous</Button><span class="text-xs">Page {data.page} of {data.pageCount}</span><Button href={href(data.page+1)} disabled={data.page>=data.pageCount} variant="outline">Next</Button></nav>{/if}
   </section>
-  {#if enquiry}<section class="page-container pb-16"><div class="destination-cta"><div><p class="eyebrow">BETTER TOGETHER</p><h2>A journey is more than one destination.</h2><p>Tell us what you love. We’ll help connect the places, experiences and stays into a route that feels right for you.</p></div><Button href="#request-quote" variant="safari">Build my journey <ArrowRight size={17}/></Button></div></section><Enquiry section={enquiry} {form} {interest}/>{/if}
+  {#if enquiry}<section class="page-container pb-16"><div class="destination-cta"><div><p class="eyebrow">BETTER TOGETHER</p><h2>A journey is more than one destination.</h2><p>Tell us what you love. We’ll help connect the places, experiences and stays into a route that feels right for you.</p></div><Button href={planHref({from:'destinations'})} data-cta="plan_my_trip" data-cta-location="destinations" variant="safari">Build my journey <ArrowRight size={17}/></Button></div></section><Enquiry section={enquiry} {form} {interest}/>{/if}
 </main>
 <SiteFooter visible={chrome.visible} destinations={chrome.destinations} onInterest={chooseInterest} {onPage}/>
 <style>

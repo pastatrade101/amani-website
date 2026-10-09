@@ -8,6 +8,7 @@
 	import TourCard from '$lib/components/tours/tour-card.svelte';
 	import SavedTours from '$lib/components/tours/saved-tours.svelte';
 	import { siteInfo } from '$lib/site-info';
+	import { planHref } from '$lib/planner/plan-href';
 	import { tourPhotos } from '$lib/home-content';
 	import type { PageProps } from './$types';
 
@@ -116,7 +117,7 @@
 							<h3 class="mt-4 max-w-md text-2xl font-semibold tracking-tight md:text-3xl">{data.toursUnavailable ? 'Your safari starts with a conversation' : filtered ? 'No safaris match your search yet' : 'New itineraries are on their way'}</h3>
 							<p class="mt-4 max-w-md text-sm leading-7 text-muted-foreground">{data.toursUnavailable ? 'We can’t display our published itineraries right now. Share the places and experiences on your wish list, and let’s plan a personal Tanzania journey.' : filtered ? 'Try a different destination or style, or let us create a trip around your interests.' : 'Tell us the places and experiences on your wish list, and we’ll plan a Tanzania journey around them.'}</p>
 							<div class="mt-6 flex flex-wrap gap-3">
-								{#if enquiry}<Button variant="safari" href="#request-quote" class="h-12 px-6">Create my safari <ArrowRight class="size-4" /></Button>{/if}
+								{#if enquiry}<Button variant="safari" href={planHref({ from: 'tours' })} data-cta="plan_my_trip" data-cta-location="tours" class="h-12 px-6">Create my safari <ArrowRight class="size-4" /></Button>{/if}
 								{#if filtered}<Button variant="outline" href="/tours#tour-results" class="h-12 px-6">See all tours</Button>{/if}
 							</div>
 						</div>

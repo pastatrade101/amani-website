@@ -8,6 +8,7 @@
 	import StaySearch from '$lib/components/stays/stay-search.svelte';
 	import StayStyles from '$lib/components/stays/stay-styles.svelte';
 	import { siteInfo } from '$lib/site-info';
+	import { planHref } from '$lib/planner/plan-href';
 	import { destinationPhoto } from '$lib/home-content';
 	import { hasStayFilters, STAY_STYLES, staysHref, stayTypeLabel, type StayFilters } from '$lib/stay-content';
 	import type { PageProps } from './$types';
@@ -89,7 +90,7 @@
 				<p data-motion="hero" data-motion-delay="0.16" class="mt-5 max-w-xl text-sm leading-[1.9] text-white/85 md:text-base">Lodges and tented camps for every style of safari, from simple bush camps to the most exclusive hideaways. Find yours, then see the safaris that stay there.</p>
 				<div data-motion="hero" data-motion-delay="0.24" class="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
 					<Button variant="safari" href="#stay-styles" class="h-12 rounded-lg px-6 text-sm">Choose your style <ArrowDown class="size-4" /></Button>
-					{#if enquiry}<Button href="#request-quote" variant="outline" onclick={() => chooseInterest('Help choosing where to stay')} class="h-12 rounded-lg border-white bg-transparent px-6 text-sm font-semibold text-white hover:bg-white/10 hover:text-white">Ask us where to stay</Button>{/if}
+					{#if enquiry}<Button href={planHref({ from: 'stays' })} data-cta="plan_my_trip" data-cta-location="stays" variant="outline" class="h-12 rounded-lg border-white bg-transparent px-6 text-sm font-semibold text-white hover:bg-white/10 hover:text-white">Ask us where to stay</Button>{/if}
 				</div>
 			</div>
 		</div>
@@ -126,7 +127,7 @@
 							<h3 class="mt-4 max-w-md text-2xl font-semibold tracking-tight md:text-3xl">{data.staysUnavailable ? 'We’ll help you choose where to stay' : pastTheEnd ? 'There are no more stays on this page' : filtered ? 'No stays match your search yet' : 'Our lodges and camps are on their way'}</h3>
 							<p class="mt-4 max-w-md text-sm leading-7 text-muted-foreground">{data.staysUnavailable ? 'We can’t show our lodges and camps right now. Tell us the comfort and places you have in mind, and we’ll suggest where to stay.' : pastTheEnd ? 'This page is past the end of the list. Start again from the first page.' : filtered ? 'Try another destination, style or type, or tell us what you have in mind and we’ll suggest where to stay.' : 'We’re adding the places our safaris stay. Tell us the comfort you’d like, and we’ll suggest the right lodges and camps for your trip.'}</p>
 							<div class="mt-6 flex flex-wrap gap-3">
-								{#if enquiry}<Button variant="safari" href="#request-quote" onclick={() => chooseInterest('Help choosing where to stay')} class="h-12 px-6">Ask us where to stay <ArrowRight class="size-4" /></Button>{/if}
+								{#if enquiry}<Button variant="safari" href={planHref({ from: 'stays' })} data-cta="plan_my_trip" data-cta-location="stays" class="h-12 px-6">Ask us where to stay <ArrowRight class="size-4" /></Button>{/if}
 								{#if pastTheEnd}<Button variant="outline" href={pageHref(1)} class="h-12 px-6">Go to the first page</Button>{:else if filtered}<Button variant="outline" href="/stays#stay-results" class="h-12 px-6">See all stays</Button>{/if}
 							</div>
 						</div>

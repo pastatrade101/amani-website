@@ -1,11 +1,17 @@
 import { browser } from '$app/environment';
 import { API_URL } from '$lib/admin/config/env';
 import { getConsent } from '$lib/admin/consent';
+import { captureVisit, safeCampaignValue, visitDetails } from '$lib/tracking/attribution';
+import { sendToGoogle, pushEvent } from '$lib/tracking/data-layer';
+import { debugOn, isProdHost } from '$lib/tracking/host';
 
 // ----------------------------------------------------------------------------
 // Analytics — one place for both layers.
-//   1) GA4 (gtag): fires window.gtag if present. Consent-gated + PII-free.
+//   1) Google: GTM's dataLayer or a direct gtag.js, whichever is configured
+//      ($lib/tracking/data-layer), never both. Consent-gated + PII-free.
 //   2) First-party backend: POST /api/analytics/events (fire-and-forget).
+// Both send only from the live site ($lib/tracking/host): the dev server
+// shares the production database, so its traffic must never be counted.
 //
 // Design rules:
 //   • NEVER send names / emails / phones / WhatsApp numbers / trip notes / form
@@ -79,7 +85,10 @@ const SAFE_KEYS = [
   'form_name', 'method', 'error_type', 'error_code',
   // Enquiry-form context. Deliberately no name, email, phone or free text —
   // SAFE_KEYS is the boundary that keeps contact details out of GA4.
-  'form_type', 'step_index', 'step_key', 'field_name', 'category_id', 'category_name', 'tour_slug'
+  'form_type', 'step_index', 'step_key', 'field_name', 'category_id', 'category_name', 'tour_slug',
+  // Lead and click context: a channel name, a place on the page, a path. Never the
+  // K2A reference: it is stored with the traveller's contact details.
+  'lead_source', 'form_location', 'link_url'
 ] as const;
 
 type SafeKey = (typeof SAFE_KEYS)[number];
@@ -88,7 +97,7 @@ export type EventMeta = Partial<Record<SafeKey, string | number | null | undefin
   metadata?: Record<string, unknown>;
 };
 
-const SESSION_KEY = 'gf_sid';
+const SESSION_KEY = 'k2a_sid';
 
 const getSessionId = (): string => {
   if (!browser) return '';
@@ -113,18 +122,20 @@ const deviceType = (): 'mobile' | 'tablet' | 'desktop' => {
   return 'desktop';
 };
 
-const hasGtag = (): ((...args: unknown[]) => void) | null => {
-  const w = window as unknown as { gtag?: (...args: unknown[]) => void };
-  return typeof w.gtag === 'function' ? w.gtag : null;
-};
-
-// A page URL with the query string dropped — the site never puts PII in the
-// path, but query params (search terms, ids) can, so GA4/first-party only ever
-// see the clean pathname. Campaign (utm/gclid) attribution is captured by GA4
-// from the initial landing URL, so nothing is lost by stripping it here.
+// A page URL without its query string, except the campaign tags (cleaned): GA4
+// reads a visit's source from the landing page's utm/gclid, so dropping them
+// would file paid and campaign traffic as direct. Other query params (search
+// terms, ids) can carry personal data and never leave the page.
+const PAGE_CAMPAIGN_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'gbraid', 'wbraid', 'srsltid'];
 export const cleanLocation = (): string => {
   if (!browser) return '';
-  return `${window.location.origin}${window.location.pathname}`;
+  const kept = new URLSearchParams();
+  for (const key of PAGE_CAMPAIGN_KEYS) {
+    const value = safeCampaignValue(key, new URLSearchParams(window.location.search).get(key));
+    if (value) kept.set(key, value);
+  }
+  const query = kept.toString();
+  return `${window.location.origin}${window.location.pathname}${query ? `?${query}` : ''}`;
 };
 
 // Search terms are the one field a visitor could paste anything into — never
@@ -146,17 +157,24 @@ const safeParams = (meta: EventMeta): Record<string, string | number> => {
   return out;
 };
 
-// Low-level emit: GA4 (recommended name + safe params) + first-party (own name).
-const emit = (name: AnalyticsEventName, meta: EventMeta): void => {
+/** Extra Google-only parameters (campaign tags on a lead). Never personal data. */
+export type GoogleExtras = Record<string, string | number | null | undefined>;
+
+// Low-level emit: Google (recommended name + safe params) + first-party (own name).
+const emit = (name: AnalyticsEventName, meta: EventMeta, google: GoogleExtras = {}): void => {
   if (!browser) return;
   if (getConsent() === 'denied') return; // explicit decline → nothing at all
   try {
     const params = safeParams(meta);
 
-    // 1) GA4 — only when gtag is loaded (which only happens after 'granted').
-    const gtag = hasGtag();
-    if (gtag) gtag('event', GA4_EVENT_MAP[name] ?? name, params);
+    // 1) Google: GTM or gtag.js (data-layer decides, and checks consent and host).
+    const googleName = GA4_EVENT_MAP[name] ?? name;
+    // A lead says which channel it came through, for the GA4 per-channel split.
+    const lead = googleName === 'generate_lead' ? { lead_source: params.lead_source ?? params.lead_type } : {};
+    sendToGoogle(googleName, { ...params, ...lead, ...google });
 
+    if (debugOn()) console.info('[analytics] first-party', name, params);
+    if (!isProdHost()) return;
     // 2) First-party backend — fire-and-forget, keepalive for unload safety.
     const payload: Record<string, unknown> = {
       event_name: name,
@@ -179,13 +197,15 @@ const emit = (name: AnalyticsEventName, meta: EventMeta): void => {
 };
 
 /** Generic event helper (backward compatible). Prefer the typed helpers below. */
-export const trackEvent = (eventName: AnalyticsEventName, meta: EventMeta = {}): void => emit(eventName, meta);
+export const trackEvent = (eventName: AnalyticsEventName, meta: EventMeta = {}, google: GoogleExtras = {}): void => emit(eventName, meta, google);
 
 // ── Page views ──────────────────────────────────────────────────────────────
-// GA4's config sends the initial page_view; for SPA route changes we must send
-// it ourselves. Deduped by clean path so the same URL never double-counts, and
-// stripped of query params so no search/id ever leaks into GA4.
-let lastGa4Path = '';
+// The Google tags are configured not to send their own page_view, so the root
+// layout calls this on every navigation, the first page included: GTM gets
+// virtual_page_view, a direct Google tag gets page_view. Deduped by clean path
+// so the same URL never double-counts, and stripped of query params so no
+// search/id ever leaks into Google.
+let lastGooglePath = '';
 let lastFirstPartyPath = '';
 
 export const trackPageView = (): void => {
@@ -193,17 +213,18 @@ export const trackPageView = (): void => {
   const path = window.location.pathname;
   const location = cleanLocation();
   try {
-    const gtag = hasGtag();
-    if (gtag && path !== lastGa4Path) {
-      lastGa4Path = path;
-      gtag('event', 'page_view', {
-        page_path: path,
-        page_location: location,
-        page_title: document.title,
-        page_referrer: document.referrer || undefined
-      });
+    if (path !== lastGooglePath) {
+      lastGooglePath = path;
+      // The referrer is reduced to its origin: a full URL may carry a query string.
+      let referrer = '';
+      try {
+        referrer = document.referrer ? new URL(document.referrer).origin : '';
+      } catch {
+        referrer = '';
+      }
+      pushEvent('virtual_page_view', { page_location: location, page_path: path, page_title: document.title, page_referrer: referrer });
     }
-    if (path !== lastFirstPartyPath) {
+    if (path !== lastFirstPartyPath && isProdHost()) {
       lastFirstPartyPath = path;
       void fetch(`${API_URL}/analytics/events`, {
         method: 'POST',
@@ -250,71 +271,44 @@ export const trackSearch = (meta: SearchMeta): void => {
 };
 
 // ── Session attribution (Tier 2) ─────────────────────────────────────────────
-// First-touch: on the first visit we capture UTM + external referrer and persist
-// them (localStorage), so a lead submitted later still carries the source that
-// brought the visitor. PII-free. Never throws.
-const ATTR_KEY = 'gf_attr';
-const SESSION_SENT_KEY = 'gf_session_sent';
+// Campaign tags, click ids, landing path and referrer host are kept by
+// $lib/tracking/attribution (this visit, and a first-touch copy after consent),
+// so a lead submitted later still carries the source that brought the visitor.
+// PII-free. Never throws.
+const SESSION_SENT_KEY = 'k2a_session_sent';
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const;
 
-const captureAttribution = (): Record<string, string> => {
-  const out: Record<string, string> = {};
-  try {
-    const params = new URLSearchParams(window.location.search);
-    for (const key of UTM_KEYS) {
-      const v = params.get(key);
-      if (v) out[key] = v.slice(0, 200);
-    }
-    const ref = document.referrer;
-    if (ref) {
-      try {
-        if (new URL(ref).host !== window.location.host) out.referrer = ref.slice(0, 500);
-      } catch {
-        /* malformed referrer — ignore */
-      }
-    }
-  } catch {
-    /* ignore */
-  }
-  return out;
-};
-
-const storedAttribution = (): Record<string, string> => {
-  if (!browser) return {};
-  try {
-    return JSON.parse(localStorage.getItem(ATTR_KEY) || '{}') as Record<string, string>;
-  } catch {
-    return {};
-  }
-};
-
-/** First-touch attribution + session id, to attach to a lead's lead_context. */
+/** Visit attribution + session id, to attach to a lead. */
 export const getAttribution = (): Record<string, string> => {
   const sid = getSessionId();
-  return { ...(sid ? { session_id: sid } : {}), ...storedAttribution() };
+  return { ...(sid ? { session_id: sid } : {}), ...visitDetails() };
 };
 
-/** Fire the session attribution beacon once per browser session. Never throws. */
+/** Record this landing, then fire the session beacon once per tab session. Never throws. */
 export const trackSession = (): void => {
   if (!browser) return;
-  if (getConsent() === 'denied') return;
+  const choice = getConsent();
+  if (choice === 'denied') return;
   try {
-    // First-touch: only persist attribution the first time we ever see this browser.
-    if (localStorage.getItem(ATTR_KEY) === null) {
-      localStorage.setItem(ATTR_KEY, JSON.stringify(captureAttribution()));
-    }
+    captureVisit(choice === 'granted');
+    if (!isProdHost()) return;
     // Send at most once per tab session.
     if (sessionStorage.getItem(SESSION_SENT_KEY)) return;
     sessionStorage.setItem(SESSION_SENT_KEY, '1');
 
-    const attr = storedAttribution();
+    const attr = visitDetails();
     const payload: Record<string, unknown> = {
       session_id: getSessionId(),
       device_type: deviceType(),
-      landing_path: window.location.pathname,
+      landing_path: attr.landing || window.location.pathname,
       referrer: attr.referrer ?? null
     };
     for (const key of UTM_KEYS) if (attr[key]) payload[key] = attr[key];
+    // A Google Ads click with no UTMs is still paid search.
+    if (!payload.utm_source && (attr.gclid || attr.gbraid || attr.wbraid)) {
+      payload.utm_source = 'google';
+      payload.utm_medium = 'cpc';
+    }
 
     void fetch(`${API_URL}/analytics/sessions`, {
       method: 'POST',

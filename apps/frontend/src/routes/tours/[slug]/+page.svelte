@@ -10,6 +10,7 @@
 	import TourActivities from '$lib/components/tours/tour-activities.svelte';
 	import TourGallery from '$lib/components/tours/tour-gallery.svelte';
 	import TourHero from '$lib/components/tours/tour-hero.svelte';
+	import { planHref } from '$lib/planner/plan-href';
 	import TourSectionNav from '$lib/components/tours/tour-section-nav.svelte';
 	import { destinationPhoto, safeUrl, textContent } from '$lib/home-content';
 	import { SAFARI_STYLES, stylesWithPrices, type SafariStyle } from '$lib/safari-pricing';
@@ -146,7 +147,7 @@
 						</div>
 					{/each}
 				</dl>
-				{#if canEnquire}<Button variant="safari" href="#request-quote" onclick={enquireAboutTour} class="mt-6 h-11 w-full rounded-lg text-sm">Enquire about this safari <ArrowRight class="size-4" /></Button>{/if}
+				{#if canEnquire}<Button variant="safari" href={planHref({ tour: tour.slug, from: 'tour_page' })} data-cta="plan_my_trip" data-cta-location="tour_page" onclick={enquireAboutTour} class="mt-6 h-11 w-full rounded-lg text-sm">Enquire about this safari <ArrowRight class="size-4" /></Button>{/if}
 			</aside>
 		</div>
 	</section>
@@ -168,7 +169,7 @@
 							<div class="px-2 py-6 text-center">
 								<p class="text-base font-semibold text-primary">{styleTitle(shown)} prices on request</p>
 								<p class="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">We price this style for your dates and group. Ask us for a quote.</p>
-								{#if canEnquire}<Button variant="safari" href="#request-quote" onclick={() => chooseInterest(`${tour.title} (${styleTitle(shown)})`)} class="mt-5 h-11 rounded-lg px-5 text-sm">Request a quote <ArrowRight class="size-4" /></Button>{/if}
+								{#if canEnquire}<Button variant="safari" href={planHref({ tour: tour.slug, from: 'tour_page' })} data-cta="plan_my_trip" data-cta-location="tour_page" onclick={() => chooseInterest(`${tour.title} (${styleTitle(shown)})`)} class="mt-5 h-11 rounded-lg px-5 text-sm">Request a quote <ArrowRight class="size-4" /></Button>{/if}
 							</div>
 						{/snippet}
 					</SafariPriceByGroupSize>
@@ -178,7 +179,7 @@
 					<span class="mx-auto grid size-12 place-items-center rounded-full bg-sun/25 text-primary"><CalendarRange class="size-5" aria-hidden="true" /></span>
 					<h2 class="section-heading mt-5">Prices on request</h2>
 					<p class="mx-auto mt-3 max-w-xl text-sm leading-7 text-muted-foreground">This safari is priced for your travel dates, group size and preferred comfort level. Share your plans and we’ll prepare a quote for you.</p>
-					{#if canEnquire}<Button variant="safari" href="#request-quote" onclick={enquireAboutTour} class="mt-6 h-12 rounded-lg px-6 text-sm">Request a quote <ArrowRight class="size-4" /></Button>{/if}
+					{#if canEnquire}<Button variant="safari" href={planHref({ tour: tour.slug, from: 'tour_page' })} data-cta="plan_my_trip" data-cta-location="tour_page" onclick={enquireAboutTour} class="mt-6 h-12 rounded-lg px-6 text-sm">Request a quote <ArrowRight class="size-4" /></Button>{/if}
 					<p class="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground"><Info class="size-3.5" aria-hidden="true" />An enquiry comes with no obligation to book.</p>
 				</div>
 			{/if}

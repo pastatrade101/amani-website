@@ -380,45 +380,85 @@ export const sendBookingNotification = async (booking: BookingLike): Promise<voi
   }
 };
 
+/** Where the trip planner starts the campaign details meant only for staff. */
+export const TEAM_ONLY_MARKER = '\n— For our team —';
+
 /**
- * The contact form. It used to be saved for the CMS and nothing else, so a
- * message only surfaced when someone happened to open the inbox page.
+ * What the traveller gets back of their own message: everything before the
+ * staff-only block, so campaign and click ids are never emailed to them. Cut at
+ * the first marker, so nothing after it can reach them whatever they typed.
  */
-export const notifyContactMessage = async (message: Record<string, unknown>): Promise<void> => {
+export const travellerCopy = (message: string): string => {
+  const at = message.indexOf(TEAM_ONLY_MARKER);
+  return (at === -1 ? message : message.slice(0, at)).trimEnd();
+};
+
+export type ContactNotifyOptions = { source?: 'contact_form' | 'plan_my_trip'; reference?: string };
+
+/**
+ * The contact form and the Plan my trip planner, which both save to
+ * contact_messages. Both alert the contact_form inbox, so trip plans reach the
+ * same people enquiries always have.
+ */
+export const notifyContactMessage = async (message: Record<string, unknown>, options: ContactNotifyOptions = {}): Promise<void> => {
   const name = str(message.full_name);
   const email = str(message.email);
   const subject = str(message.subject);
   const text = str(message.message);
   const firstName = name.split(/\s+/)[0] || 'there';
+  const isPlan = options.source === 'plan_my_trip';
+  const reference = str(options.reference);
   const sent: EmailDetail[] = [
+    ...(isPlan && reference ? [{ label: 'Reference', value: reference }] : []),
     { label: 'Subject', value: subject },
     { label: 'Message', value: text }
   ];
 
   await sendStaffAlert({
     source: 'contact_form',
-    subject: `Contact form — ${subject || name || 'new message'}`,
-    heading: `New message from ${name || 'the website'}`,
-    intro: `${name || 'Someone'} sent a message through the contact form.`,
+    subject: isPlan ? `Plan my trip — ${subject || name || 'new trip plan'}` : `Contact form — ${subject || name || 'new message'}`,
+    heading: isPlan ? `Trip plan from ${name || 'the website'}` : `New message from ${name || 'the website'}`,
+    intro: isPlan ? `${name || 'Someone'} sent a trip plan through Plan my trip.` : `${name || 'Someone'} sent a message through the contact form.`,
     contact: contactRows(name, email, str(message.phone)),
     details: sent,
-    detailsTitle: 'Message',
+    detailsTitle: isPlan ? 'Trip plan' : 'Message',
     replyTo: email || undefined,
     cmsPath: '/admin/messages'
   });
 
-  if (email) {
+  if (!email) return;
+  const ownCopy = travellerCopy(text);
+
+  if (isPlan) {
     await sendTravellerAcknowledgement({
       to: email,
-      subject: 'We have received your message',
+      subject: "We've got your trip plan",
       heading: `Thank you, ${firstName}`,
-      paragraphs: ['We have received your message. A member of our team will read it and get back to you soon.'],
-      details: sent,
-      detailsTitle: 'What you sent us',
-      preheader: 'Thanks for getting in touch — we have your message.',
-      text: `Thank you, ${firstName}.\n\nWe have received your message and will get back to you soon.\n\n${subject ? `Subject: ${subject}\n` : ''}${text}`
+      paragraphs: ['We have received your trip plan. A local specialist will read it and get back to you with ideas and a personalised quotation.'],
+      reference: reference || undefined,
+      details: [{ label: 'Your trip plan', value: ownCopy }],
+      detailsTitle: 'What you told us',
+      preheader: 'We have your trip plan — a local specialist will be in touch.',
+      text: `Thank you, ${firstName}.\n\nWe have received your trip plan. A local specialist will read it and get back to you.\n${
+        reference ? `\nYour reference: ${reference}\n` : ''
+      }\nWhat you told us:\n${ownCopy}`
     });
+    return;
   }
+
+  await sendTravellerAcknowledgement({
+    to: email,
+    subject: 'We have received your message',
+    heading: `Thank you, ${firstName}`,
+    paragraphs: ['We have received your message. A member of our team will read it and get back to you soon.'],
+    details: [
+      { label: 'Subject', value: subject },
+      { label: 'Message', value: ownCopy }
+    ],
+    detailsTitle: 'What you sent us',
+    preheader: 'Thanks for getting in touch — we have your message.',
+    text: `Thank you, ${firstName}.\n\nWe have received your message and will get back to you soon.\n\n${subject ? `Subject: ${subject}\n` : ''}${ownCopy}`
+  });
 };
 
 /**

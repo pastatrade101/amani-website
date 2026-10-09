@@ -27,6 +27,8 @@ export async function enquire({ request, fetch, getClientAddress }: RequestEvent
 		});
 		return { success: true, message: 'Thank you! Your enquiry has been received. Our team will be in touch.', values: null };
 	} catch (error) {
-		return fail(error instanceof ApiError && error.status === 429 ? 429 : 503, { success: false, message: error instanceof ApiError && error.status === 429 ? 'Please wait a few minutes before sending another enquiry.' : 'We couldn’t send your enquiry right now. Your details are still here; please try again shortly.', values });
+		// 428 is the backend asking for a captcha after several sends; this form has none, so it reads as "wait".
+		const waiting = error instanceof ApiError && (error.status === 429 || error.status === 428);
+		return fail(waiting ? 429 : 503, { success: false, message: waiting ? 'Please wait a few minutes before sending another enquiry.' : 'We couldn’t send your enquiry right now. Your details are still here; please try again shortly.', values });
 	}
 }
