@@ -1,3 +1,4 @@
+import { tripPointEmbeds } from '../utils/tour-trip-points';
 import { supabase } from '../config/supabase';
 import { safeAudit } from '../services/audit.service';
 import { AppError, sendSuccess } from '../utils/api-response';
@@ -9,7 +10,7 @@ import { dayImageFields, dayImages, legacyStyleFor, normaliseStays } from '../ut
 // The linked property rides along so the admin list and the day editor can
 // show it without a second call. Null for days still using free text.
 const select =
-  '*, tours(id,title,slug,duration_days,duration_nights,status,destinations!tours_destination_id_fkey(name,slug,country)), lodge:lodges!itinerary_days_accommodation_id_fkey(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations!lodges_destination_id_fkey(name))';
+  `*, tours(id,title,slug,duration_days,duration_nights,status,start_trip_point_id,end_trip_point_id,${tripPointEmbeds},destinations!tours_destination_id_fkey(name,slug,country)), lodge:lodges!itinerary_days_accommodation_id_fkey(id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url,destinations!lodges_destination_id_fkey(name))`;
 
 /**
  * This form edits one stay per day (accommodation / accommodation_id). Keep it

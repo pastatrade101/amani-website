@@ -63,8 +63,8 @@ export type TourEditorForm = {
   is_popular: boolean;
   duration_days: string;
   duration_nights: string;
-  start_location: string;
-  end_location: string;
+  start_trip_point_id: string;
+  end_trip_point_id: string;
   group_size_min: string;
   group_size_max: string;
   minimum_age: string;
@@ -79,11 +79,12 @@ export type TourEditorForm = {
   customization_intro: string;
   customization_options: string[];
   days: DayDraft[];
-  inclusions: string[];
-  exclusions: string[];
+  inclusion_ids: string[];
+  exclusion_ids: string[];
   price_from: string;
   currency: string;
   activity_ids: string[];
+  activity_settings: Record<string, { is_optional: boolean; additional_cost: boolean; pricing_option_id: string | null }>;
   main_image_url: string;
   banner_image_url: string;
   images: GalleryDraft[];
@@ -120,27 +121,6 @@ export const TRAVEL_MODES: { value: Exclude<TravelMode, ''>; label: string }[] =
 
 export const MEALS = ['Breakfast', 'Lunch', 'Dinner'] as const;
 export type Meal = (typeof MEALS)[number];
-
-/** One-click starting points; nothing is added until an editor clicks it. */
-export const INCLUSION_SUGGESTIONS = [
-  'Park entry and conservation fees',
-  'Private 4x4 safari vehicle with pop-up roof',
-  'Professional English-speaking driver-guide',
-  'Accommodation as listed in the itinerary',
-  'Meals as listed in the itinerary',
-  'Airport transfers on arrival and departure',
-  'Drinking water during game drives'
-];
-
-export const EXCLUSION_SUGGESTIONS = [
-  'International flights',
-  'Tanzania visa',
-  'Tips and gratuities',
-  'Travel insurance',
-  'Drinks not listed in the itinerary',
-  'Personal expenses such as laundry and phone calls',
-  'Optional activities not listed in the itinerary'
-];
 
 // ── Small helpers ────────────────────────────────────────────────────────────
 
@@ -370,8 +350,8 @@ export const emptyForm = (): TourEditorForm => ({
   is_popular: false,
   duration_days: '1',
   duration_nights: '',
-  start_location: '',
-  end_location: '',
+  start_trip_point_id: '',
+  end_trip_point_id: '',
   group_size_min: '',
   group_size_max: '',
   minimum_age: '',
@@ -384,11 +364,12 @@ export const emptyForm = (): TourEditorForm => ({
   customization_intro: '',
   customization_options: [''],
   days: [],
-  inclusions: [''],
-  exclusions: [''],
+  inclusion_ids: [],
+  exclusion_ids: [],
   price_from: '',
   currency: 'USD',
   activity_ids: [],
+  activity_settings: {},
   main_image_url: '',
   banner_image_url: '',
   images: [],
@@ -465,8 +446,8 @@ export const formFromTour = (tour: Tour): TourEditorForm => {
     is_popular: Boolean(tour.is_popular),
     duration_days: optionalText(tour.duration_days ?? 1),
     duration_nights: optionalText(tour.duration_nights),
-    start_location: optionalText(tour.start_location),
-    end_location: optionalText(tour.end_location),
+    start_trip_point_id: optionalText(tour.start_trip_point_id),
+    end_trip_point_id: optionalText(tour.end_trip_point_id),
     group_size_min: optionalText(tour.group_size_min),
     group_size_max: optionalText(tour.group_size_max),
     minimum_age: optionalText(tour.minimum_age),
@@ -479,10 +460,11 @@ export const formFromTour = (tour: Tour): TourEditorForm => {
     customization_intro: optionalText(tour.customization_intro),
     customization_options: listOrBlank((Array.isArray(tour.customization_options) ? tour.customization_options : []).map(String)),
     days,
-    inclusions: listOrBlank([...(tour.tour_inclusions ?? [])].sort(bySortOrder).map((item) => String(item.title ?? ''))),
-    exclusions: listOrBlank([...(tour.tour_exclusions ?? [])].sort(bySortOrder).map((item) => String(item.title ?? ''))),
+    inclusion_ids: [...(tour.tour_inclusions ?? [])].sort(bySortOrder).map((item) => String(item.option_id ?? '')).filter(Boolean),
+    exclusion_ids: [...(tour.tour_exclusions ?? [])].sort(bySortOrder).map((item) => String(item.option_id ?? '')).filter(Boolean),
     price_from: tour.price_from === null || tour.price_from === undefined || Number(tour.price_from) === 0 ? '' : String(tour.price_from),
     currency: text(tour.currency) || 'USD',
+    activity_settings: Object.fromEntries((tour.tour_activities ?? []).filter(link => link.activity?.id).map(link => [link.activity!.id, { is_optional: link.is_optional === true, additional_cost: link.additional_cost === true, pricing_option_id: link.pricing_option_id ?? null }])),
     activity_ids: [...(Array.isArray(tour.tour_activities) ? tour.tour_activities : [])]
       .sort(bySortOrder)
       .map((link) => text(link.activity?.id))
@@ -523,8 +505,8 @@ export const corePayload = (form: TourEditorForm) => {
     is_popular: form.is_popular,
     duration_days: days,
     duration_nights: nights ? Number(nights) : suggestedNights(days),
-    start_location: text(form.start_location) || null,
-    end_location: text(form.end_location) || null,
+    start_trip_point_id: text(form.start_trip_point_id) || null,
+    end_trip_point_id: text(form.end_trip_point_id) || null,
     group_size_min: nullableNumber(form.group_size_min),
     group_size_max: nullableNumber(form.group_size_max),
     minimum_age: nullableNumber(form.minimum_age),
@@ -572,8 +554,8 @@ const dayPayload = (day: DayDraft, index: number): TourContentDay => ({
 /** Body for PUT /tours/:id/content — every collection, so the save is whole. */
 export const contentPayload = (form: TourEditorForm): Required<TourContentBody> => ({
   days: form.days.map(dayPayload),
-  inclusions: cleanList(form.inclusions),
-  exclusions: cleanList(form.exclusions),
+  inclusion_ids: [...form.inclusion_ids],
+  exclusion_ids: [...form.exclusion_ids],
   images: form.images
     .filter((image) => text(image.image_url))
     .map((image) => ({
@@ -583,7 +565,8 @@ export const contentPayload = (form: TourEditorForm): Required<TourContentBody> 
       caption: text(image.caption) || null,
       is_featured: image.is_featured
     })),
-  activity_ids: [...new Set(form.activity_ids)]
+  activity_ids: [...new Set(form.activity_ids)],
+  activity_settings: [...new Set(form.activity_ids)].map(activity_id => ({ activity_id, ...(form.activity_settings[activity_id] ?? { is_optional: false, additional_cost: false, pricing_option_id: null }) }))
 });
 
 /** What would be saved, as one comparable string. UI-only state never counts as a change. */
@@ -626,10 +609,11 @@ export const findProblems = (form: TourEditorForm, storedSlug = ''): Problem[] =
   else if (glance.length > LIMITS.shortDescription) add('basics', `Keep “At a glance” to ${LIMITS.shortDescription} characters${has(glance.length)}`, undefined, 'short_description');
 
   for (const [value, field, name] of [
-    [form.start_location, 'start_location', 'start location'],
-    [form.end_location, 'end_location', 'end location']
+    [form.start_trip_point_id, 'start_trip_point_id', 'start point'],
+    [form.end_trip_point_id, 'end_trip_point_id', 'end point']
   ] as const) {
-    if (text(value).length > LIMITS.location) add('trip', `Keep the ${name} to ${LIMITS.location} characters${has(text(value).length)}`, undefined, field);
+    if (form.status === 'published' && !text(value)) add('trip', `Select a ${name} from Trip Points before publishing.`, undefined, field);
+    else if (text(value) && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text(value))) add('trip', `Select a valid ${name} from Trip Points.`, undefined, field);
   }
   const experience = text(form.experience_type);
   if (experience.length > LIMITS.experienceType) add('trip', `Keep the experience type to ${LIMITS.experienceType} characters${has(experience.length)}`, undefined, 'experience_type');
@@ -676,10 +660,10 @@ export const findProblems = (form: TourEditorForm, storedSlug = ''): Problem[] =
     if (new Set(photos).size > MAX_DAY_PHOTOS) add('itinerary', `${label}: the tour page shows ${MAX_DAY_PHOTOS} photos a day — remove the extra ones.`, day.key);
   });
 
-  for (const [items, name] of [[form.inclusions, 'included'], [form.exclusions, 'excluded']] as const) {
-    const list = cleanList(items);
-    if (list.length > MAX_LIST_ITEMS) add('included', `List at most ${MAX_LIST_ITEMS} ${name} items — there are ${list.length}.`);
-    if (list.some((item) => item.length > LIMITS.listItem)) add('included', `Keep each ${name} item to ${LIMITS.listItem} characters.`);
+  for (const [items, name] of [[form.inclusion_ids, 'included'], [form.exclusion_ids, 'excluded']] as const) {
+    if (items.length > MAX_LIST_ITEMS) add('included', `Select at most ${MAX_LIST_ITEMS} ${name} items.`);
+    if (new Set(items).size !== items.length) add('included', `Select each ${name} item only once.`);
+    if (items.some(id => !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))) add('included', `Select valid ${name} items from the shared library.`);
   }
 
   const price = text(form.price_from);

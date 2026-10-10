@@ -1,3 +1,4 @@
+import { normaliseTourTripPoints } from './tour-trip-points';
 import { AppError } from './api-response';
 
 /**
@@ -373,6 +374,7 @@ export const normaliseDay = (day: Row): Row => {
  * not order embedded rows, so every list is sorted here.
  */
 export const normaliseTourDetail = (record: Row, { staff }: { staff: boolean }): Row => {
+  normaliseTourTripPoints(record, staff);
   if (Array.isArray(record.itinerary_days)) {
     record.itinerary_days = (record.itinerary_days as Row[])
       .map(normaliseDay)
@@ -394,11 +396,17 @@ export const normaliseTourDetail = (record: Row, { staff }: { staff: boolean }):
       .sort(bySortOrder);
   }
   if (Array.isArray(record.tour_activities)) {
-    // The editor sees every linked activity; a public page only published
-    // ones, so a draft's name never reaches it.
+    // The editor sees every linked activity except deleted ones (the link
+    // outlives a soft delete, and saving it back is refused, so the next save
+    // drops it); a public page only published ones, so a draft's name never
+    // reaches it.
     record.tour_activities = (record.tour_activities as Row[])
-      .filter((link) => link?.activity && (staff || link.activity.status === 'published'))
+      .filter((link) => link?.activity && !link.activity.deleted_at && (staff || link.activity.status === 'published'))
       .sort(bySortOrder);
+  }
+  if (!staff && Array.isArray(record.tour_price_options)) {
+    const addOns = new Set((record.tour_activities ?? []).filter((row: Row) => row.is_optional && row.pricing_option_id).map((row: Row) => row.pricing_option_id));
+    record.tour_price_options = record.tour_price_options.filter((row: Row) => !row.is_addon && !addOns.has(row.id));
   }
   return record;
 };

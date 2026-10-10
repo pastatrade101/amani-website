@@ -15,6 +15,7 @@ const pricingOptionBaseSchema = z.object({
   tour_id: z.string().uuid(),
   title: z.string().trim().min(2),
   description: optionalText,
+  is_addon: z.boolean().default(false),
   price: z.coerce.number().min(0),
   currency: z.string().trim().min(3).max(3).default('USD'),
   price_type: priceTypeSchema.default('per_person'),

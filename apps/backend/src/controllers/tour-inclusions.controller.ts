@@ -60,7 +60,11 @@ export const createInclusion = asyncHandler(async (req, res) => {
     .select(select)
     .single();
 
-  if (error) throw new AppError('Unable to create tour inclusion.', 500, [error]);
+  if (error) {
+    if (error.code === '23505') throw new AppError('This option is already selected for this tour.', 409);
+    if (error.code === '23514' || error.code === '23503') throw new AppError('Choose an available inclusion from the shared library.', 422);
+    throw new AppError('Unable to create tour inclusion.', 500, [error]);
+  }
 
   await safeAudit({ action: 'create', entityId: data?.id, entityType: 'tour_inclusions', newData: data, req });
 
@@ -84,7 +88,11 @@ export const updateInclusion = asyncHandler(async (req, res) => {
     .select(select)
     .single();
 
-  if (error) throw new AppError('Unable to update tour inclusion.', 500, [error]);
+  if (error) {
+    if (error.code === '23505') throw new AppError('This option is already selected for this tour.', 409);
+    if (error.code === '23514' || error.code === '23503') throw new AppError('Choose an available inclusion from the shared library.', 422);
+    throw new AppError('Unable to update tour inclusion.', 500, [error]);
+  }
 
   await safeAudit({ action: 'update', entityId: req.params.id, entityType: 'tour_inclusions', oldData: previous, newData: data, req });
 

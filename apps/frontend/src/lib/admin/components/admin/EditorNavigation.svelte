@@ -4,8 +4,21 @@
   import type { Component } from 'svelte';
   let { sections, active, errors = {}, onNavigate }: { sections: readonly (readonly [string, Component, string])[]; active: string; errors?: Record<string, boolean>; onNavigate: (key: string) => void } = $props();
   const descriptions: Record<string,string> = {basics: 'Name, story & publishing', travel: 'Timing & traveller advice', trip: 'Duration, route & group', highlights: 'What makes it special', itinerary: 'Day by day & overnights', included: 'What the price covers', pricing: 'Prices per person', activities: 'Experiences to add', where: 'Places & best time', tours: 'Tours that include it', story: 'What makes it special', about: 'Story & highlights', location: 'Where it is & getting there', rates: 'Rates & tours using it', header: 'Title & introduction', look: 'Icon & colour', guide: 'Month by month', considerations: 'Worth knowing', media: 'Photography & visuals', landing: 'Build the experience page', seo: 'Search & sharing', translations: 'Speak their language', place: 'Country, region & map', overview: 'Description & guide', safety: 'Advice for travellers', ratings: 'Scores to compare'};
+  let nav: HTMLElement;
+  $effect(() => {
+    active;
+    // Move only the horizontal step strip; preserve the editor's vertical position.
+    queueMicrotask(() => {
+      const current = nav?.querySelector<HTMLElement>('[aria-current="step"]');
+      if (current && nav.scrollWidth > nav.clientWidth) {
+        const left = current.offsetLeft - nav.offsetLeft;
+        if (left < nav.scrollLeft || left + current.offsetWidth > nav.scrollLeft + nav.clientWidth)
+          nav.scrollLeft = Math.max(0, left - 12);
+      }
+    });
+  });
 </script>
-<nav class="cms-editor-nav" aria-label="Editor sections">
+<nav bind:this={nav} class="cms-editor-nav" aria-label="Editor sections">
   <p class="cms-editor-nav-label">IN THIS EDITOR</p>
   {#each sections as [key, Icon, label], index}
     <Button type="button" variant="ghost" class={`cms-editor-step ${active === key ? 'is-current' : ''}`} aria-current={active === key ? 'step' : undefined} onclick={() => onNavigate(key)}>

@@ -71,8 +71,8 @@ describe('tour content payload', () => {
   });
 
   it('accepts an empty collection, which clears it', () => {
-    assert.deepEqual(tourContentSchema.parse({ inclusions: [], images: [], activity_ids: [], days: [] }), {
-      inclusions: [],
+    assert.deepEqual(tourContentSchema.parse({ inclusion_ids: [], images: [], activity_ids: [], days: [] }), {
+      inclusion_ids: [],
       images: [],
       activity_ids: [],
       days: []
@@ -89,7 +89,7 @@ describe('text limits sized to the public pages', () => {
       title: '6-Day Tanzania Classic: Tarangire, Serengeti & Ngorongoro',
       short_description: x(207),
       highlights: [x(80), '<p><strong>Big five</strong> on the crater floor</p>'],
-      start_location: 'Arusha',
+      start_trip_point_id: DAY_ID,
       experience_type: 'safari',
       meta_title: x(56),
       seo_title: x(56),
@@ -111,8 +111,8 @@ describe('text limits sized to the public pages', () => {
             stays: [{ safari_style: 'midrange', accommodation: x(35) }]
           }
         ],
-        inclusions: [x(72)],
-        exclusions: [x(56)],
+        inclusion_ids: [DAY_ID],
+        exclusion_ids: [LODGE_ID],
         images: [{ image_url: 'https://x.test/a.jpg', alt_text: x(51) }]
       }),
       []
@@ -128,7 +128,9 @@ describe('text limits sized to the public pages', () => {
     assert.match(message({ short_description: x(221) }), /At a glance/);
     assert.match(message({ highlights: [x(101)] }), /each highlight to 100/);
     assert.match(message({ highlights: Array(11).fill('Crater') }), /at most 10 highlights/);
-    assert.match(message({ end_location: x(61) }), /locations to 60/);
+    assert.match(message({ end_location: 'Arusha' }), /Trip Points/);
+    assert.equal(tourUpdateSchema.safeParse({ start_trip_point_id: 'Arusha' }).success, false);
+    assert.equal(tourUpdateSchema.safeParse({ end_trip_point_id: DAY_ID }).success, true);
     assert.match(message({ experience_type: x(41) }), /experience type to 40/);
     assert.match(message({ meta_title: x(71) }), /search title to 70/);
     assert.match(message({ meta_description: x(201) }), /meta description to 200/);
@@ -145,8 +147,8 @@ describe('text limits sized to the public pages', () => {
     assert.ok(issues(day({ summary: x(141) })).some((m) => /fits under the day title/.test(m)));
     assert.ok(issues(day({ meals: x(41) })).some((m) => /meals to 40/.test(m)));
     assert.ok(issues(day({ stays: [{ safari_style: 'luxury', accommodation: x(61) }] })).some((m) => /property name to 60/.test(m)));
-    assert.ok(issues({ inclusions: [x(101)] }).some((m) => /included or excluded item to 100/.test(m)));
-    assert.ok(issues({ exclusions: Array(21).fill('Visa') }).some((m) => /at most 20/.test(m)));
+    assert.ok(issues({ inclusions: ['Park fees'] }).length, 'Free text must be rejected in tour selections');
+    assert.ok(issues({ exclusion_ids: Array(21).fill(DAY_ID) }).some((m) => /at most 20/.test(m)));
     assert.ok(issues({ images: [{ image_url: 'https://x.test/a.jpg', alt_text: x(126) }] }).some((m) => /alt text to 125/.test(m)));
     assert.ok(issues({ images: [{ image_url: 'https://x.test/a.jpg', caption: x(151) }] }).some((m) => /captions to 150/.test(m)));
   });
@@ -170,4 +172,22 @@ describe('tour budget tier', () => {
     assert.equal(tourUpdateSchema.parse({ budget_tier: 'Mid-range' }).budget_tier, 'Mid-range');
     assert.equal(tourUpdateSchema.safeParse({ budget_tier: 'x'.repeat(81) }).success, false);
   });
+});
+
+describe('shared inclusion/exclusion selections', () => {
+  it('accepts only UUID selections and rejects repeated IDs or legacy free text', () => {
+    assert.deepEqual(tourContentSchema.parse({ inclusion_ids: [DAY_ID, LODGE_ID], exclusion_ids: [] }), { inclusion_ids: [DAY_ID, LODGE_ID], exclusion_ids: [] });
+    assert.ok(issues({ inclusion_ids: ['Park fees'] }).length);
+    assert.ok(issues({ inclusion_ids: [DAY_ID, DAY_ID] }).some(m => /only once/.test(m)));
+    assert.ok(issues({ exclusion_ids: [DAY_ID, DAY_ID] }).some(m => /only once/.test(m)));
+    assert.ok(issues({ exclusions: [] }).length);
+  });
+});
+
+it('optional activity settings reject extra charges on included experiences and duplicate selections', () => {
+ const included = {activity_id:DAY_ID,is_optional:false,additional_cost:true,pricing_option_id:null};
+ assert.equal(tourContentSchema.safeParse({activity_settings:[included]}).success,false);
+ const optional = {...included,is_optional:true};
+ assert.equal(tourContentSchema.safeParse({activity_settings:[optional]}).success,true);
+ assert.equal(tourContentSchema.safeParse({activity_settings:[optional,optional]}).success,false);
 });

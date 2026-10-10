@@ -45,8 +45,10 @@ export const tourCreateSchema = z.object({
   group_size_min: z.coerce.number().int().min(0).optional().nullable(),
   group_size_max: z.coerce.number().int().min(0).optional().nullable(),
   minimum_age: z.coerce.number().int().min(0).optional().nullable(),
-  start_location: z.string().max(L.location, M.location).optional().nullable(),
-  end_location: z.string().max(L.location, M.location).optional().nullable(),
+  start_trip_point_id: z.preprocess((v) => v === '' ? null : v, z.string().uuid().nullable()).optional(),
+  end_trip_point_id: z.preprocess((v) => v === '' ? null : v, z.string().uuid().nullable()).optional(),
+  start_location: z.never({ invalid_type_error: 'Select a start point from Trip Points instead of entering text.' }).optional(),
+  end_location: z.never({ invalid_type_error: 'Select an end point from Trip Points instead of entering text.' }).optional(),
   status: statusSchema.default('draft'),
   is_available: z.coerce.boolean().default(true),
   is_featured: z.coerce.boolean().default(false),
@@ -117,7 +119,15 @@ const contentImageSchema = z.object({
   is_featured: z.boolean().optional()
 });
 
-const contentListSchema = z.array(z.string().trim().min(1).max(L.listItem, M.listItem)).max(L.listItems, M.listItems).optional();
+export const tourActivitySettingSchema = z.object({
+  activity_id: z.string().uuid(),
+  is_optional: z.boolean(),
+  additional_cost: z.boolean().default(false),
+  pricing_option_id: z.string().uuid().nullable().default(null)
+}).superRefine((row, ctx) => {
+  if ((!row.is_optional && (row.additional_cost || row.pricing_option_id)) || (row.pricing_option_id && !row.additional_cost))
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Only optional additional-cost activities can link a price.' });
+});
 
 export const tourContentSchema = z.object({
   days: z
@@ -126,8 +136,10 @@ export const tourContentSchema = z.object({
     .superRefine(unique('Each day number can only be used once.', (day: z.infer<typeof contentDaySchema>) => day.day_number, 'day_number'))
     .superRefine(unique('Each day can only be listed once.', (day: z.infer<typeof contentDaySchema>) => day.id, 'id'))
     .optional(),
-  inclusions: contentListSchema,
-  exclusions: contentListSchema,
+  inclusion_ids: z.array(z.string().uuid()).max(L.listItems, M.listItems).refine(ids => new Set(ids).size === ids.length, 'Select each inclusion only once.').optional(),
+  exclusion_ids: z.array(z.string().uuid()).max(L.listItems, M.listItems).refine(ids => new Set(ids).size === ids.length, 'Select each exclusion only once.').optional(),
+  inclusions: z.never({invalid_type_error:'Select inclusions from the shared library.'}).optional(),
+  exclusions: z.never({invalid_type_error:'Select exclusions from the shared library.'}).optional(),
   images: z
     .array(contentImageSchema)
     .max(40)
@@ -135,7 +147,8 @@ export const tourContentSchema = z.object({
       message: 'Only one gallery photo can be featured.'
     })
     .optional(),
-  activity_ids: z.array(z.string().uuid()).max(50).optional()
+  activity_settings: z.array(tourActivitySettingSchema).max(50).refine(rows => new Set(rows.map(r => r.activity_id)).size === rows.length, 'Select each activity once.').optional(),
+  activity_ids: z.array(z.string().uuid()).max(50).refine(ids => new Set(ids).size === ids.length, 'Select each activity once.').optional()
 });
 
 export type TourContentInput = z.infer<typeof tourContentSchema>;

@@ -25,7 +25,7 @@
   const HEADERS = [
     'title', 'slug', 'category', 'destination', 'destination_country', 'experience_type', 'budget_tier',
     'duration_days', 'duration_nights', 'price_from', 'currency', 'group_size_min', 'group_size_max',
-    'minimum_age', 'difficulty_level', 'start_location', 'end_location', 'persona_tags', 'highlights',
+    'minimum_age', 'difficulty_level', 'start_trip_point_id', 'end_trip_point_id', 'persona_tags', 'highlights',
     'short_description', 'full_description', 'main_image_url', 'banner_image_url', 'status', 'is_featured',
     'is_popular', 'seo_title', 'meta_title', 'meta_description', 'days', 'inclusions', 'exclusions', 'price_options'
   ];

@@ -4,14 +4,14 @@
   import { safeUrl, textContent } from '$lib/home-content';
   import type { GuestReview } from '$lib/homepage-guides';
 
-  let { reviews }: { reviews: GuestReview[] } = $props();
+  let { reviews, variant = 'default' }: { reviews: GuestReview[]; variant?: 'default' | 'tour' } = $props();
   const excerpt = (message: string) => {
     const text = textContent(message).replace(/\s+/g, ' ').trim();
     return text.length > 260 ? `${text.slice(0, 260).replace(/\s+\S*$/, '')}…` : text;
   };
 </script>
 
-<div class="review-grid">
+<div class="review-grid" class:tour-reviews={variant === 'tour'}>
   {#each reviews as review (review.id)}
     <article class="review-card" data-motion="card">
       <div class="review-top">
@@ -24,7 +24,7 @@
       <blockquote>{excerpt(review.message)}</blockquote>
       <div class="review-bottom">
         <div class="review-author">
-          <span class="author-quote" aria-hidden="true"><Quote size={20} fill="currentColor" /></span><span class="initial" aria-hidden="true">{review.author_name.trim().slice(0, 1).toUpperCase()}</span>
+          {#if variant !== 'tour'}<span class="author-quote" aria-hidden="true"><Quote size={20} fill="currentColor" /></span>{/if}<span class="initial" aria-hidden="true">{review.author_name.trim().slice(0, 1).toUpperCase()}</span>
           <div><h3>{review.author_name}</h3><p>{review.country || 'Safari guest'}</p></div>
         </div>
         <Dialog.Root>
@@ -70,4 +70,22 @@
   .original-review { display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: #17334c; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
   @media(max-width:1023px) { .review-grid { gap: 14px; } .review-card { padding: 20px; } }
   @media(max-width:767px) { .review-grid { grid-template-columns: minmax(0, 1fr); } .review-card { height: 328px; padding: 23px; } }
+
+  /* Tour pages use a compact pair, with a consistent reading area and aligned authors. */
+  .tour-reviews { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 24px; }
+  .tour-reviews .review-card { height: auto; min-height: 300px; padding: 28px; border-color: var(--border); border-radius: 20px; box-shadow: 0 12px 32px -24px rgb(20 49 77 / .2); }
+  .tour-reviews .stars { color: var(--success); }
+  .tour-reviews .quote-mark { width: 40px; height: 40px; border: none; border-radius: 12px; background: var(--navy); color: var(--sun); }
+  .tour-reviews .review-card > blockquote { min-height: 6.8em; margin: 20px 0 24px; font-size: 14px; line-height: 1.7; color: var(--muted-foreground); }
+  .tour-reviews .review-bottom { display: flex; align-items: center; gap: 16px; padding-top: 20px; }
+  .tour-reviews .review-author { flex: 1; gap: 12px; }
+  .tour-reviews .initial { background: color-mix(in oklch, var(--sun) 18%, white); margin-right: 0; }
+  .tour-reviews .review-bottom :global(.review-trigger) { flex-shrink: 0; gap: 6px; width: auto; min-height: 44px; margin-top: 0; font-size: 12px; }
+  @media(max-width:1023px) {
+    .tour-reviews .review-card { padding: 24px; }
+    .tour-reviews .review-bottom { flex-wrap: wrap; gap: 8px; }
+    .tour-reviews .review-author { flex-basis: 100%; }
+    .tour-reviews .review-bottom :global(.review-trigger) { width: 100%; }
+  }
+  @media(max-width:767px) { .tour-reviews { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
 </style>

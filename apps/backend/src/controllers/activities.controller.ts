@@ -1,3 +1,4 @@
+import { optionalActivityLinks } from '../services/optional-activities.service';
 import { supabase } from '../config/supabase';
 import { safeAudit } from '../services/audit.service';
 import { createUniqueSlug } from '../services/slug.service';
@@ -15,7 +16,7 @@ import { getRecordBySlug, listRecords, softDeleteRecord } from '../utils/supabas
  */
 const listSelect = '*, destinations!activities_destination_id_fkey(name,slug), activity_destinations(destination_id,is_primary,sort_order), tour_activities(tour_id)';
 const detailSelect =
-  '*, destinations!activities_destination_id_fkey(name,slug), activity_destinations(destination_id,sort_order,is_primary,destinations(id,name,slug,region,status)), tour_activities(tour_id,sort_order,tours(id,title,slug,status,deleted_at))';
+  '*, destinations!activities_destination_id_fkey(name,slug), activity_destinations(destination_id,sort_order,is_primary,destinations(id,name,slug,region,status)), tour_activities(tour_id,sort_order,is_optional,additional_cost,pricing_option_id,tours(id,title,slug,status,deleted_at))';
 // The primary destination needs the FK hint: with activity_destinations in place,
 // a bare `destinations(...)` embed is ambiguous (PGRST201) and fails the query.
 // Before the links migration the link embeds don't resolve; fall back rather than fail.
@@ -187,4 +188,15 @@ export const updateActivity = asyncHandler(async (req, res) => {
 
 export const deleteActivity = asyncHandler(async (req, res) => {
   return softDeleteRecord(res, 'activities', req.params.id, req);
+});
+
+export const listOptionalActivities = asyncHandler(async (_req,res) => {
+ const links = await optionalActivityLinks();
+ const unique = new Map<string,Record<string,any>>();
+ for (const row of links) {
+  const existing = unique.get(row.activity.id);
+  if (existing) existing.additional_cost ||= row.additional_cost;
+  else unique.set(row.activity.id,{sort_order:row.sort_order,is_optional:true,additional_cost:row.additional_cost,pricing_option:null,pricing_option_id:null,activity:row.activity});
+ }
+ return sendSuccess(res,'Optional activities fetched successfully.',[...unique.values()]);
 });

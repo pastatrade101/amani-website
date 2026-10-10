@@ -343,6 +343,9 @@ create table if not exists tours (
   group_size_min integer,
   group_size_max integer,
   minimum_age integer,
+  start_trip_point_id uuid references trip_points(id) on delete restrict,
+  end_trip_point_id uuid references trip_points(id) on delete restrict,
+  -- Read-only compatibility snapshots; generated from the linked Trip Points.
   start_location text,
   end_location text,
   is_available boolean not null default true,
@@ -382,9 +385,20 @@ create table if not exists itinerary_days (
   unique (tour_id, day_number)
 );
 
+create table if not exists tour_list_options (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null check (kind in ('inclusion','exclusion')),
+  title text not null check (length(btrim(title)) > 0),
+  is_active boolean not null default true,
+  sort_order integer not null default 0 check (sort_order >= 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists tour_inclusions (
   id uuid primary key default gen_random_uuid(),
   tour_id uuid not null references tours(id) on delete cascade,
+  option_id uuid not null references tour_list_options(id) on delete restrict,
   title text not null,
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
@@ -394,6 +408,7 @@ create table if not exists tour_inclusions (
 create table if not exists tour_exclusions (
   id uuid primary key default gen_random_uuid(),
   tour_id uuid not null references tours(id) on delete cascade,
+  option_id uuid not null references tour_list_options(id) on delete restrict,
   title text not null,
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
@@ -434,6 +449,7 @@ create table if not exists tour_price_options (
   label text not null,
   price numeric(12, 2) not null default 0,
   currency text not null default 'USD',
+  is_addon boolean not null default false,
   price_type text not null default 'per_person' check (price_type in ('per_person', 'per_group', 'per_child', 'single_supplement', 'upgrade', 'discount')),
   description text,
   sort_order integer not null default 0,

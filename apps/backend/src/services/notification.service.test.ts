@@ -202,3 +202,8 @@ describe('travellerCopy — what a trip planner gets back of their own plan', ()
     assert.equal(travellerCopy('Hello, two of us in July.\n\nTravelers: 2'), 'Hello, two of us in July.\n\nTravelers: 2');
   });
 });
+
+it('staff lead summary carries all requested optional experiences and charges', () => {
+ const lead = buildLeadFromBooking({lead_context:{answers:{optional_activities:['Balloon safari — USD 250 per person','Village visit — Price on request']}}});
+ assert.match(lead.summary,/Balloon safari — USD 250 per person/);assert.match(lead.summary,/Village visit — Price on request/);
+});

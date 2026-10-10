@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { Checkbox } from '$lib/components/ui/checkbox';
+	import { activityCost } from '$lib/optional-activities';
+	import type { TourActivityItem } from '$lib/types/api';
 	import { enhance } from '$app/forms';
 	import { ArrowRight, MapPin, Compass, Check, CalendarDays, Users } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -16,8 +19,11 @@
 	import { newTransactionId } from '$lib/tracking/data-layer';
 	// The result of the shared `enquire` action ($lib/server/enquiry), from whichever page hosts the form.
 	type EnquiryField = 'full_name' | 'email' | 'phone' | 'message' | 'travel_date' | 'travelers' | 'interest';
-	type EnquiryResult = { success?: boolean; message?: string; values?: Partial<Record<EnquiryField, string>> | null } | null | undefined;
-	let { section, form, interest }: { section: HomepageSection; form: EnquiryResult; interest: string } = $props();
+	type EnquiryResult = { success?: boolean; message?: string; values?: (Partial<Record<EnquiryField, string>> & { optional_activity_ids?: string[] }) | null } | null | undefined;
+	let { section, form, interest, optionalActivities = [], selectedIds = $bindable([]) }: { section: HomepageSection; form: EnquiryResult; interest: string; optionalActivities?: TourActivityItem[]; selectedIds?: string[] } = $props();
+	const selectActivity = (id: string, checked: boolean) => selectedIds = checked ? [...new Set([...selectedIds,id])] : selectedIds.filter(value => value !== id);
+	let idempotencyKey = $state(newTransactionId());
+	$effect(() => { if (form?.success) selectedIds = []; else if (form?.values?.optional_activity_ids) selectedIds = form.values.optional_activity_ids; });
 	let sending = $state(false);
 	let travelDate = $state<DateValue>();
 	let travelerCount = $state('2');
@@ -37,14 +43,28 @@
 			<div class="mt-8 grid gap-5 text-sm"><p class="flex items-center gap-3"><MapPin class="size-5" /> Local knowledge, personal attention</p><p class="flex items-center gap-3"><Compass class="size-5" /> A journey shaped around your interests</p><p class="flex items-center gap-3"><Check class="size-5" /> An enquiry, with no obligation to book</p></div>
 			<img src="/images/itinerary-game-drive.jpg" alt="A safari vehicle on a Tanzania game drive" loading="lazy" class="mt-9 h-44 w-full max-w-md rounded-2xl object-cover" />
 		</div>
-		<form data-motion="reveal" data-motion-delay="0.12" method="POST" action="?/enquire#request-quote" use:enhance={() => { sending = true; return async ({ update, result }) => { try { const sent = result.type === 'success' && result.data?.success === true; await update({ reset: sent, invalidateAll: false }); if (sent) enquirySent(); } finally { sending = false; } }; }} class="enquiry-form grid gap-5 rounded-2xl border border-border bg-white p-6 shadow-[0_20px_60px_-30px_rgba(16,45,65,.2)] sm:p-8">
+		<form data-motion="reveal" data-motion-delay="0.12" method="POST" action="?/enquire#request-quote" use:enhance={() => { sending = true; return async ({ update, result }) => { try { const sent = result.type === 'success' && result.data?.success === true; await update({ reset: sent, invalidateAll: false }); if (sent) { enquirySent(); idempotencyKey = newTransactionId(); selectedIds = []; } } finally { sending = false; } }; }} class="enquiry-form grid gap-5 rounded-2xl border border-border bg-white p-6 shadow-[0_20px_60px_-30px_rgba(16,45,65,.2)] sm:p-8">
 			<div class="mb-1"><h3 class="text-xl font-semibold tracking-tight">Your journey starts here</h3><p class="mt-2 text-xs leading-6 text-muted-foreground">A few details are all we need to start planning together.</p></div>
 			{#if form?.message}<p role={form.success ? 'status' : 'alert'} class={`rounded-xl p-4 text-sm leading-6 ${form.success ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-900'}`}>{form.message}</p>{/if}
 			<div class="grid gap-5 sm:grid-cols-2"><div class="grid gap-2"><Label for="full-name">Your name</Label><Input id="full-name" name="full_name" autocomplete="name" required minlength={2} maxlength={150} value={form?.values?.full_name ?? ''} placeholder="Full name" class="h-11" /></div><div class="grid gap-2"><Label for="email">Email address</Label><Input id="email" name="email" type="email" autocomplete="email" required maxlength={254} value={form?.values?.email ?? ''} placeholder="you@example.com" class="h-11" /></div></div>
-			<div class="grid gap-2"><Label for="phone">Phone <span class="font-normal text-muted-foreground">(optional)</span></Label><Input id="phone" name="phone" type="tel" autocomplete="tel" maxlength={50} value={form?.values?.phone ?? ''} placeholder="Include country code" class="h-11" /></div>
+			<div class="grid gap-2"><Label for="phone">Phone <span class="font-normal text-muted-foreground">(optional)</span></Label><Input id="phone" name="phone" type="tel" autocomplete="tel" minlength={6} maxlength={50} value={form?.values?.phone ?? ''} placeholder="Include country code" class="h-11" /></div>
 			<div class="grid gap-5 sm:grid-cols-2"><div class="grid gap-2"><Label for="travel-date">Preferred start date</Label><Popover.Root bind:open={calendarOpen}><Popover.Trigger id="travel-date" class="flex h-11 w-full items-center gap-2 rounded-md border border-input bg-white px-3 text-left text-sm"><CalendarDays class="size-4 text-muted-foreground" />{travelDate ? dateFormat.format(travelDate.toDate('Africa/Dar_es_Salaam')) : 'Select a date'}</Popover.Trigger><Popover.Content class="w-auto p-0" align="start"><Calendar type="single" bind:value={travelDate} onValueChange={() => calendarOpen = false} minValue={today('Africa/Dar_es_Salaam')} captionLayout="dropdown" /></Popover.Content></Popover.Root><input type="hidden" name="travel_date" value={travelDate?.toString() || ''} /></div><div class="grid gap-2"><Label for="travelers">Number of travelers</Label><Select.Root type="single" name="travelers" bind:value={travelerCount}><Select.Trigger id="travelers" class="h-11 w-full"><span class="flex items-center gap-2"><Users class="size-4 text-muted-foreground" />{travelerCount} {travelerCount === '1' ? 'traveler' : 'travelers'}</span></Select.Trigger><Select.Content>{#each Array.from({ length: 20 }, (_, i) => String(i + 1)) as count}<Select.Item value={count}>{count} {count === '1' ? 'traveler' : 'travelers'}</Select.Item>{/each}</Select.Content></Select.Root></div></div>
 			<div class="grid gap-2"><Label for="interest">What would you love to explore?</Label><Input id="interest" name="interest" maxlength={200} value={interest || form?.values?.interest || ''} placeholder="Serengeti, a family safari, Zanzibar…" class="h-11" /></div>
-			<div class="grid gap-2"><Label for="message">Tell us about your trip</Label><Textarea id="message" name="message" required minlength={10} maxlength={5000} value={form?.values?.message ?? ''} placeholder="Your interests, ideal trip length, budget, or anything you would like us to know." class="min-h-28" /></div>
+			<input type="hidden" name="idempotency_key" value={idempotencyKey} />
+            {#if optionalActivities.length}
+            <fieldset class="grid gap-3 rounded-xl border border-border bg-secondary/30 p-4">
+             <legend class="px-1 text-sm font-semibold text-navy">Personalize your safari</legend>
+             <p class="text-xs leading-5 text-muted-foreground">Choose one or more optional activities. We’ll confirm availability and pricing in your quotation.</p>
+             {#each optionalActivities as item (item.activity.id)}
+             <label class="flex cursor-pointer items-start gap-3 rounded-lg bg-white p-3">
+              <Checkbox checked={selectedIds.includes(item.activity.id)} onCheckedChange={(checked) => selectActivity(item.activity.id,checked === true)} aria-label={`Include ${item.activity.name} in my safari`} />
+              <span class="grid gap-1"><span class="text-sm font-semibold">{item.activity.name}</span><span class="text-xs text-muted-foreground">Optional Activity · {activityCost(item)}</span><span class="text-[11px] text-navy">Include This Activity in My Safari</span></span>
+             </label>
+             {/each}
+            </fieldset>
+            {/if}
+            {#each selectedIds as id (id)}<input type="hidden" name="optional_activity_ids" value={id} />{/each}
+            <div class="grid gap-2"><Label for="message">Tell us about your trip</Label><Textarea id="message" name="message" required minlength={10} maxlength={5000} value={form?.values?.message ?? ''} placeholder="Your interests, ideal trip length, budget, or anything you would like us to know." class="min-h-28" /></div>
 			<div class="hidden" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
 			<Button variant="safari" type="submit" disabled={sending} class="h-12 rounded-lg px-6 font-bold w-full">{sending ? 'Sending your enquiry…' : 'Send My Safari Enquiry'} <ArrowRight class="ml-2" /></Button><p class="text-center text-[10px] leading-5 text-muted-foreground">We’ll use your details to respond to this enquiry.</p>
 		</form>

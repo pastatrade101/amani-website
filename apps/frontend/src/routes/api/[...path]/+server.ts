@@ -12,7 +12,13 @@ const proxy: RequestHandler = async ({ request, params, url, getClientAddress })
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
   }
-  headers.set('x-forwarded-for', getClientAddress());
+  // Internal SSR fetches can have no socket address in the development server.
+  try {
+    const address = getClientAddress();
+    if (address) headers.set('x-forwarded-for', address);
+  } catch {
+    // Keep the request usable without inventing or trusting a forwarded IP.
+  }
   const init: RequestInit = { method: request.method, headers, redirect: 'manual', signal: AbortSignal.timeout(60000) };
   if (!['GET', 'HEAD'].includes(request.method)) init.body = await request.arrayBuffer();
   try {

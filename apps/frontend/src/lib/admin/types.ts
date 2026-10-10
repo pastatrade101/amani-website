@@ -1,3 +1,4 @@
+import type { TripEndpoint } from '$lib/types/api';
 export type ApiResponse<T> = {
   success: boolean;
   message: string;
@@ -60,6 +61,10 @@ export type CurrencyApiState = {
 };
 
 export type Tour = {
+  start_trip_point_id?: string | null;
+  end_trip_point_id?: string | null;
+  start_point?: TripEndpoint | null;
+  end_point?: TripEndpoint | null;
   id: string;
   title: string;
   slug: string;
@@ -103,8 +108,8 @@ export type Tour = {
   start_location?: string | null;
   end_location?: string | null;
   itinerary_days?: ItineraryDay[];
-  tour_inclusions?: { title: string; sort_order?: number }[];
-  tour_exclusions?: { title: string; sort_order?: number }[];
+  tour_inclusions?: { option_id: string; title: string; sort_order?: number }[];
+  tour_exclusions?: { option_id: string; title: string; sort_order?: number }[];
   tour_images?: TourImage[] | null;
   /** Catalogue activities linked to the tour; staff reads include drafts. */
   tour_activities?: TourActivityLink[] | null;
@@ -144,6 +149,9 @@ export type TourImage = {
 };
 
 export type TourActivityLink = {
+  is_optional?: boolean;
+  additional_cost?: boolean;
+  pricing_option_id?: string | null;
   sort_order?: number | null;
   activity?: {
     id: string;
@@ -192,13 +200,15 @@ export type TourContentDay = {
 
 export type TourContentBody = {
   days?: TourContentDay[];
-  inclusions?: string[];
-  exclusions?: string[];
+  inclusion_ids?: string[];
+  exclusion_ids?: string[];
   images?: Array<{ id?: string; image_url: string; alt_text: string | null; caption: string | null; is_featured: boolean }>;
   activity_ids?: string[];
+  activity_settings?: Array<{ activity_id: string; is_optional: boolean; additional_cost: boolean; pricing_option_id: string | null }>;
 };
 
 export type TourPriceOption = {
+  is_addon?: boolean;
   id: string;
   tour_id: string;
   title: string;
@@ -781,4 +791,9 @@ export type EntityTranslations = {
   source: Record<string, string | string[]>;
   source_hash: string;
   translations: Record<string, TranslationRecord>;
+};
+
+export type TourListOption = {
+  id: string; kind: 'inclusion' | 'exclusion'; title: string;
+  is_active: boolean; sort_order: number;
 };

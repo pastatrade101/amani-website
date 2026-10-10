@@ -32,7 +32,7 @@
   import ErrorState from '$lib/admin/components/public/ErrorState.svelte';
   import LoadingState from '$lib/admin/components/public/LoadingState.svelte';
   import { toPlainText } from '$lib/admin/richText';
-  import type { Activity, Destination, ItineraryDay, Lodge, Paginated, Tour, TravelStyle } from '$lib/admin/types';
+  import type { Activity, Destination, ItineraryDay, Lodge, Paginated, Tour, TravelStyle, TripPoint, TourListOption } from '$lib/admin/types';
   import type { PricingSeason } from '$lib/safari-pricing';
   import ActivitiesPanel from './tour-editor/ActivitiesPanel.svelte';
   import EssentialsPanel from './tour-editor/EssentialsPanel.svelte';
@@ -112,8 +112,8 @@
     minimum_age: 'trip',
     highlights: 'trip',
     customization_options: 'trip',
-    start_location: 'trip',
-    end_location: 'trip',
+    start_trip_point_id: 'trip',
+    end_trip_point_id: 'trip',
     experience_type: 'trip',
     days: 'itinerary',
     inclusions: 'included',
@@ -152,6 +152,9 @@
   let editorBody: HTMLDivElement;
   let toasts: Toast[] = [];
 
+  let listOptions: TourListOption[] = [];
+  let loadingListOptions = false;
+  let tripPoints: TripPoint[] = [];
   let destinations: DestinationOption[] = [];
   let lodges: LodgeOption[] = [];
   let activities: ActivityOption[] = [];
@@ -265,17 +268,28 @@
     }
   };
 
+  const loadListOptions = async () => {
+    loadingListOptions = true;
+    try { listOptions = await allPages<TourListOption>(page=>api.tourListOptions.list({limit:100,page})); }
+    catch(err) { showToast(errorText(err,'Unable to load inclusion/exclusion options.'),'error'); }
+    finally { loadingListOptions = false; }
+  };
+
   const loadOptions = async () => {
     loadingOptions = true;
-    const [places, categories, specialists, styles, media, catalogue] = await Promise.allSettled([
+    void loadListOptions();
+    const [places, categories, specialists, styles, media, catalogue, endpoints] = await Promise.allSettled([
       allPages<Destination>((page) => api.destinations.list({ limit: 100, page, status: 'all' })),
       api.categories.list({ limit: 100, status: 'all' }),
       api.specialists.list({ limit: 100, status: 'all' }),
       api.travelStyles.list({ limit: 100, status: 'all' }),
       api.media.list({ file_type: 'image', limit: 100 }),
-      allPages<Activity>((page) => api.activities.list({ limit: 100, page, status: 'all' }), 5)
+      allPages<Activity>((page) => api.activities.list({ limit: 100, page, status: 'all' }), 5),
+      allPages<TripPoint>((page) => api.tripPoints.list({ limit: 100, page, status: 'all' }))
     ]);
     const failed: string[] = [];
+    if (endpoints.status === 'fulfilled') tripPoints = endpoints.value.sort((a, b) => a.name.localeCompare(b.name));
+    else failed.push('trip points');
 
     if (places.status === 'fulfilled') {
       destinations = places.value
@@ -487,6 +501,8 @@
 
   onMount(() => {
     mounted = true;
+    const requestedTab = new URLSearchParams(window.location.search).get('tab');
+    if (requestedTab && TABS.some(([key]) => key === requestedTab)) activeTab = requestedTab as TabKey;
     if (flash) {
       showToast(flash);
       flash = '';
@@ -536,10 +552,12 @@
             <EssentialsPanel bind:form bind:slugManuallyEdited {storedSlug} {destinations} {seasons} {categoryOptions} {specialistOptions} {loadingOptions} {attemptedSave} {aiContext} />
           </div>
           <div class:hidden={activeTab !== 'trip'}>
-            <TripDetailsPanel bind:form {travelStyleOptions} {loadingOptions} {attemptedSave} {aiContext} />
+            <TripDetailsPanel bind:form {tripPoints} {travelStyleOptions} {loadingOptions} {attemptedSave} {aiContext} />
           </div>
           <div class:hidden={activeTab !== 'itinerary'}>
             <ItineraryPanel
+              {tripPoints}
+              {loadingOptions}
               bind:form
               bind:expandedKey
               {destinations}
@@ -553,13 +571,13 @@
             />
           </div>
           <div class:hidden={activeTab !== 'included'}>
-            <InclusionsPanel bind:form />
+            <InclusionsPanel bind:form options={listOptions} loading={loadingListOptions} onRefresh={loadListOptions} />
           </div>
           <div class:hidden={activeTab !== 'pricing'}>
             <PricingPanel bind:form tourId={currentId} {seasons} {dirty} {attemptedSave} />
           </div>
           <div class:hidden={activeTab !== 'activities'}>
-            <ActivitiesPanel bind:form {activities} {destinations} {loadingOptions} knownNames={knownActivityNames} />
+            <ActivitiesPanel tourId={record?.id ?? ''} pricingOptions={record?.tour_price_options ?? []} bind:form {activities} {destinations} {loadingOptions} knownNames={knownActivityNames} />
           </div>
           <div class:hidden={activeTab !== 'media'}>
             <PhotographyPanel bind:form {mediaItems} {destinations} {seasons} />

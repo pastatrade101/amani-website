@@ -15,7 +15,7 @@ export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
 	// that list; only a search or later page needs its own request (sent first,
 	// so the search stays the last tours request).
 	const browsing = !filters.search && !filters.destination_id && !filters.category_id && query.get('page') === '1';
-	const [stays, latest, homepage, destinations, activities, categories, tours, seasons, reviews, faqs, gallery] = await Promise.allSettled([
+	const [stays, latest, homepage, destinations, activities, categories, tours, seasons, reviews, faqs, gallery, optionalActivities] = await Promise.allSettled([
 		apiGet<Paginated<Stay>>('lodges?status=published&limit=4', fetch),
 		browsing ? Promise.resolve(null) : apiGet<Paginated<Tour>>('tours?status=published&limit=6', fetch),
 		apiGet<HomepageSection[]>('homepage', fetch),
@@ -26,10 +26,12 @@ export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
 		apiGet<Paginated<Season>>('seasons?status=published&limit=24', fetch),
 		apiGet<Paginated<GuestReview>>('reviews?status=approved&limit=3', fetch),
 		apiGet<Paginated<{question:string;answer:string}>>('faqs?status=published&entity_type=null&destination_id=null&limit=12', fetch),
-		apiGet<Paginated<GalleryPhoto>>('gallery?status=published&media_type=image&limit=24', fetch)
+		apiGet<Paginated<GalleryPhoto>>('gallery?status=published&media_type=image&limit=24', fetch),
+        apiGet<import('$lib/types/api').TourActivityItem[]>('activities/optional',fetch)
 	]);
 	return {
 		siteOrigin: url.origin,
+        optionalActivities: optionalActivities.status === 'fulfilled' ? optionalActivities.value : [],
 		gallery: gallery.status === 'fulfilled' ? publishedGallery(gallery.value.items) : [],
 		reviews: reviews.status === 'fulfilled' ? approvedReviews(reviews.value.items) : [],
 		faqs: faqs.status === 'fulfilled' ? faqs.value.items : null,

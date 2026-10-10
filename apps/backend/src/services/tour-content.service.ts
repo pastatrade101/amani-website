@@ -1,3 +1,4 @@
+import { syncTourStartingPrice } from './tour-starting-price.service';
 import { supabase } from '../config/supabase';
 import type { TourContentInput } from '../schemas/tours.schema';
 import { AppError } from '../utils/api-response';
@@ -7,7 +8,6 @@ import {
   planImages,
   referencedIds,
   SAFARI_STYLES,
-  textListRows,
   uniqueIds,
   type DayPlan,
   type ExistingDay,
@@ -138,21 +138,25 @@ const writeDays = async (tourId: string, plan: DayPlan) => {
   }
 };
 
-/** Replace inclusions or exclusions: new rows first, so a failed insert loses nothing. */
-const replaceTextList = async (table: 'tour_inclusions' | 'tour_exclusions', tourId: string, items: string[]) => {
-  const { data: previous, error: readError } = await supabase.from(table).select('id').eq('tour_id', tourId);
-  if (readError) throw new AppError(`Unable to load ${table}.`, 500, [readError]);
-
-  const rows = textListRows(tourId, items);
-  if (rows.length) {
-    const { error } = await supabase.from(table).insert(rows);
-    if (error) throw new AppError(`Unable to save ${table}.`, 500, [error]);
-  }
-  const previousIds = (previous ?? []).map((row) => String((row as { id: unknown }).id));
-  if (previousIds.length) {
-    const { error } = await supabase.from(table).delete().in('id', previousIds);
-    if (error) throw new AppError(`Unable to replace ${table}.`, 500, [error]);
-  }
+/** Check all selections before any content write, then recheck inside the SQL transaction. */
+const checkListOptions = async (tourId: string, kind: 'inclusion' | 'exclusion', ids: string[]) => {
+  if (!ids.length) return;
+  const table = kind === 'inclusion' ? 'tour_inclusions' : 'tour_exclusions';
+  const [{data:options,error},{data:previous,error:readError}] = await Promise.all([
+    supabase.from('tour_list_options').select('id,kind,is_active').in('id',ids),
+    supabase.from(table).select('option_id').eq('tour_id',tourId)
+  ]);
+  if(error||readError)throw new AppError('Unable to validate the package options.',500,[error,readError]);
+  const retained = new Set((previous??[]).map(row=>row.option_id));
+  if(ids.some(id=>!options?.some(option=>option.id===id && option.kind===kind && (option.is_active||retained.has(id)))))
+    throw new AppError(`Select available ${kind} options from the shared library.`,422);
+};
+const writeListOptions = async (tourId:string, body:TourContentInput) => {
+  if(body.inclusion_ids===undefined && body.exclusion_ids===undefined)return;
+  const {error}=await supabase.rpc('set_tour_list_options',{
+    p_tour_id:tourId,p_inclusion_ids:body.inclusion_ids??null,p_exclusion_ids:body.exclusion_ids??null
+  });
+  if(error)throw new AppError('Unable to save the selected package options.',error.code==='23514'?422:500,[error]);
 };
 
 const writeImages = async (tourId: string, plan: ImagePlan) => {
@@ -170,27 +174,23 @@ const writeImages = async (tourId: string, plan: ImagePlan) => {
   }
 };
 
-const writeActivities = async (tourId: string, activityIds: string[]) => {
-  if (activityIds.length) {
-    const { error } = await supabase
-      .from('tour_activities')
-      .upsert(
-        activityIds.map((activityId, index) => ({ tour_id: tourId, activity_id: activityId, sort_order: index })),
-        { onConflict: 'tour_id,activity_id' }
-      );
-    if (error) {
-      const status = isMissingSchema(error) ? 503 : 500;
-      throw new AppError('Unable to link activities to this tour. Run the activity links migration first.', status, [error]);
-    }
+const writeActivities = async (tourId: string, activityIds: string[], settings?: TourContentInput['activity_settings']) => {
+  // A per-person rate that becomes an activity add-on stops counting towards
+  // the tour's "from" price. Any other content save leaves price_from alone.
+  const linked = (settings ?? []).flatMap(row => row.pricing_option_id ? [row.pricing_option_id] : []);
+  let becomingAddOns = 0;
+  if (linked.length) {
+    const { count, error } = await supabase.from('tour_price_options').select('id',{count:'exact',head:true}).eq('tour_id',tourId).in('id',linked).eq('price_type','per_person').eq('is_addon',false);
+    if (error) throw new AppError('Unable to verify tour rates.',500,[error]);
+    becomingAddOns = count ?? 0;
   }
-
-  let unlink = supabase.from('tour_activities').delete().eq('tour_id', tourId);
-  if (activityIds.length) unlink = unlink.not('activity_id', 'in', `(${activityIds.join(',')})`);
-  const { error } = await unlink;
-  // Nothing to unlink before the activity links migration exists.
-  if (error && !(isMissingSchema(error) && !activityIds.length)) {
-    throw new AppError('Unable to unlink activities from this tour.', 500, [error]);
-  }
+  const { error } = await supabase.rpc('set_tour_activity_links', {
+    p_tour_id: tourId,
+    p_links: settings ?? activityIds.map(activity_id => ({ activity_id }))
+  });
+  // 23514 messages come from set_tour_activity_links and name the actual problem.
+  if (error) throw new AppError(error.code === '23514' ? `Unable to save tour activities: ${error.message}` : 'Unable to save tour activities.', error.code === '23514' ? 422 : 500, [error]);
+  if (becomingAddOns) await syncTourStartingPrice(tourId);
 };
 
 export const applyTourContent = async (tourId: string, body: TourContentInput, userId?: string) => {
@@ -199,19 +199,28 @@ export const applyTourContent = async (tourId: string, body: TourContentInput, u
   // checks run side by side, and so do the writes (each one is already safe
   // on its own: new rows land before old ones go). A six-day save was about
   // twenty round trips in a row.
-  const activityIds = body.activity_ids ? uniqueIds(body.activity_ids) : null;
+  const activityIds = body.activity_settings ? body.activity_settings.map(row => row.activity_id) : body.activity_ids ? uniqueIds(body.activity_ids) : null;
+  if (body.activity_ids && body.activity_settings && JSON.stringify(body.activity_ids) !== JSON.stringify(activityIds))
+    throw new AppError('Activity choices and settings must match in the same order.', 422);
+  if (body.activity_settings?.some(row => row.pricing_option_id)) {
+    const { data, error } = await supabase.from('tour_price_options').select('id,tour_id,price_type').in('id', body.activity_settings.flatMap(row => row.pricing_option_id ? [row.pricing_option_id] : []));
+    if (error) throw new AppError('Unable to check activity prices.', 500, [error]);
+    if (body.activity_settings.some(row => row.pricing_option_id && !data?.some(price => price.id === row.pricing_option_id && price.tour_id === tourId && ['per_person','per_group','per_child','upgrade'].includes(price.price_type))))
+      throw new AppError('Choose an activity pricing option from this tour.', 422);
+  }
   const [dayPlan, imagePlan] = await Promise.all([
     body.days ? loadDayPlan(tourId, body.days) : null,
     body.images ? loadImagePlan(tourId, body.images) : null,
-    activityIds ? checkActivities(activityIds) : null
+    activityIds ? checkActivities(activityIds) : null,
+    body.inclusion_ids ? checkListOptions(tourId,'inclusion',body.inclusion_ids) : null,
+    body.exclusion_ids ? checkListOptions(tourId,'exclusion',body.exclusion_ids) : null
   ]);
 
   await Promise.all([
     dayPlan ? writeDays(tourId, dayPlan) : null,
-    body.inclusions ? replaceTextList('tour_inclusions', tourId, body.inclusions) : null,
-    body.exclusions ? replaceTextList('tour_exclusions', tourId, body.exclusions) : null,
+    writeListOptions(tourId,body),
     imagePlan ? writeImages(tourId, imagePlan) : null,
-    activityIds ? writeActivities(tourId, activityIds) : null
+    activityIds ? writeActivities(tourId, activityIds, body.activity_settings) : null
   ]);
 
   // The tours list shows when a tour was last edited; content counts.

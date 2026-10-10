@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import { API_URL } from '$lib/admin/config/env';
 import type { EntityTranslations, Language, TranslationRecord } from '$lib/admin/types';
 import type { LegalDefaults } from '$lib/admin/legal';
-import type { Activity, AdvisorDonePayload, AdvisorMeta, AdvisorPageContext, AdvisorRecommendation, AiChatResponse, ApiResponse, BlogPost, Comparison, CurrencyApiState, Destination, FAQ, Lodge, MigrationEntry, PageSeo, Paginated, Review, ReviewSummary, SafariPackage, SafetyTopic, Specialist, Testimonial, Tour, TourCategory, TourContentBody, TravelStyle, TripPoint } from '$lib/admin/types';
+import type { Activity, AdvisorDonePayload, AdvisorMeta, AdvisorPageContext, AdvisorRecommendation, AiChatResponse, ApiResponse, BlogPost, Comparison, CurrencyApiState, Destination, FAQ, Lodge, MigrationEntry, PageSeo, Paginated, Review, ReviewSummary, SafariPackage, SafetyTopic, Specialist, Testimonial, Tour, TourListOption, TourCategory, TourContentBody, TravelStyle, TripPoint } from '$lib/admin/types';
 
 type QueryValue = string | number | boolean | undefined | null;
 type RequestOptions = Omit<RequestInit, 'body'> & {
@@ -278,6 +278,13 @@ export const api = {
     update: (id: string, body: Record<string, unknown>) =>
       apiRequest<Record<string, unknown>>(`/pricing-options/${id}`, { method: 'PUT', body }),
     remove: (id: string) => apiRequest(`/pricing-options/${id}`, { method: 'DELETE' })
+  },
+  tourListOptions: {
+    list: (params?: Record<string, QueryValue>) => apiRequest<Paginated<TourListOption>>(`/tour-list-options${queryString(params)}`),
+    create: (body: Record<string,unknown>) => apiRequest<TourListOption>('/tour-list-options',{method:'POST',body}),
+    update: (id:string,body:Record<string,unknown>) => apiRequest<TourListOption>(`/tour-list-options/${id}`,{method:'PUT',body}),
+    remove: (id:string) => apiRequest(`/tour-list-options/${id}`,{method:'DELETE'}),
+    bulk: (kind:'inclusion'|'exclusion',titles:string[]) => apiRequest<TourListOption[]>('/tour-list-options/bulk',{method:'POST',body:{kind,titles}})
   },
   tourInclusions: {
     list: (params?: Record<string, QueryValue>) =>

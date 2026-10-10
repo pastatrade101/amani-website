@@ -33,22 +33,35 @@
 </script>
 
 <nav aria-label="On this page" class="section-nav">
-	<div class="page-container flex items-center gap-4">
-		<ul bind:this={list} class="relative -mx-4 flex min-w-0 flex-1 gap-1 overflow-x-auto px-4 py-2 md:mx-0 md:px-0">
-			{#each items as item (item.id)}
-				<li class="shrink-0">
-					<a href={`#${item.id}`} data-section={item.id} aria-current={active === item.id ? 'location' : undefined} class={`inline-flex h-9 items-center rounded-full px-3.5 text-[13px] font-medium whitespace-nowrap transition-colors duration-150 ${active === item.id ? 'bg-navy text-white' : 'text-muted-foreground hover:bg-secondary hover:text-primary'}`}>{item.label}</a>
-				</li>
-			{/each}
-		</ul>
-		{#if canEnquire}
-			<Button variant="safari" href="#request-quote" onclick={onEnquire} class="hidden h-9 shrink-0 px-4 text-xs md:inline-flex">Enquire <ArrowRight class="size-3.5" /></Button>
-		{/if}
+	<div class="nav-shell">
+		<div class="nav-inner">
+			<ul bind:this={list} class="nav-tabs">
+				{#each items as item (item.id)}
+					<li class="nav-item">
+						<a href={`#${item.id}`} data-section={item.id} aria-current={active === item.id ? 'location' : undefined} class={`section-link ${active === item.id ? 'is-active' : ''}`}>{item.label}</a>
+					</li>
+				{/each}
+			</ul>
+			{#if canEnquire}
+				<div class="nav-cta"><Button variant="safari" href="#request-quote" onclick={onEnquire} class="h-11 rounded-lg px-6 text-sm font-bold">Request a Quote <ArrowRight class="size-4" /></Button></div>
+			{/if}
+		</div>
 	</div>
 </nav>
 
 <style>
-	.section-nav { position: sticky; top: var(--site-header-height); z-index: 40; border-bottom: 1px solid var(--border); background: color-mix(in oklch, var(--background) 94%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+	.section-nav { position: sticky; top: var(--site-header-height, 0px); z-index: 40; width: 100%; background: color-mix(in oklch, var(--background) 94%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+	.nav-shell { width:100%; border-block:1px solid var(--border); background:white; box-shadow:0 4px 20px -16px #14314d66; overflow:hidden; }
+	/* Same width and side padding as .tour-container, so the tabs start where the page's headings do. */
+	.nav-inner { display:flex; align-items:stretch; width:100%; max-width:1440px; margin-inline:auto; }
+	.nav-tabs { position:relative; display:flex; flex:1; min-width:0; overflow-x:auto; padding-inline:20px; gap:24px; }
+	.nav-item { display:flex; flex:none; }
+	@media(min-width:768px) { .nav-tabs { padding-inline:32px; gap:40px; } }
+	.section-link { display:flex; align-items:center; min-height:76px; border-bottom:3px solid transparent; padding:0 2px; white-space:nowrap; font-size:15px; font-weight:600; color:var(--muted-foreground); }
+	.section-link:hover,.section-link.is-active { color:var(--navy); }
+	.section-link.is-active { border-bottom-color:var(--sun); }
+	.nav-cta { display:flex; align-items:center; border-left:1px solid var(--border); padding:12px 32px 12px 24px; }
+	@media(max-width:767px) { .section-nav { padding:0; } .nav-shell { border-radius:0; border-left:0; border-right:0; } .section-link { min-height:58px; font-size:12px; } .nav-cta { display:none; } }
 	.section-nav ul { scrollbar-width: none; }
 	.section-nav ul::-webkit-scrollbar { display: none; }
 </style>

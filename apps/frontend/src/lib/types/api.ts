@@ -1,3 +1,10 @@
+export type TripEndpoint = {
+  id: string; name: string; slug: string; role: 'start' | 'end' | 'both';
+  gateway_type: 'airport' | 'city' | 'hotel' | 'border' | 'station';
+  airport_code?: string | null; destination_id?: string | null;
+  transfer_info?: string | null; status: 'draft' | 'published' | 'archived';
+};
+
 import type { ImageVariants } from '$lib/admin/img';
 
 /** Public fields from the existing Express controllers and Zod schemas. */
@@ -63,6 +70,10 @@ export type TourDestinationLink = {
 };
 
 export type Tour = {
+  start_trip_point_id?: string | null;
+  end_trip_point_id?: string | null;
+  start_point?: TripEndpoint | null;
+  end_point?: TripEndpoint | null;
 	id: string;
 	title: string;
 	slug: string;
@@ -117,6 +128,8 @@ export type DayStay = {
 };
 
 export type ItineraryDay = {
+  start_point?: TripEndpoint | null;
+  end_point?: TripEndpoint | null;
 	id: string;
 	day_number: number;
 	title: string;
@@ -161,6 +174,9 @@ export type TourPricingSeasonPublic = {
 };
 
 export type TourDetail = Tour & {
+	specialist?: { name: string; role: string; photo_url?: string | null; status?: string; blurb?: string | null } | null;
+	customization_intro?: string | null;
+	customization_options?: string[] | null;
 	full_description?: string | null;
 	difficulty_level?: string | null;
 	minimum_age?: number | null;
@@ -170,12 +186,12 @@ export type TourDetail = Tour & {
 	meta_description?: string | null;
 	og_image_url?: string | null;
 	itinerary_days?: ItineraryDay[] | null;
-	tour_inclusions?: { title: string; sort_order: number }[] | null;
-	tour_exclusions?: { title: string; sort_order: number }[] | null;
+	tour_inclusions?: { option_id?: string; title: string; sort_order: number }[] | null;
+	tour_exclusions?: { option_id?: string; title: string; sort_order: number }[] | null;
 	tour_images?: { id: string; image_url: string; alt_text?: string | null; caption?: string | null; sort_order: number; is_featured: boolean; image_url_thumbnail?: string }[] | null;
 	tour_pricing_seasons?: TourPricingSeasonPublic[] | null;
 	/** Published catalogue activities only. */
-	tour_activities?: { sort_order: number; activity: { id: string; name: string; slug: string; category?: string | null; duration_label?: string | null; price_from?: number | null; currency?: string | null; price_unit?: string | null; badge?: string | null; hero_image_url?: string | null; image_url?: string | null } }[] | null;
+	tour_activities?: TourActivityItem[] | null;
 };
 
 /** The lodge enums (apps/backend/src/schemas/lodges.schema.ts). */
@@ -255,3 +271,10 @@ export type StayDetail = Stay & {
 	/** Up to three other public stays in the same destination. */
 	nearby_stays?: Stay[] | null;
 };
+
+export type TourActivityItem = {
+ sort_order: number; is_optional: boolean; additional_cost: boolean; pricing_option_id?: string | null;
+ pricing_option?: { id: string; title: string; price: number; currency: string; price_type: string } | null;
+ activity: { id: string; name: string; slug: string; description?: string | null; category?: string | null; duration_label?: string | null; hero_image_url?: string | null; image_url?: string | null; };
+};
+export type OptionalActivitySelection = { activity_id: string; name: string; additional_cost: boolean; price: number | null; currency: string | null; price_type: string | null; pricing_option_id: string | null; };

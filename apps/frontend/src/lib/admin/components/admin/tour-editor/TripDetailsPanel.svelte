@@ -7,10 +7,13 @@
   import AdminTextArea from '$lib/admin/components/admin/AdminTextArea.svelte';
   import AiAssistButton from '$lib/admin/components/admin/AiAssistButton.svelte';
   import { LODGE_LEVELS } from '$lib/lodge-levels';
+  import TripEndpointsEditor from './TripEndpointsEditor.svelte';
+  import type { TripPoint } from '$lib/admin/types';
   import ListEditor from './ListEditor.svelte';
   import { DIFFICULTY_LEVELS, LIMITS, MAX_HIGHLIGHTS, STYLE_KEYS, STYLE_LABEL, suggestedNights, text, type Option, type TourEditorForm } from './model';
 
   export let form: TourEditorForm;
+  export let tripPoints: TripPoint[] = [];
   export let travelStyleOptions: Option[] = [];
   export let loadingOptions = false;
   export let attemptedSave = false;
@@ -66,9 +69,9 @@
           <button type="button" class="w-fit text-[11px] font-semibold text-forest underline-offset-2 hover:underline" on:click={() => (form.duration_nights = String(nights))}>Use {nights} {nights === 1 ? 'night' : 'nights'} (days − 1)</button>
         {/if}
       </div>
-      <AdminFormInput label="Start location" name="start_location" bind:value={form.start_location} placeholder="e.g. Arusha" maxlength={LIMITS.location} />
-      <AdminFormInput label="End location" name="end_location" bind:value={form.end_location} placeholder="e.g. Kilimanjaro International Airport" maxlength={LIMITS.location} />
+
     </div>
+    <TripEndpointsEditor bind:form points={tripPoints} loading={loadingOptions} {attemptedSave} />
   </section>
 
   <section class="cms-form-section grid gap-5">

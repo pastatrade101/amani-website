@@ -1,0 +1,14 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/auth.middleware';
+import { requirePermission } from '../middleware/permission.middleware';
+import { validate } from '../middleware/validate.middleware';
+import { tourListOptionCreateSchema, tourListOptionUpdateSchema, tourListOptionBulkSchema } from '../schemas/tour-list-options.schema';
+import { listTourListOptions,createTourListOption,updateTourListOption,deleteTourListOption,bulkCreateTourListOptions } from '../controllers/tour-list-options.controller';
+const router=Router();
+router.use(authenticate);
+router.get('/',requirePermission('tours.view'),listTourListOptions);
+router.post('/bulk',requirePermission('tours.update'),validate({body:tourListOptionBulkSchema}),bulkCreateTourListOptions);
+router.post('/',requirePermission('tours.update'),validate({body:tourListOptionCreateSchema}),createTourListOption);
+router.put('/:id',requirePermission('tours.update'),validate({body:tourListOptionUpdateSchema}),updateTourListOption);
+router.delete('/:id',requirePermission('tours.delete'),deleteTourListOption);
+export default router;

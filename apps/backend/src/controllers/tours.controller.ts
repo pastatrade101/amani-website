@@ -1,3 +1,5 @@
+import { tripPointEmbeds, normaliseTourTripPoints } from '../utils/tour-trip-points';
+import { validateTourTripPoints } from '../services/tour-trip-points.service';
 import { asyncHandler } from '../utils/async-handler';
 import { supabase } from '../config/supabase';
 import { AppError, sendSuccess } from '../utils/api-response';
@@ -19,17 +21,17 @@ import type { TourContentInput } from '../schemas/tours.schema';
 
 const primaryDestinationEmbed = 'destinations!tours_destination_id_fkey(name,slug,country)';
 const specialistEmbed = 'specialist:specialists!tours_specialist_id_fkey(id,name,role,photo_url,blurb,whatsapp_number,tripadvisor_url,status,is_featured,sort_order)';
-const legacySelect = `*, ${primaryDestinationEmbed}, tour_categories(name,slug), ${specialistEmbed}`;
-const fallbackSelect = `*, ${primaryDestinationEmbed}, tour_categories(name,slug)`;
+const legacySelect = `*, ${tripPointEmbeds}, ${primaryDestinationEmbed}, tour_categories(name,slug), ${specialistEmbed}`;
+const fallbackSelect = `*, ${tripPointEmbeds}, ${primaryDestinationEmbed}, tour_categories(name,slug)`;
 const destinationEmbed = 'tour_destinations(destination_id,sort_order,is_primary,destinations!tour_destinations_destination_id_fkey(id,name,slug,country))';
 const select = `${legacySelect}, ${destinationEmbed}`;
 // Lean projection for listings: everything the cards use, minus the detail-only
 // heavy fields (full_description, sample_itinerary). getTour still uses the full
 // select + embeds below.
 const legacyListSelect =
-  `id, title, slug, short_description, destination_id, specialist_id, category_id, experience_type, persona_tags, duration_days, duration_nights, budget_tier, price_from, currency, main_image_url, banner_image_url, highlights, difficulty_level, group_size, group_size_min, group_size_max, minimum_age, start_location, end_location, is_available, seats_remaining, status, is_featured, is_popular, seo_title, meta_title, meta_description, og_image_url, created_at, updated_at, ${primaryDestinationEmbed}, tour_categories(name,slug), ${specialistEmbed}`;
+  `id, title, slug, short_description, destination_id, specialist_id, category_id, experience_type, persona_tags, duration_days, duration_nights, budget_tier, price_from, currency, main_image_url, banner_image_url, highlights, difficulty_level, group_size, group_size_min, group_size_max, minimum_age, start_trip_point_id, end_trip_point_id, ${tripPointEmbeds}, is_available, seats_remaining, status, is_featured, is_popular, seo_title, meta_title, meta_description, og_image_url, created_at, updated_at, ${primaryDestinationEmbed}, tour_categories(name,slug), ${specialistEmbed}`;
 const fallbackListSelect =
-  `id, title, slug, short_description, destination_id, category_id, experience_type, persona_tags, duration_days, duration_nights, budget_tier, price_from, currency, main_image_url, banner_image_url, highlights, difficulty_level, group_size, group_size_min, group_size_max, minimum_age, start_location, end_location, is_available, seats_remaining, status, is_featured, is_popular, seo_title, meta_title, meta_description, og_image_url, created_at, updated_at, ${primaryDestinationEmbed}, tour_categories(name,slug)`;
+  `id, title, slug, short_description, destination_id, category_id, experience_type, persona_tags, duration_days, duration_nights, budget_tier, price_from, currency, main_image_url, banner_image_url, highlights, difficulty_level, group_size, group_size_min, group_size_max, minimum_age, start_trip_point_id, end_trip_point_id, ${tripPointEmbeds}, is_available, seats_remaining, status, is_featured, is_popular, seo_title, meta_title, meta_description, og_image_url, created_at, updated_at, ${primaryDestinationEmbed}, tour_categories(name,slug)`;
 const listSelect = `${legacyListSelect}, ${destinationEmbed}`;
 // Cards show the safari styles, a "from" price and the number of days. The
 // seasons are only read to compute pricing_summary and are stripped before the
@@ -43,16 +45,15 @@ const listSelects = [
   `${fallbackListSelect}, ${dayCountEmbed}`,
   fallbackListSelect
 ];
-// Compact relationship-free projection for admin lookup controls. Itinerary,
-// pricing and departures editors only need a tour identity and duration; they
-// should not fail because an optional destination/specialist embed is stale.
+// Compact projection for admin lookup controls, including the parent tour’s
+// canonical endpoints for the standalone itinerary editor.
 const summaryListSelect =
-  'id, title, slug, destination_id, duration_days, duration_nights, status, created_at, updated_at';
+  `id, title, slug, destination_id, duration_days, duration_nights, status, created_at, updated_at, start_trip_point_id, end_trip_point_id, ${tripPointEmbeds}`;
 // Detail view also embeds the assigned trip specialist, day-by-day itinerary,
 // what's included/excluded, pricing options and the tour gallery images.
 // Catalogue activities linked in the CMS (tour_activities); drafts are dropped
 // for public readers in normaliseTourDetail.
-const activitiesEmbed = 'tour_activities(sort_order,activity:activities(id,name,slug,category,duration_label,price_from,currency,price_unit,badge,hero_image_url,image_url,status))';
+const activitiesEmbed = 'tour_activities(sort_order,is_optional,additional_cost,pricing_option_id,pricing_option:tour_price_options(id,tour_id,title,price,currency,price_type),activity:activities(id,name,slug,category,description,duration_label,price_from,currency,price_unit,badge,hero_image_url,image_url,status,deleted_at))';
 const dayColumns = 'id,day_number,title,description,accommodation,accommodation_id,meals,activities,image_url';
 const dayLodgeEmbed = (columns: string) =>
   `lodge:lodges!itinerary_days_accommodation_id_fkey(${columns},destinations!lodges_destination_id_fkey(name),lodge_images(id,image_url,alt_text,caption,sort_order,is_cover))`;
@@ -75,7 +76,7 @@ const itineraryEmbeds = {
   // Before the route migration.
   legacy: `itinerary_days(${dayColumns},${dayLodgeEmbed(dayLodgeColumns)})`
 };
-const contentEmbeds = 'tour_inclusions(title,sort_order), tour_exclusions(title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
+const contentEmbeds = 'tour_inclusions(option_id,title,sort_order), tour_exclusions(option_id,title,sort_order), tour_price_options(id,tour_id,title,label,price,currency,price_type,is_addon,description,sort_order,created_at,updated_at), tour_images(id,tour_id,image_url,alt_text,caption,sort_order,is_featured,created_at,updated_at)';
 const seasonsEmbed = 'tour_pricing_seasons(id,safari_style,season_type,season_name,start_date,end_date,currency,pricing_basis,status,sort_order,group_prices:tour_group_prices(id,minimum_travelers,maximum_travelers,room_count,price,price_status,sort_order))';
 // Tried in order; each step drops what a not-yet-applied migration would add,
 // so the page keeps rendering between deploying code and running its SQL.
@@ -175,6 +176,8 @@ const prepareTourPayload = (body: Record<string, unknown>) => {
   delete rawPayload.destination_ids;
   delete rawPayload.tour_destinations;
   delete rawPayload.specialist;
+  delete rawPayload.start_point;
+  delete rawPayload.end_point;
 
   const explicitPrimary =
     typeof rawPayload.destination_id === 'string' && rawPayload.destination_id.trim()
@@ -249,7 +252,8 @@ const fetchTourById = async (id: string) => {
 const bySortOrder = (a: Row, b: Row) => Number(a?.sort_order ?? 0) - Number(b?.sort_order ?? 0);
 
 /** Card fields computed from the list embeds, which are then dropped. */
-const finishListItem = (item: Row, withPricing: boolean) => {
+const finishListItem = (item: Row, withPricing: boolean, staff: boolean) => {
+  normaliseTourTripPoints(item, staff);
   if (Array.isArray(item.tour_destinations)) item.tour_destinations = [...(item.tour_destinations as Row[])].sort(bySortOrder);
   if (Array.isArray(item.itinerary_days)) {
     item.itinerary_day_count = Number((item.itinerary_days as Row[])[0]?.count ?? 0);
@@ -341,7 +345,7 @@ export const listTours = asyncHandler(async (req, res) => {
   if (error) throw new AppError('Unable to fetch tours.', 500, [error]);
 
   const items = (data ?? []) as unknown as Array<Record<string, unknown>>;
-  for (const item of items) finishListItem(item, !summaryOnly);
+  for (const item of items) finishListItem(item, !summaryOnly, isStaffRequest(req));
   await attachThumbnails('tours', items);
   // One batched merge for the whole page of tours — a locale never costs a
   // query per row.
@@ -401,6 +405,7 @@ const localizeLodgeSummaries = async (lodges: Array<Record<string, unknown>>, lo
 
 export const createTour = asyncHandler(async (req, res) => {
   const { payload, destinationIds, syncDestinations } = prepareTourPayload(req.body);
+  await validateTourTripPoints(payload);
   const source = String(payload.slug || payload.title);
   payload.slug = await createUniqueSlug('tours', source);
 
@@ -429,7 +434,10 @@ export const updateTour = asyncHandler(async (req, res) => {
 
   if (req.user) payload.updated_by = req.user.sub;
 
-  const { data: previous } = await supabase.from('tours').select('*').eq('id', req.params.id).maybeSingle();
+  const { data: previous, error: previousError } = await supabase.from('tours').select('*').eq('id', req.params.id).maybeSingle();
+  if (previousError) throw new AppError('Unable to read this tour.', 500, [previousError]);
+  if (!previous) throw new AppError('Tour not found.', 404);
+  await validateTourTripPoints(payload, previous);
   const { data, error } = await supabase.from('tours').update(payload).eq('id', req.params.id).select('id').single();
   if (error) throw new AppError('Unable to update tours.', 500, [error]);
 

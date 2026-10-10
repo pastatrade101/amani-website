@@ -64,6 +64,8 @@
   };
 
   type TourSummary = {
+    start_point?: import('$lib/types/api').TripEndpoint | null;
+    end_point?: import('$lib/types/api').TripEndpoint | null;
     destination?: string;
     duration_days?: number | string | null;
     duration_nights?: number | string | null;
@@ -192,6 +194,8 @@
       const response = await api.tours.list({ limit: 100, status: 'all', view: 'summary' });
       tours = response.data.items.map((tour) => ({
         destination: relationText((tour as Record<string, unknown>).destinations, 'name'),
+        start_point: tour.start_point,
+        end_point: tour.end_point,
         duration_days: tour.duration_days,
         duration_nights: tour.duration_nights,
         id: tour.id,
@@ -579,6 +583,8 @@
         <div>
           <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-forest/70">Selected parent tour</p>
           <h2 class="mt-1 text-xl font-bold text-ink">{selectedTour.title}</h2>
+          <p class="mt-2 text-sm text-forest"><strong>{selectedTour.start_point?.name ?? 'Start point not selected'}</strong> → <strong>{selectedTour.end_point?.name ?? 'End point not selected'}</strong></p>
+          <p class="mt-1 text-xs text-ink/50">The first and final days inherit these endpoints. Change them in the parent tour editor.</p>
           <div class="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-ink/58">
             <span class="rounded-full bg-sand/70 px-3 py-1">{selectedTour.destination || selectedTour.slug}</span>
             <span class="rounded-full bg-sand/70 px-3 py-1">{formatDuration(selectedTour)}</span>

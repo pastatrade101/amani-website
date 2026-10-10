@@ -1,3 +1,4 @@
+import { resolveOptionalActivities, activitySummary } from '../services/optional-activities.service';
 import { supabase } from '../config/supabase';
 import { safeAudit } from '../services/audit.service';
 import { generateBookingCode } from '../services/booking-code.service';
@@ -49,6 +50,10 @@ export const createBooking = asyncHandler(async (req, res) => {
   if (!isAdmin && honeypot) {
     return sendSuccess(res, 'Booking request submitted successfully.', { booking_code: null }, 201);
   }
+
+  const optionalIds = Array.isArray(payload.optional_activity_ids) ? payload.optional_activity_ids as string[] : [];
+  delete payload.optional_activity_ids;
+  const optionalActivities = await resolveOptionalActivities(payload.tour_id ? String(payload.tour_id) : null, optionalIds);
 
   let source = String(payload.source ?? 'website_booking_form');
   // Public submitters may only set public sources — never forge admin/CRM sources.
@@ -109,6 +114,14 @@ export const createBooking = asyncHandler(async (req, res) => {
   delete payload.selected_currency;
 
   const leadContext = (payload.lead_context as Record<string, unknown> | null) ?? {};
+  delete leadContext.optional_activities;
+  const answers = { ...((leadContext.answers && typeof leadContext.answers === 'object') ? leadContext.answers as Record<string,unknown> : {}) };
+  delete answers.optional_activities;
+  if (optionalActivities.length) {
+    leadContext.optional_activities = optionalActivities;
+    answers.optional_activities = optionalActivities.map(activitySummary);
+  }
+  leadContext.answers = answers;
   if (!isAdmin) leadContext.selected_currency = selectedCurrency;
 
   const insertData = {

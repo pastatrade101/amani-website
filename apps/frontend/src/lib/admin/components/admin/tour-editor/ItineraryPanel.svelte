@@ -24,6 +24,8 @@
   import ConfirmModal from '$lib/admin/components/admin/ConfirmModal.svelte';
   import { plainToHtml } from '$lib/admin/richText';
   import { SAFARI_STYLE_THEME } from '$lib/safari-pricing';
+  import TripEndpointsEditor from './TripEndpointsEditor.svelte';
+  import type { TripPoint } from '$lib/admin/types';
   import DayEditor from './DayEditor.svelte';
   import {
     LIMITS,
@@ -52,6 +54,8 @@
    * number is always its position, so reordering can never leave a gap.
    */
   export let form: TourEditorForm;
+  export let tripPoints: TripPoint[] = [];
+  export let loadingOptions = false;
   export let destinations: DestinationOption[] = [];
   export let lodges: LodgeOption[] = [];
   export let loadingLodges = false;
@@ -179,6 +183,7 @@
 </script>
 
 <div class="grid gap-5 cms-form-panel">
+  <TripEndpointsEditor bind:form points={tripPoints} loading={loadingOptions} {attemptedSave} prefix="itinerary" />
   <section class="cms-form-section grid gap-4">
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div class="min-w-0">
@@ -275,6 +280,8 @@
 
             {#if open}
               <DayEditor
+                startPoint={index === 0 ? tripPoints.find(p => p.id === form.start_trip_point_id) ?? null : null}
+                endPoint={index === form.days.length - 1 ? tripPoints.find(p => p.id === form.end_trip_point_id) ?? null : null}
                 bind:day={form.days[index]}
                 {index}
                 {destinations}

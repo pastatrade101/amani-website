@@ -199,10 +199,10 @@
 .key2africa-admin-surface [data-slot=accordion-content][data-state=closed] { display: none; }
 .key2africa-admin-surface [data-slot=checkbox][data-state=checked] { background: #123252; border-color: #123252; color: white; }
 .key2africa-admin-surface [data-slot=switch][data-state=checked] { background: #123252; }
-.key2africa-admin-surface [data-slot=switch-thumb][data-state=checked] { transform: translateX(calc(100% - 2px)); }
+/* The Switch component owns thumb movement; a second transform doubles its offset. */
 
 .key2africa-admin-surface [data-slot=switch][data-state=unchecked] { background: #dce3eb; }
-.key2africa-admin-surface [data-slot=switch-thumb] { background: white; }
+.key2africa-admin-surface [data-slot=switch-thumb] { background: white; box-shadow: 0 1px 3px #12325226; }
 
 /* Maintain readable controls and touch targets in both editor layouts. */
 .cms-editor-form [data-slot=input], .cms-editor-form [data-slot=textarea], .cms-editor-form [data-slot=select-trigger] { font-size: 14px; }

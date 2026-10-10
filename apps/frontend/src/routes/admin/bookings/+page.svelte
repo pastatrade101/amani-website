@@ -200,7 +200,7 @@ import ConfirmModal from '$lib/admin/components/admin/ConfirmModal.svelte';
    * the literal text "[object Object]" — so all the captured attribution was
    * invisible to whoever was reading the enquiry.
    */
-  const LC_SKIP = new Set(['v', 'form_type', 'answers', 'consent', 'attribution', 'page', 'tour', 'category', 'utm']);
+  const LC_SKIP = new Set(['optional_activities', 'v', 'form_type', 'answers', 'consent', 'attribution', 'page', 'tour', 'category', 'utm']);
   const prettyKey = (key: string) => key.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
   const prettyValue = (value: unknown): string => {
     if (Array.isArray(value)) return value.map((item) => String(item)).filter(Boolean).join(', ');

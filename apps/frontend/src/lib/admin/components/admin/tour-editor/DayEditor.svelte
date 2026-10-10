@@ -1,5 +1,6 @@
 <script lang="ts">
   import { BedDouble, Car, Image as ImageIcon, ListChecks, MapPin, Plane, Ship, Utensils } from '@lucide/svelte';
+  import type { TripPoint } from '$lib/admin/types';
   import AdminFormInput from '$lib/admin/components/admin/AdminFormInput.svelte';
   import AdminRichText from '$lib/admin/components/admin/AdminRichText.svelte';
   import MediaPicker from '$lib/admin/components/admin/MediaPicker.svelte';
@@ -27,6 +28,8 @@
   /** The inline editor under one day of the itinerary timeline. */
   export let day: DayDraft;
   export let index: number;
+  export let startPoint: TripPoint | null = null;
+  export let endPoint: TripPoint | null = null;
   export let destinations: DestinationOption[] = [];
   /** The tour's own destinations, listed first in the place picker. */
   export let tourDestinationIds: string[] = [];
@@ -68,6 +71,11 @@
 </script>
 
 <div class="grid gap-6 border-t border-ink/10 p-3 sm:p-5">
+  {#if startPoint || endPoint}<div class="grid gap-2 rounded-lg border border-forest/15 bg-forest/5 p-3 text-xs text-heading">
+    {#if startPoint}<p><strong>Journey starts:</strong> {startPoint.name}{startPoint.airport_code ? ` (${startPoint.airport_code})` : ''}</p>{/if}
+    {#if endPoint}<p><strong>Journey finishes:</strong> {endPoint.name}{endPoint.airport_code ? ` (${endPoint.airport_code})` : ''}</p>{/if}
+    <p class="text-ink/50">Linked to the tour’s journey endpoints above.</p>
+  </div>{/if}
   <section class="@container grid gap-4">
     <!-- Typed on the left, shown on the right as the tour page will wrap it —
          side by side once the day itself is wide enough, not the window. -->

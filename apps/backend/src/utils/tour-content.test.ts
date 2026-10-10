@@ -332,6 +332,7 @@ describe('reading a tour back', () => {
     tour_activities: [
       { sort_order: 2, activity: { name: 'Draft', status: 'draft' } },
       { sort_order: 1, activity: { name: 'Live', status: 'published' } },
+      { sort_order: 3, activity: { name: 'Deleted', status: 'published', deleted_at: '2026-10-01T00:00:00Z' } },
       { sort_order: 0, activity: null }
     ]
   });
@@ -361,7 +362,9 @@ describe('reading a tour back', () => {
     assert.equal(first.destination, null);
   });
 
-  it('keeps draft activities off public pages but shows them to the editor', () => {
+  // A deleted activity's link outlives the soft delete; the editor must not
+  // send it back, because set_tour_activity_links refuses it.
+  it('keeps draft activities off public pages but shows them to the editor, and hides deleted ones from both', () => {
     assert.deepEqual(normaliseTourDetail(record(), { staff: false }).tour_activities.map((link: any) => link.activity.name), ['Live']);
     assert.deepEqual(normaliseTourDetail(record(), { staff: true }).tour_activities.map((link: any) => link.activity.name), ['Live', 'Draft']);
   });

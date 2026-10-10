@@ -1,3 +1,4 @@
+import { syncTourStartingPrice } from '../services/tour-starting-price.service';
 import { supabase } from '../config/supabase';
 import { safeAudit } from '../services/audit.service';
 import { AppError, sendSuccess } from '../utils/api-response';
@@ -24,26 +25,6 @@ const normalizePayload = (payload: Record<string, unknown>) => {
 // Keep the tour-card starting price aligned with its real per-person rates.
 // Other option types (supplements, upgrades, discounts and group totals) must
 // not become the public "from" price.
-const syncTourStartingPrice = async (tourId: string) => {
-  if (!tourId) return;
-  const { data, error } = await supabase
-    .from('tour_price_options')
-    .select('price')
-    .eq('tour_id', tourId)
-    .eq('price_type', 'per_person')
-    .order('price', { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw new AppError('Pricing option saved, but the tour starting price could not be synchronized.', 500, [error]);
-  const nextPrice = data?.price ?? 0;
-
-  const { error: updateError } = await supabase
-    .from('tours')
-    .update({ price_from: nextPrice })
-    .eq('id', tourId);
-  if (updateError) throw new AppError('Pricing option saved, but the tour starting price could not be synchronized.', 500, [updateError]);
-};
 
 export const listPricingOptions = asyncHandler(async (req, res) => {
   const { page, limit, from, to } = getPagination(req.query);
@@ -105,7 +86,7 @@ export const createPricingOption = asyncHandler(async (req, res) => {
 
   if (error) throw new AppError('Unable to create pricing option.', 500, [error]);
 
-  await syncTourStartingPrice(String(data.tour_id));
+  if (!data.is_addon) await syncTourStartingPrice(String(data.tour_id));
 
   await safeAudit({ action: 'create', entityId: data?.id, entityType: 'tour_price_options', newData: data, req });
 
@@ -131,11 +112,11 @@ export const updatePricingOption = asyncHandler(async (req, res) => {
     .select(select)
     .single();
 
-  if (error) throw new AppError('Unable to update pricing option.', 500, [error]);
+  if (error) throw new AppError(error.code === '23514' ? 'This rate is used by an optional activity. Keep its tour and charge basis compatible.' : 'Unable to update pricing option.', error.code === '23514' ? 422 : 500, [error]);
 
   const previousTourId = String(previous.tour_id ?? '');
   const nextTourId = String(data.tour_id ?? previousTourId);
-  await syncTourStartingPrice(nextTourId);
+  if (!data.is_addon || !previous.is_addon) await syncTourStartingPrice(nextTourId);
   if (previousTourId && previousTourId !== nextTourId) await syncTourStartingPrice(previousTourId);
 
   await safeAudit({ action: 'update', entityId: req.params.id, entityType: 'tour_price_options', oldData: previous, newData: data, req });
@@ -151,9 +132,9 @@ export const deletePricingOption = asyncHandler(async (req, res) => {
     .maybeSingle();
 
   const { error } = await supabase.from('tour_price_options').delete().eq('id', req.params.id);
-  if (error) throw new AppError('Unable to delete pricing option.', 500, [error]);
+  if (error) throw new AppError(error.code === '23503' ? 'Unlink this rate from its optional activity before deleting it.' : 'Unable to delete pricing option.', error.code === '23503' ? 409 : 500, [error]);
 
-  await syncTourStartingPrice(String(previous?.tour_id ?? ''));
+  if (!previous?.is_addon) await syncTourStartingPrice(String(previous?.tour_id ?? ''));
 
   await safeAudit({ action: 'delete', entityId: req.params.id, entityType: 'tour_price_options', oldData: previous, req });
 

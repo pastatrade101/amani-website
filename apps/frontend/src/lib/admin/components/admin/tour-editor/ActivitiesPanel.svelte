@@ -1,4 +1,9 @@
 <script lang="ts">
+  import ActivityRateEditor from './ActivityRateEditor.svelte';
+  export let tourId = '';
+  import AdminSelect from '../AdminSelect.svelte';
+  import { Switch } from '$lib/components/ui/switch';
+  import type { TourPriceOption } from '$lib/admin/types';
   import { Input as CmsInput } from '$lib/components/ui/input';
 
   import { ArrowDown, ArrowUp, Binoculars, ExternalLink, X } from '@lucide/svelte';
@@ -16,7 +21,16 @@
   /** Names from the saved tour, for a linked activity missing from the catalogue list. */
   export let knownNames: Record<string, string> = {};
 
+  export let pricingOptions: TourPriceOption[] = [];
   let search = '';
+  const setting = (id: string) => form.activity_settings[id] ?? { is_optional: false, additional_cost: false, pricing_option_id: null };
+  const updateSetting = (id: string, patch: Partial<ReturnType<typeof setting>>) => {
+    const next = { ...setting(id), ...patch };
+    if (!next.is_optional) { next.additional_cost = false; next.pricing_option_id = null; }
+    if (!next.additional_cost) next.pricing_option_id = null;
+    form.activity_settings = { ...form.activity_settings, [id]: next };
+  };
+  $: priceChoices = [{ value: 'request', label: 'Price on request' }, ...pricingOptions.filter(p => (p.is_addon || p.price_type === 'upgrade') && ['per_person','per_group','per_child','upgrade'].includes(p.price_type)).map(p => ({value: p.id, label: `${p.title} · ${p.currency || 'USD'} ${p.price} (${p.price_type.replaceAll('_', ' ')})`}))];
 
   $: byId = new Map(activities.map((activity) => [activity.id, activity]));
   $: nameOf = (id: string) => byId.get(id)?.name ?? knownNames[id] ?? 'Unknown activity';
@@ -49,7 +63,7 @@
   <section class="cms-form-section grid gap-3">
     <div class="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-forest/70">Included activities</p>
+        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-forest/70">Tour activities</p>
         <p class="mt-1 text-xs text-ink/55">Shown on the tour page in this order. Tick more below; drafts stay hidden on the site until they are published.</p>
       </div>
       <span class="text-xs font-semibold text-ink/55">{form.activity_ids.length} of {MAX_ACTIVITIES}</span>
@@ -58,15 +72,25 @@
       <ol class="grid gap-1.5">
         {#each form.activity_ids as id, index (id)}
           {@const activity = byId.get(id)}
-          <li class="flex min-w-0 items-center gap-2 rounded-md border border-forest/25 bg-forest/5 px-2.5 py-2">
+          {@const config = form.activity_settings[id] ?? { is_optional: false, additional_cost: false, pricing_option_id: null }}
+          <li class="rounded-xl border border-forest/25 bg-forest/5 p-3">
+            <div class="flex min-w-0 items-center gap-2">
             <span class="flex size-6 shrink-0 items-center justify-center rounded-full bg-surface text-[11px] font-bold text-heading ring-1 ring-ink/10">{index + 1}</span>
             <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-medium text-ink">{nameOf(id)}</p>
+              <p class="break-words text-sm font-medium leading-5 text-ink">{nameOf(id)}</p>
               {#if activity && activity.status !== 'published'}<p class="text-[11px] font-semibold text-amber-700">{hiddenLabel(activity.status)}</p>{/if}
             </div>
             <button type="button" class="flex size-8 shrink-0 items-center justify-center rounded-md text-ink/60 hover:bg-surface disabled:opacity-30" aria-label={`Move ${nameOf(id)} up`} disabled={index === 0} on:click={() => (form.activity_ids = moveItem(form.activity_ids, index, -1))}><ArrowUp size={14} /></button>
             <button type="button" class="flex size-8 shrink-0 items-center justify-center rounded-md text-ink/60 hover:bg-surface disabled:opacity-30" aria-label={`Move ${nameOf(id)} down`} disabled={index === form.activity_ids.length - 1} on:click={() => (form.activity_ids = moveItem(form.activity_ids, index, 1))}><ArrowDown size={14} /></button>
             <button type="button" class="flex size-8 shrink-0 items-center justify-center rounded-md text-red-700 hover:bg-red-50" aria-label={`Remove ${nameOf(id)}`} on:click={() => toggle(id)}><X size={14} /></button>
+            </div>
+            <div class="mt-3 grid items-end gap-3 border-t border-ink/10 pt-3 sm:grid-cols-2">
+              <AdminSelect label="Activity type" name={`activity-type-${id}`} value={config.is_optional ? 'optional' : 'included'} options={[{value: 'included', label: 'Included in this tour'}, {value: 'optional', label: 'Optional activity'}]} on:change={(event) => updateSetting(id, { is_optional: event.detail === 'optional' })} />
+              {#if config.is_optional}
+                <div class="flex h-10 items-center justify-between gap-3 text-sm"><span>Additional cost</span><Switch checked={config.additional_cost} onCheckedChange={(checked) => updateSetting(id, { additional_cost: checked })} aria-label={`Additional cost for ${nameOf(id)}`} /></div>
+                {#if config.additional_cost}<div class="sm:col-span-2"><AdminSelect label="Tour pricing option" name={`activity-price-${id}`} options={priceChoices} value={config.pricing_option_id || 'request'} on:change={(event) => updateSetting(id, { pricing_option_id: event.detail === 'request' ? null : event.detail })} /><p class="mt-2 text-xs text-ink/55">An optional add-on, separate from the safari starting price.</p><ActivityRateEditor {tourId} activityName={nameOf(id)} rate={pricingOptions.find(rate => rate.id === config.pricing_option_id) ?? null} on:saved={(event) => { pricingOptions = [...pricingOptions.filter(rate => rate.id !== event.detail.id), event.detail]; updateSetting(id,{pricing_option_id:event.detail.id}); }} /></div>{/if}
+              {/if}
+            </div>
           </li>
         {/each}
       </ol>

@@ -81,10 +81,11 @@
           <span class="text-[11px] text-ink/40">Tour cards show up to three lines of it — see the card preview below.</span>
         {/if}
       </div>
-      <CmsLabel class="grid gap-1.5">
-        <span class="text-[13px] font-semibold text-ink/65">Page URL</span>
+      <div class="cms-field">
+        <CmsLabel for="tour-slug">Page URL</CmsLabel>
         <CmsInput
-          class="h-11 rounded-md border border-ink/15 bg-black/[0.02] px-3.5 text-sm text-ink outline-none transition hover:border-ink/25 focus:border-forest focus:bg-surface focus:ring-2 focus:ring-forest/20"
+          class="h-10 rounded-md border border-ink/15 bg-black/[0.02] px-3.5 text-sm text-ink outline-none transition hover:border-ink/25 focus:border-forest focus:bg-surface focus:ring-2 focus:ring-forest/20"
+          id="tour-slug"
           name="slug"
           bind:value={form.slug}
           oninput={() => (slugManuallyEdited = true)}
@@ -94,7 +95,7 @@
         {:else}
           <span class="text-[11px] text-ink/40">/tours/{text(form.slug) || 'your-safari'} · generated from the title until you edit it.</span>
         {/if}
-      </CmsLabel>
+      </div>
     </div>
 
     <div class="grid gap-1.5">
@@ -210,6 +211,6 @@
         Popular tour
       </CmsLabel>
     </div>
-    <p class="-mt-2 text-xs text-ink/45">Publishing needs at least one destination, an “At a glance” description and at least one itinerary day.</p>
+    <p class="-mt-2 text-xs text-ink/45">Publishing needs at least one destination, an “At a glance” description, published start and end points, and at least one itinerary day.</p>
   </section>
 </div>

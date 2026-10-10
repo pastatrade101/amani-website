@@ -62,6 +62,7 @@ const leadContextSchema = z.record(z.unknown()).optional().nullable();
 
 export const bookingCreateSchema = z.object({
   tour_id: uuidOrEmpty,
+  optional_activity_ids: z.array(z.string().uuid()).max(50).refine(ids => new Set(ids).size === ids.length, 'Select each activity once.').optional(),
   full_name: z.string().min(2),
   email: z.string().email(),
   phone: z.string().min(6).optional().nullable(),

@@ -1,3 +1,4 @@
+import tourListOptionsRoutes from './routes/tour-list-options.routes';
 import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
@@ -134,6 +135,7 @@ app.use('/api/ai', aiTravelAdvisorRoutes);
 app.use('/api/tours', toursRoutes);
 app.use('/api/itinerary-import', itineraryImportRoutes);
 app.use('/api/import', csvImportRoutes);
+app.use('/api/tour-list-options', tourListOptionsRoutes);
 app.use('/api/tour-inclusions', tourInclusionsRoutes);
 app.use('/api/tour-exclusions', tourExclusionsRoutes);
 app.use('/api/tour-images', tourImagesRoutes);

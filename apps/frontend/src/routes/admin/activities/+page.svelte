@@ -718,8 +718,8 @@
           <section class="cms-form-section grid gap-4">
             <div class="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-forest/70">Included in tours</p>
-                <p class="mt-1 text-xs text-ink/55">Tick the safari packages that include this activity. New links are added at the end of each tour’s activity list.</p>
+                <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-forest/70">Linked tours</p>
+                <p class="mt-1 text-xs text-ink/55">Link this experience to safari packages. Each tour’s Activities step controls whether it is included or optional and its additional cost.</p>
               </div>
               <span class="text-xs font-semibold text-ink/55">{form.tour_ids.length} selected</span>
             </div>
@@ -735,6 +735,7 @@
                     <span class="min-w-0 flex-1 truncate text-sm font-medium text-ink">{t.title}</span>
                     {#if t.status && t.status !== 'published'}<span class="shrink-0 text-[10px] uppercase tracking-wide text-ink/40">{t.status}</span>{/if}
                   </label>
+                  {#if picked}<a class="ml-7 text-xs font-semibold text-heading hover:underline" href={`/admin/tours/${t.id}/edit?tab=activities`} target="_blank" rel="noopener">Configure optional activity &amp; pricing →</a>{/if}
                 {/each}
               </div>
             {/if}

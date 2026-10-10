@@ -42,8 +42,10 @@
 
   type Tab = 'exclusions' | 'images' | 'inclusions';
 
-  type InclusionItem = { created_at?: string; id: string; sort_order: number; title: string; tour_id: string };
-  type ExclusionItem = { created_at?: string; id: string; sort_order: number; title: string; tour_id: string };
+  import type { TourListOption } from '$lib/admin/types';
+  let listOptions: TourListOption[] = [];
+  type InclusionItem = { option_id: string; created_at?: string; id: string; sort_order: number; title: string; tour_id: string };
+  type ExclusionItem = { option_id: string; created_at?: string; id: string; sort_order: number; title: string; tour_id: string };
   type TourImage = {
     alt_text?: string | null;
     caption?: string | null;
@@ -98,7 +100,7 @@
   let editingId: null | string = null;
   let deleteTarget: null | { id: string; label: string } = null;
 
-  let itemForm = { sort_order: '0', title: '', tour_id: '' };
+  let itemForm = { sort_order: '0', option_id: '', tour_id: '' };
   let imageForm = {
     alt_text: '',
     caption: '',
@@ -146,6 +148,7 @@
 
   const normalizeInclusion = (raw: Record<string, unknown>): InclusionItem => ({
     id: String(raw.id ?? ''),
+    option_id: String(raw.option_id ?? ''),
     tour_id: String(raw.tour_id ?? ''),
     title: String(raw.title ?? ''),
     sort_order: Number(raw.sort_order ?? 0),
@@ -154,6 +157,7 @@
 
   const normalizeExclusion = (raw: Record<string, unknown>): ExclusionItem => ({
     id: String(raw.id ?? ''),
+    option_id: String(raw.option_id ?? ''),
     tour_id: String(raw.tour_id ?? ''),
     title: String(raw.title ?? ''),
     sort_order: Number(raw.sort_order ?? 0),
@@ -253,9 +257,9 @@
     editingId = null;
     if (kind === 'image') void loadMedia();
     if (kind === 'inclusion') {
-      itemForm = { sort_order: nextOrder(sortedInclusions), title: '', tour_id: selectedTourId };
+      itemForm = { sort_order: nextOrder(sortedInclusions), option_id: '', tour_id: selectedTourId };
     } else if (kind === 'exclusion') {
-      itemForm = { sort_order: nextOrder(sortedExclusions), title: '', tour_id: selectedTourId };
+      itemForm = { sort_order: nextOrder(sortedExclusions), option_id: '', tour_id: selectedTourId };
     } else {
       imageForm = { alt_text: '', caption: '', image_url: '', is_featured: false, sort_order: nextOrder(sortedImages), tour_id: selectedTourId };
     }
@@ -268,7 +272,7 @@
     if (kind === 'image') void loadMedia();
     if (kind === 'inclusion' || kind === 'exclusion') {
       const i = item as InclusionItem;
-      itemForm = { sort_order: String(i.sort_order), title: i.title, tour_id: i.tour_id };
+      itemForm = { sort_order: String(i.sort_order), option_id: i.option_id, tour_id: i.tour_id };
     } else {
       const img = item as TourImage;
       imageForm = {
@@ -291,13 +295,13 @@
   // ─── save / delete ────────────────────────────────────────────────────────
 
   const saveItem = async () => {
-    if (!itemForm.title.trim()) {
-      showToast('Item text is required.', 'error');
+    if (!itemForm.option_id) {
+      showToast('Select an option from the shared library.', 'error');
       return;
     }
     saving = true;
     const payload = {
-      title: itemForm.title.trim(),
+      option_id: itemForm.option_id,
       tour_id: itemForm.tour_id || selectedTourId,
       sort_order: Number(itemForm.sort_order) || 0
     };
@@ -401,7 +405,10 @@
     }
   };
 
-  onMount(loadTours);
+  onMount(()=>{void loadTours();void (async()=>{
+    try {let page=1;const items:TourListOption[]=[];while(true){const r=await api.tourListOptions.list({page,limit:100});items.push(...r.data.items);if(page>=r.data.pagination.totalPages)break;page++;}listOptions=items;}
+    catch(err){showToast(err instanceof Error?err.message:'Unable to load package options.','error');}
+  })();});
 </script>
 
 <ToastStack {toasts} on:dismiss={dismissToast} />
@@ -679,13 +686,11 @@
 
       {#if modalKind === 'inclusion' || modalKind === 'exclusion'}
         <div class="mt-6 grid gap-4 sm:grid-cols-[1fr_160px]">
-          <AdminFormInput
-            label={modalKind === 'inclusion' ? 'Included item' : 'Excluded item'}
-            name="title"
-            bind:value={itemForm.title}
-            placeholder={modalKind === 'inclusion' ? 'e.g. All park fees' : 'e.g. International flights'}
-            required
-          />
+          <div class="grid gap-2">
+            <AdminSelect label={modalKind==='inclusion'?'Included item':'Excluded item'} name="option_id" bind:value={itemForm.option_id}
+              options={[{value:'',label:'Select a shared option'},...listOptions.filter(o=>o.kind===modalKind&&(o.is_active||o.id===itemForm.option_id)).map(o=>({value:o.id,label:o.title}))]} />
+            <a href="/admin/tour-options" class="text-xs font-semibold text-forest hover:underline">Manage the shared library →</a>
+          </div>
           <AdminFormInput label="Sort order" name="sort_order" type="number" bind:value={itemForm.sort_order} />
         </div>
 

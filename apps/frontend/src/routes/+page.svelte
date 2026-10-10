@@ -96,7 +96,7 @@
 		{:else if guideSections.some(item => item.section_key === section.section_key)}
 			<SafariGuide {section} canEnquire={visible.includes('enquiry')} onInterest={chooseInterest} reviews={data.reviews} />
 		{:else if section.section_key === 'enquiry'}
-			<Enquiry {section} {form} {interest} />
+			<Enquiry {section} {form} {interest} optionalActivities={data.optionalActivities} />
 		{/if}
 	{/each}
 </main>

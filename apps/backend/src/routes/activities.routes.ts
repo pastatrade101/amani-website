@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  listOptionalActivities,
   createActivity,
   deleteActivity,
   getActivity,
@@ -14,6 +15,7 @@ import { activityCreateSchema, activityUpdateSchema } from '../schemas/activitie
 const router = Router();
 
 router.get('/', listActivities);
+router.get('/optional', listOptionalActivities);
 router.get('/:slug', getActivity);
 router.post('/', authenticate, requirePermission('activities.create'), validate({ body: activityCreateSchema }), createActivity);
 router.put('/:id', authenticate, requirePermission('activities.update'), validate({ body: activityUpdateSchema }), updateActivity);

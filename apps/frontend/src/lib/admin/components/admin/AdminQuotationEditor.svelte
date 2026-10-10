@@ -14,6 +14,8 @@
    * this screen is opinionated — a send that the server skipped is reported as
    * skipped, never as sent.
    */
+  import type { OptionalActivitySelection } from '$lib/types/api';
+  import { optionalQuotationAmount } from '$lib/optional-activities';
   import { createEventDispatcher } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { MessageCircle, Plus, Save, Trash2, X } from '@lucide/svelte';
@@ -30,7 +32,30 @@
   export let prefill: Record<string, any> = {};
   export let tours: Array<Record<string, any>> = [];
 
-  type Line = { key: number; label: string; amount: string };
+  type Line = { key: number; label: string; amount: string; activity_id?: string };
+  let requestedActivities: OptionalActivitySelection[] = [];
+  let requestedError = '';
+  let requestGeneration = 0;
+  const loadRequestedActivities = async (id: string) => {
+    const generation = ++requestGeneration; requestedActivities = []; requestedError = '';
+    if (!id) return;
+    const initialAdults = form.adults, initialChildren = form.children;
+    try {
+      const booking = await api.bookings.get(id);
+      if (generation !== requestGeneration) return;
+      const context = booking.data.lead_context as Record<string,unknown> | null;
+      requestedActivities = Array.isArray(context?.optional_activities) ? context.optional_activities as OptionalActivitySelection[] : [];
+      if (!quotation) {
+        if (prefill.adults == null && form.adults === initialAdults) form.adults = String(booking.data.number_of_adults ?? 1);
+        if (prefill.children == null && form.children === initialChildren) form.children = String(booking.data.number_of_children ?? 0);
+      }
+    }
+    catch { if (generation === requestGeneration) requestedError = 'Could not load requested activities. Check the inquiry before sending this quotation.'; }
+  };
+  const addRequestedActivity = (item: OptionalActivitySelection) => {
+    if (lines.some(line => line.activity_id === item.activity_id)) return;
+    lines = [...lines, {key: ++lineSeq, activity_id:item.activity_id,label:`${item.name} (optional activity)`,amount:optionalQuotationAmount(item,Number(form.adults),Number(form.children),form.currency)}];
+  };
   type Form = {
     title: string;
     tour_id: string;
@@ -263,10 +288,12 @@
       ? existing.map((item) => ({
           key: (lineSeq += 1),
           label: text(item?.label ?? item?.title),
+          activity_id: item?.activity_id,
           amount: numText(item?.amount, '')
         }))
       : [newLine()];
     baseline = snapshot();
+    void loadRequestedActivities(text(source.booking_request_id));
     ensureCurrencies();
     // `hydrated` also stops the recursion: hydrate() re-seeds with the full row.
     if (quotation?.id && !hydrated) void hydrate(String(quotation.id));
@@ -369,15 +396,17 @@
     if (form.total_amount.trim() === '' || !Number.isFinite(totalValue) || totalValue < 0) {
       errors.total = 'Enter the total this traveller is being quoted.';
     }
+    if (lines.some(line => line.activity_id && (line.amount.trim() === '' || !Number.isFinite(Number(line.amount)) || Number(line.amount) < 0))) errors.total = 'Confirm the price of each requested activity before saving or sending this quotation.';
     return !errors.title && !errors.total;
   };
 
   /** Rows the agent started and abandoned are not line items. */
   const cleanItems = () =>
     lines
-      .map((line) => ({ label: line.label.trim(), amount: line.amount.trim() }))
+      .map((line) => ({ label: line.label.trim(), amount: line.amount.trim(), activity_id: line.activity_id }))
       .filter((line) => line.label !== '' || line.amount !== '')
       .map((line) => ({
+        ...(line.activity_id ? { activity_id: line.activity_id } : {}),
         label: line.label,
         amount: line.amount === '' || !Number.isFinite(Number(line.amount)) ? null : Number(line.amount)
       }));
@@ -634,6 +663,19 @@
           {/if}
         </section>
 
+        {#if requestedActivities.length || requestedError}
+        <section class="grid gap-3 border-t border-ink/10 bg-sun/5 p-5">
+         <h3 class="text-sm font-semibold text-heading">Requested optional activities</h3>
+         <p class="text-xs leading-5 text-ink/60">Selected by the customer; rates were captured at inquiry time. Add confirmed experiences to the quotation breakdown and review the final total. Blank amounts need a confirmed price or currency conversion.</p>
+         {#if requestedError}<p role="alert" class="text-sm text-red-700">{requestedError}</p>{/if}
+         {#each requestedActivities as item (item.activity_id)}
+          <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 bg-surface p-3">
+           <div><p class="text-sm font-semibold">{item.name}</p><p class="mt-1 text-xs text-ink/60">{!item.additional_cost ? 'No additional cost' : item.price === null ? 'Price on request' : `${item.currency} ${item.price} ${item.price_type?.replaceAll('_',' ')}`}</p></div>
+           <CmsButton type="button" variant="outline" size="sm" disabled={lines.some(line => line.activity_id === item.activity_id)} onclick={() => addRequestedActivity(item)}>{lines.some(line => line.activity_id === item.activity_id) ? 'Added to quotation' : 'Add to quotation'}</CmsButton>
+          </div>
+         {/each}
+        </section>
+        {/if}
         <section class="grid gap-3 border-t border-ink/10 p-5">
           <div>
             <p class={labelClass}>What's included</p>

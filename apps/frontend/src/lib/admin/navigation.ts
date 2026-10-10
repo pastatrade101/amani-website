@@ -63,6 +63,7 @@ export const groups: NavGroup[] = [
         { href: '/admin/available-dates', label: 'Available Dates', icon: CalendarDays },
         { href: '/admin/pricing-options', label: 'Pricing Options', icon: CircleDollarSign },
         { href: '/admin/exchange-rates', label: 'Exchange Rates', icon: CircleDollarSign },
+        { href: '/admin/tour-options', label: 'Inclusions & Exclusions', icon: ListCheck },
         { href: '/admin/tour-details', label: 'Tour Details', icon: ListCheck },
         { href: '/admin/import', label: 'Import Content (CSV)', icon: Upload }
       ]

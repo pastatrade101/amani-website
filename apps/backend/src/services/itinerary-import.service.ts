@@ -1,3 +1,4 @@
+import { resolveImportedTripPoint, validateTourTripPoints } from './tour-trip-points.service';
 // Bulk itinerary (tour) importer — one CSV row = one full itinerary, including
 // its type/category, day-by-day plan, inclusions, exclusions and pricing tiers.
 //
@@ -234,8 +235,11 @@ const replaceChildren = async (
   if (supplied.days) wipes.push(supabase.from('itinerary_days').delete().eq('tour_id', tourId));
   if (supplied.inclusions) wipes.push(supabase.from('tour_inclusions').delete().eq('tour_id', tourId));
   if (supplied.exclusions) wipes.push(supabase.from('tour_exclusions').delete().eq('tour_id', tourId));
-  if (supplied.priceOptions) wipes.push(supabase.from('tour_price_options').delete().eq('tour_id', tourId));
-  await Promise.all(wipes);
+  // Activity add-on rates are linked from tour_activities (on delete restrict)
+  // and are not part of the CSV, so only the tour's own tiers are replaced.
+  if (supplied.priceOptions) wipes.push(supabase.from('tour_price_options').delete().eq('tour_id', tourId).eq('is_addon', false));
+  // A failed wipe must not leave the new rows inserted next to the old ones.
+  for (const { error } of await Promise.all(wipes)) if (error) throw new Error(`replacing tour content: ${error.message}`);
 
   if (days.length) {
     // A CSV cell can carry markup just as an editor can, and this importer
@@ -298,7 +302,7 @@ export const importItineraries = async (csvText: string, userId?: string): Promi
       const categoryId = r.category ? await resolveCategory(r.category, warnings) : null;
       const destinationId = r.destination ? await resolveDestination(r.destination, r.destination_country || 'Tanzania', warnings) : null;
 
-      const existing = await supabase.from('tours').select('id, currency').eq('slug', slug).is('deleted_at', null).maybeSingle();
+      const existing = await supabase.from('tours').select('id, currency, status, start_trip_point_id, end_trip_point_id').eq('slug', slug).is('deleted_at', null).maybeSingle();
 
       // Price tiers need a currency even when the CSV omits the column; fall
       // back to the currency already on the tour before defaulting to USD.
@@ -326,8 +330,10 @@ export const importItineraries = async (csvText: string, userId?: string): Promi
       put(payload, 'group_size_max', r.group_size_max, toInt(r.group_size_max));
       put(payload, 'minimum_age', r.minimum_age, toInt(r.minimum_age));
       put(payload, 'difficulty_level', r.difficulty_level, r.difficulty_level);
-      put(payload, 'start_location', r.start_location, r.start_location);
-      put(payload, 'end_location', r.end_location, r.end_location);
+      for (const side of ['start', 'end'] as const) {
+        const value = r[`${side}_trip_point_id`] || r[`${side}_point`] || r[`${side}_location`];
+        if (has(value)) payload[`${side}_trip_point_id`] = await resolveImportedTripPoint(value, side);
+      }
       put(payload, 'highlights', r.highlights, splitList(r.highlights));
       put(payload, 'main_image_url', r.main_image_url, r.main_image_url);
       put(payload, 'banner_image_url', r.banner_image_url, r.banner_image_url);
@@ -337,6 +343,7 @@ export const importItineraries = async (csvText: string, userId?: string): Promi
       put(payload, 'seo_title', r.seo_title, r.seo_title);
       put(payload, 'meta_title', r.meta_title, r.meta_title);
       put(payload, 'meta_description', r.meta_description, r.meta_description);
+      await validateTourTripPoints(payload, existing.data ?? {});
       if (has(r.currency)) payload.currency = currency;
       // A resolved link only; an unresolvable name already raised a warning and
       // must not blank out a link that is already correct in the CMS.

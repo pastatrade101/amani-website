@@ -85,9 +85,9 @@ test('the content payload numbers days by position and drops empty stays', () =>
   second.activities = ['Game drive', ' ', 'Sundowner'];
   second.stays.budget = { lodge_id: '', accommodation: 'Tented camp', custom: true };
   form.days = [first, second];
-  form.inclusions = ['Park fees', '  '];
+  form.inclusion_ids = ['5b0c4f7e-9a51-4f1c-8a53-7f7d0b0f1a2b'];
 
-  const { days, inclusions } = contentPayload(form);
+  const { days, inclusion_ids } = contentPayload(form);
   assert.equal(days[0].day_number, 1);
   assert.equal(days[0].travel_mode, null, 'day 1 has no leg into it');
   assert.deepEqual(days[0].stays, [{ safari_style: 'midrange', lodge_id: 'lodge-1', accommodation: null }]);
@@ -95,7 +95,7 @@ test('the content payload numbers days by position and drops empty stays', () =>
   assert.equal(days[1].travel_mode, 'DRIVE');
   assert.equal(days[1].activities, 'Game drive\nSundowner');
   assert.deepEqual(days[1].stays, [{ safari_style: 'budget', lodge_id: null, accommodation: 'Tented camp' }]);
-  assert.deepEqual(inclusions, ['Park fees']);
+  assert.deepEqual(inclusion_ids, form.inclusion_ids);
   assert.equal('id' in days[0], false, 'a new day is sent without an id');
 });
 
@@ -119,7 +119,7 @@ test('publishing needs a destination, an at-a-glance line and a day', () => {
   form.slug = 'seven-days';
   form.status = 'published';
   const tabs = findProblems(form).map((problem) => problem.tab);
-  assert.deepEqual(tabs, ['basics', 'basics', 'itinerary']);
+  assert.deepEqual(tabs, ['trip', 'trip', 'basics', 'basics', 'itinerary']);
 });
 
 test('an untitled day blocks the save and points at that day', () => {
@@ -150,7 +150,7 @@ test('a stored tour round-trips without looking changed', () => {
       { destination_id: 'a', sort_order: 0 },
       { destination_id: 'b', sort_order: 1 }
     ],
-    tour_inclusions: [{ title: 'Park fees', sort_order: 1 }, { title: 'Guide', sort_order: 0 }],
+    tour_inclusions: [{ option_id: '5b0c4f7e-9a51-4f1c-8a53-7f7d0b0f1a2b', title: 'Park fees', sort_order: 1 }, { option_id: 'c1f0f4a2-3d7e-4b8a-9c1d-2e3f4a5b6c7d', title: 'Guide', sort_order: 0 }],
     tour_images: [
       { id: 'i1', image_url: 'https://x.test/1.jpg', is_featured: true, sort_order: 0 },
       { id: 'i2', image_url: 'https://x.test/2.jpg', is_featured: true, sort_order: 1 }
@@ -164,7 +164,7 @@ test('a stored tour round-trips without looking changed', () => {
   const form = formFromTour(tour);
   assert.equal(form.budget_tier, 'midrange');
   assert.deepEqual(form.destination_ids, ['b', 'a'], 'the primary destination comes first');
-  assert.deepEqual(form.inclusions, ['Guide', 'Park fees']);
+  assert.deepEqual(form.inclusion_ids, ['c1f0f4a2-3d7e-4b8a-9c1d-2e3f4a5b6c7d', '5b0c4f7e-9a51-4f1c-8a53-7f7d0b0f1a2b']);
   assert.deepEqual(form.days.map((day) => day.id), ['d1', 'd2']);
   assert.deepEqual(form.images.map((image) => image.is_featured), [true, false], 'one featured photo at most');
   assert.deepEqual(form.highlights, ['Big five', 'Crater floor']);
@@ -212,7 +212,7 @@ test('text past a limit blocks the save on its own step, saying how long it is',
 
   const trip = namedForm();
   trip.highlights = Array(LIMITS.highlights + 1).fill('Crater');
-  trip.end_location = 'x'.repeat(LIMITS.location + 1);
+  trip.end_trip_point_id = 'not-a-trip-point-uuid';
   assert.deepEqual(findProblems(trip).map((problem) => problem.tab), ['trip', 'trip']);
 
   const seo = namedForm();
@@ -296,4 +296,47 @@ test('photo addresses must be absolute before they reach the API', () => {
   assert.deepEqual(findProblems(form).map((problem) => problem.tab), ['itinerary']);
   day.image_urls = ['https://cdn.test/a.jpg', '', ''];
   assert.deepEqual(findProblems(form), []);
+});
+
+
+test('tour endpoints save only CMS identifiers, never typed labels', () => {
+  const form = namedForm();
+  form.start_trip_point_id = '5b0c4f7e-9a51-4f1c-8a53-7f7d0b0f1a2b';
+  form.end_trip_point_id = form.start_trip_point_id;
+  const payload = corePayload(form);
+  assert.equal(payload.start_trip_point_id, form.start_trip_point_id);
+  assert.equal(payload.end_trip_point_id, form.end_trip_point_id);
+  assert.equal('start_location' in payload, false);
+  assert.equal('end_location' in payload, false);
+  assert.deepEqual(findProblems(form), []);
+});
+
+ test('package selections use stable IDs and reject duplicate or malformed selections', () => {
+  const form = namedForm();
+  const id = '5b0c4f7e-9a51-4f1c-8a53-7f7d0b0f1a2b';
+  assert.deepEqual(contentPayload(form).inclusion_ids, []);
+  form.inclusion_ids = [id, id];
+  assert.ok(findProblems(form).some(p => p.tab === 'included' && /only once/.test(p.message)));
+  form.inclusion_ids = ['Park fees'];
+  assert.ok(findProblems(form).some(p => /shared library/.test(p.message)));
+  form.inclusion_ids = [id];
+  assert.deepEqual(findProblems(form), []);
+  assert.equal('inclusions' in contentPayload(form), false);
+  assert.equal('exclusions' in contentPayload(form), false);
+  form.exclusion_ids = Array(21).fill(id);
+  assert.ok(findProblems(form).some(p => /at most 20/.test(p.message)));
+});
+
+test('renaming a shared option does not change a tour selection or its saved order', () => {
+  const row = { id: 't1', title: 'Safari', slug: 'safari', tour_inclusions: [{ option_id: '5b0c4f7e-9a51-4f1c-8a53-7f7d0b0f1a2b', title: 'Before', sort_order: 0 }] } as unknown as Tour;
+  const before = formFromTour(row);
+  row.tour_inclusions![0].title = 'Updated library wording';
+  assert.deepEqual(contentPayload(formFromTour(row)).inclusion_ids, contentPayload(before).inclusion_ids);
+});
+
+test('tour editor preserves optional settings and removes deselected activity settings from saves', () => {
+ const row = {id:'tour',title:'Safari',tour_activities:[{activity:{id:'balloon',name:'Balloon'},is_optional:true,additional_cost:true,pricing_option_id:'rate',sort_order:0}]} as Tour;
+ const form = formFromTour(row);
+ assert.deepEqual(contentPayload(form).activity_settings,[{activity_id:'balloon',is_optional:true,additional_cost:true,pricing_option_id:'rate'}]);
+ form.activity_ids=[];assert.deepEqual(contentPayload(form).activity_settings,[]);
 });
