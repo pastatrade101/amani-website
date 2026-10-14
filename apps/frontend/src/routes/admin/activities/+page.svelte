@@ -119,6 +119,8 @@
     best_months: number[];
     tour_ids: string[];
     description: string;
+    short_description: string;
+    quick_highlights: string[];
     why_we_recommend: string;
     highlights: string[];
     price_from: string;
@@ -146,6 +148,8 @@
     best_months: [],
     tour_ids: [],
     description: '',
+    short_description: '',
+    quick_highlights: ['', '', ''],
     why_we_recommend: '',
     highlights: [''],
     price_from: '',
@@ -316,6 +320,8 @@
         best_months: Array.isArray(a.best_months) ? a.best_months.map(Number).filter((m) => m >= 1 && m <= 12) : [],
         tour_ids: (a.tour_activities ?? []).map((link) => link.tour_id),
         description: a.description ?? '',
+        short_description: a.short_description ?? '',
+        quick_highlights: [0, 1, 2].map((i) => a.quick_highlights?.[i] ?? ''),
         why_we_recommend: a.why_we_recommend ?? '',
         highlights: a.highlights?.length ? [...a.highlights] : [''],
         price_from: a.price_from != null ? String(a.price_from) : '',
@@ -409,6 +415,8 @@
       best_months: [...form.best_months].sort((a, b) => a - b),
       tour_ids: form.tour_ids,
       description: hasRichContent(form.description) ? form.description : null,
+      short_description: text(form.short_description),
+      quick_highlights: form.quick_highlights.map((item) => item.trim()).filter(Boolean),
       why_we_recommend: hasRichContent(form.why_we_recommend) ? form.why_we_recommend : null,
       highlights: cleanHighlights(),
       price_from: priceValue,
@@ -744,6 +752,23 @@
 
         <!-- ── Story & highlights ─────────────────────────────────────── -->
         <div class="grid gap-5 cms-form-panel" class:hidden={activeTab !== 'story'}>
+          <!-- What the tour page's activities popup shows. Both are capped so a
+               card keeps its shape; the long description stays for the full story. -->
+          <section class="cms-form-section grid gap-4">
+            <div>
+              <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-forest/70">Tour page card</p>
+              <p class="mt-1 text-xs text-ink/55">Shown in the activities popup on every tour that includes this activity.</p>
+            </div>
+            <AdminTextArea label="Short description" name="short_description" bind:value={form.short_description} rows={3} maxlength={200} placeholder="e.g. See the Serengeti from above on a sunrise balloon flight, followed by a champagne breakfast in the bush." />
+            <div class="grid gap-2">
+              <p class="text-sm font-medium text-ink">Quick highlights <span class="font-normal text-ink/50">— up to 3 short facts</span></p>
+              <div class="grid gap-3 sm:grid-cols-3">
+                {#each [0, 1, 2] as index}
+                  <AdminFormInput label={`Highlight ${index + 1}`} name={`quick_highlight_${index}`} bind:value={form.quick_highlights[index]} maxlength={48} placeholder={['Approx. 4 hours', 'Available in Serengeti', 'Champagne breakfast'][index]} />
+                {/each}
+              </div>
+            </div>
+          </section>
           <section class="cms-form-section grid gap-5">
             <AdminRichText label="Description" name="description" bind:value={form.description} rows={8} placeholder="What the activity involves, how long it takes and what to expect." />
             {#if attemptedSave && publishNeedsStory}<p class="-mt-3 text-xs font-semibold text-clay">Add a description before publishing.</p>{/if}

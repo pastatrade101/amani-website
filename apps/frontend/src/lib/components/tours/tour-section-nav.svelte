@@ -30,8 +30,37 @@
 		const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		list.scrollTo({ left: link.offsetLeft - (list.clientWidth - link.offsetWidth) / 2, behavior: reduce ? 'auto' : 'smooth' });
 	});
+
+	// Once the bar reaches the site header it takes the header's place: the
+	// header slides away, and comes back when the bar returns to its spot. The
+	// marker sits where the bar would be unstuck, so hiding the header (a
+	// transform, no layout change) never moves it and the state cannot flicker.
+	let marker = $state<HTMLDivElement>();
+	$effect(() => {
+		if (!marker) return;
+		const root = document.documentElement;
+		let headerHeight = 0;
+		// Scroll events already arrive at most once a frame; this is one rect read.
+		const check = () => {
+			if (marker!.getBoundingClientRect().top < headerHeight) root.dataset.headerHidden = 'true';
+			else delete root.dataset.headerHidden;
+		};
+		const measure = () => {
+			headerHeight = parseFloat(getComputedStyle(root).getPropertyValue('--site-header-height')) || 0;
+			check();
+		};
+		measure();
+		window.addEventListener('scroll', check, { passive: true });
+		window.addEventListener('resize', measure);
+		return () => {
+			window.removeEventListener('scroll', check);
+			window.removeEventListener('resize', measure);
+			delete root.dataset.headerHidden;
+		};
+	});
 </script>
 
+<div bind:this={marker} aria-hidden="true"></div>
 <nav aria-label="On this page" class="section-nav">
 	<div class="nav-shell">
 		<div class="nav-inner">
@@ -50,7 +79,10 @@
 </nav>
 
 <style>
-	.section-nav { position: sticky; top: var(--site-header-height, 0px); z-index: 40; width: 100%; background: color-mix(in oklch, var(--background) 94%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+	.section-nav { position: sticky; top: var(--site-header-height, 0px); z-index: 40; width: 100%; background: color-mix(in oklch, var(--background) 94%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: top 0.25s ease; }
+	/* The header has slid away (see the marker above): the bar moves up into its place. */
+	:global(html[data-header-hidden]) .section-nav { top: 0; }
+	@media (prefers-reduced-motion: reduce) { .section-nav { transition: none; } }
 	.nav-shell { width:100%; border-block:1px solid var(--border); background:white; box-shadow:0 4px 20px -16px #14314d66; overflow:hidden; }
 	/* Same width and side padding as .tour-container, so the tabs start where the page's headings do. */
 	.nav-inner { display:flex; align-items:stretch; width:100%; max-width:1440px; margin-inline:auto; }

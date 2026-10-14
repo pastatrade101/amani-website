@@ -55,6 +55,6 @@ export function costRows(section: HomepageSection): {label:string; from:string; 
   if (!Array.isArray(rows)) return [];
   return rows.filter(r => r && typeof r === 'object').map(r => ({label:string(r.label),from:string(r.from),note:string(r.note)})).filter(r => r.label);
 }
-export function approvedReviews(rows: GuestReview[]): GuestReview[] {
-  return rows.filter(r => r.status === 'approved' && r.message?.trim() && r.author_name?.trim() && Number.isFinite(Number(r.rating)) && Number(r.rating) >= 1 && Number(r.rating) <= 5).slice(0, 3);
+export function approvedReviews(rows: GuestReview[], max = 3): GuestReview[] {
+  return rows.filter(r => r.status === 'approved' && r.message?.trim() && r.author_name?.trim() && Number.isFinite(Number(r.rating)) && Number(r.rating) >= 1 && Number(r.rating) <= 5).slice(0, max);
 }

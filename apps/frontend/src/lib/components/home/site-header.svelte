@@ -237,7 +237,11 @@
 </header>
 
 <style>
-	.site-header { position: sticky; top: 0; z-index: 50; box-shadow: 0 8px 24px -20px rgb(15 35 55 / .3); border-bottom: 1px solid var(--border); background: var(--background); }
+	.site-header { position: sticky; top: 0; z-index: 50; box-shadow: 0 8px 24px -20px rgb(15 35 55 / .3); border-bottom: 1px solid var(--border); background: var(--background); transition: transform .25s ease; }
+	/* A page's own sticky bar can take the header's place while it is stuck
+	   (tour pages); keyboard focus inside the header still brings it back. */
+	:global(html[data-header-hidden]) .site-header:not(:focus-within) { transform: translateY(-100%); box-shadow: none; }
+	@media (prefers-reduced-motion: reduce) { .site-header { transition: none; } }
 	.header-shell { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px; max-width: var(--page-max); height: var(--site-header-height); margin-inline: auto; padding-inline: 32px; }
 	:global(.desktop-navigation) { position: static; display: flex; flex: none; }
 	:global(.mega-menu-item) { position: static; }

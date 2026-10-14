@@ -95,7 +95,7 @@
 		{:else if section.section_key === 'when_to_go'}
 			<Seasons {section} seasons={data.seasons} />
 		{:else if guideSections.some(item => item.section_key === section.section_key)}
-			<SafariGuide {section} canEnquire={visible.includes('enquiry')} onInterest={chooseInterest} reviews={data.reviews} />
+			<SafariGuide {section} canEnquire={visible.includes('enquiry')} onInterest={chooseInterest} reviews={data.reviews} reviewTotal={data.reviewTotal} />
 		{:else if section.section_key === 'enquiry'}
 			<Enquiry {section} {form} {interest} optionalActivities={data.optionalActivities} />
 		{/if}

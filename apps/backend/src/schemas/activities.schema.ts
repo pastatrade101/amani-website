@@ -22,6 +22,10 @@ const fields = {
   category: z.enum(ACTIVITY_CATEGORIES),
   difficulty: z.enum(ACTIVITY_DIFFICULTIES).optional().nullable(),
   description: z.string().max(20000).optional().nullable(),
+  // The tour page's activity popup: one short paragraph and up to three quick
+  // facts. Capped so a card keeps its shape (the database caps them too).
+  short_description: z.string().trim().max(200).optional().nullable(),
+  quick_highlights: z.array(z.string().trim().min(1).max(48)).max(3).optional(),
   why_we_recommend: z.string().max(8000).optional().nullable(),
   highlights: z.array(z.string().trim().min(1).max(200)).max(20).optional(),
   hero_image_url: optionalUrl,

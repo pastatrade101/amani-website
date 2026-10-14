@@ -34,6 +34,7 @@ export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
         optionalActivities: optionalActivities.status === 'fulfilled' ? optionalActivities.value : [],
 		gallery: gallery.status === 'fulfilled' ? publishedGallery(gallery.value.items) : [],
 		reviews: reviews.status === 'fulfilled' ? approvedReviews(reviews.value.items) : [],
+		reviewTotal: reviews.status === 'fulfilled' ? reviews.value.pagination.total : 0,
 		faqs: faqs.status === 'fulfilled' ? faqs.value.items : null,
 		sections: mergeSections(homepage.status === 'fulfilled' && Array.isArray(homepage.value) ? homepage.value : []),
 		destinations: destinations.status === 'fulfilled' ? destinations.value.items.filter((item) => !item.country || item.country.toLowerCase() === 'tanzania') : referenceDestinations,

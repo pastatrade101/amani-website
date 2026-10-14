@@ -24,9 +24,9 @@ export const load: PageServerLoad = async ({ fetch, params, url, request, setHea
 	// The questions the FAQ library places on this tour, in the library's order.
 	const [faqs, reviews] = await Promise.all([
 		apiGet<Paginated<FaqItem>>(`faqs?placement=tour&target_id=${encodeURIComponent(tour.id)}&limit=50`, fetch).then(r => r.items).catch(() => [] as FaqItem[]),
-		apiGet<Paginated<GuestReview>>('reviews?status=approved&limit=3', fetch).then(r => approvedReviews(r.items)).catch(() => [] as GuestReview[])
+		apiGet<Paginated<GuestReview>>('reviews?status=approved&limit=3', fetch).then(r => ({ items: approvedReviews(r.items), total: r.pagination.total })).catch(() => ({ items: [] as GuestReview[], total: 0 }))
 	]);
-	return { siteOrigin: url.origin, tour, chrome, faqs, reviews };
+	return { siteOrigin: url.origin, tour, chrome, faqs, reviews: reviews.items, reviewTotal: reviews.total };
 };
 
 export const actions: Actions = {

@@ -275,6 +275,6 @@ export type StayDetail = Stay & {
 export type TourActivityItem = {
  sort_order: number; is_optional: boolean; additional_cost: boolean; pricing_option_id?: string | null;
  pricing_option?: { id: string; title: string; price: number; currency: string; price_type: string } | null;
- activity: { id: string; name: string; slug: string; description?: string | null; category?: string | null; duration_label?: string | null; hero_image_url?: string | null; image_url?: string | null; };
+ activity: { id: string; name: string; slug: string; description?: string | null; short_description?: string | null; quick_highlights?: string[] | null; category?: string | null; duration_label?: string | null; hero_image_url?: string | null; image_url?: string | null; };
 };
 export type OptionalActivitySelection = { activity_id: string; name: string; additional_cost: boolean; price: number | null; currency: string | null; price_type: string | null; pricing_option_id: string | null; };

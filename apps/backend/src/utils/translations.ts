@@ -172,6 +172,7 @@ export const TRANSLATABLE_ENTITIES: Record<string, TranslatableField[]> = {
   ],
   activities: [
     { key: 'name', label: 'Name', kind: 'text', required: true },
+    { key: 'short_description', label: 'Short description', kind: 'textarea' },
     { key: 'description', label: 'Description', kind: 'rich', required: true },
     { key: 'meta_title', label: 'SEO title', kind: 'text' },
     { key: 'meta_description', label: 'SEO description', kind: 'textarea' }

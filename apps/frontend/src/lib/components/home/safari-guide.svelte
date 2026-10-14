@@ -6,7 +6,7 @@
   import { costRows, guideRows, sectionDefault, type GuestReview } from '$lib/homepage-guides';
   import { safeUrl, textContent } from '$lib/home-content';
   import type { HomepageSection } from '$lib/types/api';
-  let { section, canEnquire, onInterest = () => {}, reviews = [] }: { section: HomepageSection; canEnquire: boolean; onInterest?: (interest: string) => void; reviews?: GuestReview[] } = $props();
+  let { section, canEnquire, onInterest = () => {}, reviews = [], reviewTotal = 0 }: { section: HomepageSection; canEnquire: boolean; onInterest?: (interest: string) => void; reviews?: GuestReview[]; reviewTotal?: number } = $props();
   let rows = $derived(guideRows(section));
   let costs = $derived(costRows(section));
   let selected = $state('0');
@@ -32,7 +32,7 @@
     {:else if section.section_key === 'safari_day'}
       <div class="day-layout"><div class="day-photo" data-motion="image"><img src={photo} alt="Golden evening light over the Tanzanian landscape" loading="lazy"/><div><Sunrise size={30}/><p>Slow moments.<br/>Extraordinary memories.</p></div></div><ol class="day-timeline">{#each rows as row}<li data-motion="reveal"><span class="day-time">{row.label}</span><div><h3>{row.title}</h3><p>{row.text}</p></div></li>{/each}</ol></div>
     {:else if section.section_key === 'reviews_section'}
-      <GuestReviews {reviews} />
+      <GuestReviews {reviews} total={reviewTotal} />
     {/if}
   </div>
 </section>

@@ -53,7 +53,7 @@ const summaryListSelect =
 // what's included/excluded, pricing options and the tour gallery images.
 // Catalogue activities linked in the CMS (tour_activities); drafts are dropped
 // for public readers in normaliseTourDetail.
-const activitiesEmbed = 'tour_activities(sort_order,is_optional,additional_cost,pricing_option_id,pricing_option:tour_price_options(id,tour_id,title,price,currency,price_type),activity:activities(id,name,slug,category,description,duration_label,price_from,currency,price_unit,badge,hero_image_url,image_url,status,deleted_at))';
+const activitiesEmbed = 'tour_activities(sort_order,is_optional,additional_cost,pricing_option_id,pricing_option:tour_price_options(id,tour_id,title,price,currency,price_type),activity:activities(id,name,slug,category,description,short_description,quick_highlights,duration_label,price_from,currency,price_unit,badge,hero_image_url,image_url,status,deleted_at))';
 const dayColumns = 'id,day_number,title,description,accommodation,accommodation_id,meals,activities,image_url';
 const dayLodgeEmbed = (columns: string) =>
   `lodge:lodges!itinerary_days_accommodation_id_fkey(${columns},destinations!lodges_destination_id_fkey(name),lodge_images(id,image_url,alt_text,caption,sort_order,is_cover))`;

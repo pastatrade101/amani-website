@@ -3,7 +3,7 @@ export { activitySummary } from '../utils/optional-activities';
 import { supabase } from '../config/supabase';
 import { AppError } from '../utils/api-response';
 
-const select = 'sort_order,is_optional,additional_cost,pricing_option_id,activity:activities!inner(id,name,slug,description,category,duration_label,hero_image_url,image_url,status,deleted_at),pricing_option:tour_price_options(id,title,price,currency,price_type),tour:tours!inner(id,status,deleted_at)';
+const select = 'sort_order,is_optional,additional_cost,pricing_option_id,activity:activities!inner(id,name,slug,description,short_description,quick_highlights,category,duration_label,hero_image_url,image_url,status,deleted_at),pricing_option:tour_price_options(id,title,price,currency,price_type),tour:tours!inner(id,status,deleted_at)';
 export async function optionalActivityLinks(tourId?: string | null, ids?: string[]) {
  let query = supabase.from('tour_activities').select(select).eq('is_optional', true)
   .eq('activity.status','published').is('activity.deleted_at',null)

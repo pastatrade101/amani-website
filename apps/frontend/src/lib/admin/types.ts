@@ -448,6 +448,9 @@ export type Activity = {
   category: 'wildlife' | 'adventure' | 'cultural' | 'water' | 'trekking' | 'relaxation';
   difficulty?: 'easy' | 'moderate' | 'challenging' | 'strenuous' | null;
   description?: string;
+  /** The tour page's activity popup: one short paragraph (≤200) and up to 3 quick facts (≤48 each). */
+  short_description?: string | null;
+  quick_highlights?: string[];
   why_we_recommend?: string;
   highlights?: string[];
   hero_image_url?: string;
