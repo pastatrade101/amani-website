@@ -6,6 +6,7 @@
 	import Enquiry from '$lib/components/home/enquiry.svelte';
 	import RichText from '$lib/components/tours/rich-text.svelte';
 	import TourCard from '$lib/components/tours/tour-card.svelte';
+	import CardSlider from '$lib/components/card-slider.svelte';
 	import TourSectionNav from '$lib/components/tours/tour-section-nav.svelte';
 	import StayCard from '$lib/components/stays/stay-card.svelte';
 	import StayAmenities from '$lib/components/stays/detail/stay-amenities.svelte';
@@ -188,15 +189,17 @@
 					</div>
 					{#if place}<Button href={`/tours?destination_id=${encodeURIComponent(place.id)}#tour-results`} variant="outline" class="h-11 rounded-full px-5">All safaris to {placeShort} <ArrowRight class="size-4" /></Button>{/if}
 				</div>
-				<ul class="card-grid mt-10">
-					{#each tours as tour, i (tour.id)}
-						{@const note = overnightNote(tour)}
-						<li class="flex flex-col gap-3">
-							<div class="flex-1"><TourCard {tour} photo={tourImages[i]} /></div>
-							{#if note}<p class="overnight-note"><BedDouble class="size-4 shrink-0" aria-hidden="true" /><span>Overnight here: <strong>{note}</strong></span></p>{/if}
-						</li>
-					{/each}
-				</ul>
+				<div class="mt-10">
+					<CardSlider items={tours} label="Safaris that stay here" key={(tour) => tour.id} class="card-grid">
+						{#snippet card(tour, i)}
+							{@const note = overnightNote(tour)}
+							<div class="flex flex-1 flex-col gap-3">
+								<div class="flex-1"><TourCard {tour} photo={tourImages[i]} /></div>
+								{#if note}<p class="overnight-note"><BedDouble class="size-4 shrink-0" aria-hidden="true" /><span>Overnight here: <strong>{note}</strong></span></p>{/if}
+							</div>
+						{/snippet}
+					</CardSlider>
+				</div>
 			</div>
 		</section>
 	{/if}

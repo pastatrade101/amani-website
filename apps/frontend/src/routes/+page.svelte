@@ -17,6 +17,7 @@
 	import Seasons from '$lib/components/home/seasons.svelte';
 	import Enquiry from '$lib/components/home/enquiry.svelte';
 	import TourCard from '$lib/components/tours/tour-card.svelte';
+	import CardSlider from '$lib/components/card-slider.svelte';
 	import { siteInfo, websiteSchema } from '$lib/site-info';
 	import { textContent, tourPhotos } from '$lib/home-content';
 	import type { PageProps } from './$types';
@@ -79,16 +80,16 @@
 				<div class="page-container">
 					<div data-motion="reveal" class="flex flex-wrap items-end justify-between gap-5"><div class="max-w-2xl"><p class="eyebrow text-muted-foreground">{section.subtitle}</p><h2 class="section-heading mt-3">{section.title}</h2><p class="mt-3 text-sm leading-7 text-muted-foreground">{textContent(section.content)}</p></div><div class="flex flex-wrap items-center gap-3">{#if data.filters.search || data.filters.destination_id || data.filters.category_id}<Button href="/#tanzania-safari-packages" variant="outline">Clear filters</Button>{/if}<Button href="/tours" variant="outline" class="border-navy/20">View all tours <ArrowRight class="size-4" /></Button></div></div>
 					{#if data.filters.search}<p class="mt-5 text-sm">Results for “{data.filters.search}”</p>{/if}
+					{#if data.tours.length}
+						<div class="mt-8"><CardSlider items={data.tours} label="Safari tours" key={(tour) => tour.id} class="card-grid">{#snippet card(tour, i)}<TourCard {tour} photo={photos[i]} />{/snippet}</CardSlider></div>
+					{:else}
 					<div class="card-grid mt-8">
-						{#each data.tours as tour, i (tour.id)}
-							<TourCard {tour} photo={photos[i]} />
-						{:else}
                             <div data-motion="image" class="col-span-full grid overflow-hidden rounded-2xl border border-border bg-white md:grid-cols-2">
                                 <img src="/images/tanzania-hero-3.jpg" alt="Hot air balloons drifting over the Serengeti at sunrise" loading="lazy" class="h-60 w-full object-cover md:h-full md:min-h-80" />
                                 <div class="flex flex-col items-start justify-center p-7 md:p-10"><span class="eyebrow text-muted-foreground">MADE AROUND YOU</span><h3 class="mt-4 max-w-md text-2xl font-semibold tracking-tight md:text-3xl">{data.toursUnavailable ? 'Your safari starts with a conversation' : 'No safaris match your search yet'}</h3><p class="mt-4 max-w-md text-sm leading-7 text-muted-foreground">{data.toursUnavailable ? 'We can’t display our published itineraries right now. Share the places and experiences on your wish list, and let’s plan a personal Tanzania journey.' : 'Try a different destination or style, or let us create a trip around your interests.'}</p>{#if visible.includes('enquiry')}<Button variant="safari" href={planHref({ from: 'home_tours' })} data-cta="plan_my_trip" data-cta-location="home_tours" class="mt-6 h-12 px-6">Create my safari <ArrowRight class="size-4" /></Button>{/if}</div>
                             </div>
-						{/each}
 					</div>
+					{/if}
 					{#if data.pageCount > 1}<nav aria-label="Safari search pages" class="mt-8 flex items-center justify-center gap-4"><Button href={pageHref(data.page - 1)} disabled={data.page <= 1} variant="outline">Previous</Button><span class="text-xs">Page {data.page} of {data.pageCount}</span><Button href={pageHref(data.page + 1)} disabled={data.page >= data.pageCount} variant="outline">Next</Button></nav>{/if}
 				</div>
 			</section>

@@ -8,6 +8,7 @@
 	import ItineraryTimeline from '$lib/components/tours/itinerary-timeline.svelte';
 	import RichText from '$lib/components/tours/rich-text.svelte';
 	import FaqList from '$lib/components/faq/faq-list.svelte';
+	import CardSlider from '$lib/components/card-slider.svelte';
 	import ActivityShowcase from '$lib/components/tours/activity-showcase.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Accordion from '$lib/components/ui/accordion';
@@ -168,7 +169,7 @@
   </div></div>
  </section>
  {#if data.reviews.length}<section class="border-y border-border bg-secondary/20 py-12 md:py-16"><div class="tour-container"><h2 class="tour-heading text-center">Reviews</h2><div class="mx-auto mt-3 h-1 w-14 rounded-full bg-sun"></div><p class="mt-4 text-center text-sm text-muted-foreground">See what travelers say about their safari experience with Key2africa Safaris.</p><div class="mt-8"><GuestReviews reviews={data.reviews.slice(0,2)} total={data.reviewTotal} variant="tour" /></div></div></section>{/if}
- {#if related.length}<section class="tour-container py-12 md:py-16"><div class="flex flex-wrap items-end justify-between gap-4"><h2 class="tour-heading">More safaris to inspire you</h2><a href="/tours" class="inline-flex min-h-11 items-center gap-2 text-sm font-semibold">View all safaris <ArrowRight class="size-4" /></a></div><div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{#each related as item}<TourCard tour={item} />{/each}</div></section>{/if}
+ {#if related.length}<section class="tour-container py-12 md:py-16" style="--slider-bleed: 20px"><h2 class="tour-heading text-center">You May Also Like</h2><div class="mx-auto mt-3 h-1 w-14 rounded-full bg-sun"></div><p class="mx-auto mt-4 max-w-xl text-center text-sm leading-6 text-muted-foreground">Explore more safari experiences across Tanzania’s parks, landscapes and coast.</p><div class="mt-8"><CardSlider items={related} label="Similar safaris" key={(item) => item.id} class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{#snippet card(item)}<TourCard tour={item} />{/snippet}</CardSlider></div><div class="mt-7 flex justify-center"><a href="/tours" class="inline-flex min-h-[46px] items-center gap-2 rounded-[10px] border-[1.5px] border-sun bg-white px-[22px] text-sm font-semibold text-navy transition-colors hover:bg-sun/15">View All Tanzania Safaris <ArrowRight class="size-4" /></a></div></section>{/if}
  {#if enquirySection}<Enquiry section={enquirySection} {form} interest={enquiryInterest} optionalActivities={activities.filter(item => item.is_optional)} bind:selectedIds={selectedOptionalIds} />{/if}
 </main>
 <SiteFooter visible={chrome.visible} destinations={chrome.destinations} onInterest={chooseInterest} {onPage} />
