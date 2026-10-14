@@ -398,14 +398,14 @@
       key: 'faq',
       label: 'FAQ section',
       surface: 'public',
-      description: 'FAQ heading, WhatsApp CTA and optional homepage-specific FAQ rows. If no rows are added here, the homepage falls back to published FAQ records.',
-      fields: ['title', 'subtitle', 'button', 'extra: eyebrow, faqs'],
+      description: 'FAQ heading and WhatsApp CTA. The questions come from the FAQ library: every published question marked "Home page" there.',
+      fields: ['title', 'subtitle', 'button', 'extra: eyebrow'],
       preset: {
         title: 'Tanzania Safari FAQs',
         subtitle: 'Honest answers to the questions travellers ask most.',
         button_text: 'Ask us on WhatsApp',
         button_url: '/contact',
-        extra_data: { eyebrow: 'Good to know', faqs: [] }
+        extra_data: { eyebrow: 'Good to know' }
       }
     },
     {
@@ -629,6 +629,9 @@
 
   const MANAGED_KEYS = [
     ...BG_KEYS,
+    // Questions typed here before the FAQ library existed. Listed so they stay
+    // out of the raw JSON box; saving the section drops them, which leaves the
+    // library as the only source of home page questions.
     'faqs',
     'logos',
     'slides',
@@ -959,36 +962,14 @@
         ...(r.note.trim() ? { note: r.note.trim() } : {})
       }));
 
-  // ── homepage FAQ repeater (stored in extra_data.faqs) ─────────────────────
-  type FaqRow = { question: string; answer: string };
-  let faqRows: FaqRow[] = [];
-  const addFaqRow = () => {
-    faqRows = [...faqRows, { question: '', answer: '' }];
-  };
-  const removeFaqRow = (index: number) => {
-    faqRows = faqRows.filter((_, i) => i !== index);
-  };
-  const moveFaqRow = (index: number, direction: 'down' | 'up') => {
-    const nextIndex = direction === 'up' ? index - 1 : index + 1;
-    if (nextIndex < 0 || nextIndex >= faqRows.length) return;
-    const next = [...faqRows];
-    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
-    faqRows = next;
-  };
-  const extraToFaqRows = (ed: Record<string, unknown>): FaqRow[] =>
-    Array.isArray(ed.faqs)
-      ? (ed.faqs as Array<Record<string, unknown>>).map((f) => ({
-          question: String(f?.question ?? ''),
-          answer: String(f?.answer ?? '')
-        }))
-      : [];
-  const faqRowsToExtra = () =>
-    faqRows
-      .filter((f) => f.question.trim() && f.answer.trim())
-      .map((f) => ({
-        question: f.question.trim(),
-        answer: f.answer.trim()
-      }));
+  /**
+   * How many questions the open section still holds from the old homepage-only
+   * repeater (extra_data.faqs). They no longer show anywhere, and saving the
+   * section removes them, so the editor is told before that happens.
+   */
+  let legacyFaqCount = 0;
+  const countLegacyFaqs = (ed: Record<string, unknown>) =>
+    Array.isArray(ed.faqs) ? ed.faqs.filter((row) => String((row as Record<string, unknown>)?.question ?? '').trim()).length : 0;
 
   $: sorted = rows
     .filter((section) => !NON_HOME_KEYS.has(section.section_key))
@@ -1081,7 +1062,7 @@
     logos = [];
     slides = [];
     costRanges = [];
-    faqRows = [];
+    legacyFaqCount = 0;
     hydrateReferenceEditors('', {});
     hydrateButtonPresets();
     void loadMedia();
@@ -1105,7 +1086,7 @@
     logos = key === 'partners' ? extraToLogos(ed) : [];
     slides = key === 'login_slider' ? extraToSlides(ed) : [];
     costRanges = key === 'cost_ranges' ? extraToCostRanges(ed) : [];
-    faqRows = key === 'faq' ? extraToFaqRows(ed) : [];
+    legacyFaqCount = 0;
     hydrateReferenceEditors(key, ed);
     hydrateButtonPresets();
     const rest = Object.fromEntries(Object.entries(ed).filter(([extraKey]) => !MANAGED_KEYS.includes(extraKey)));
@@ -1170,7 +1151,7 @@
     logos = [];
     slides = [];
     costRanges = [];
-    faqRows = [];
+    legacyFaqCount = 0;
     hydrateReferenceEditors('', {});
     hydrateButtonPresets();
     void loadMedia();
@@ -1203,7 +1184,7 @@
     logos = extraToLogos(ed);
     slides = extraToSlides(ed);
     costRanges = extraToCostRanges(ed);
-    faqRows = extraToFaqRows(ed);
+    legacyFaqCount = countLegacyFaqs(ed);
     hydrateReferenceEditors(section.section_key, ed);
     hydrateButtonPresets();
     const rest = Object.fromEntries(Object.entries(ed).filter(([key]) => !MANAGED_KEYS.includes(key)));
@@ -1222,7 +1203,7 @@
     logos = [];
     slides = [];
     costRanges = [];
-    faqRows = [];
+    legacyFaqCount = 0;
     hydrateReferenceEditors('', {});
     hydrateButtonPresets();
   };
@@ -1333,12 +1314,6 @@
     // Merge cost ranges for the typical-cost band.
     if (form.section_key.trim() === 'cost_ranges' || costRanges.some((r) => r.label.trim())) {
       extra = { ...extra, ranges: costRangesToExtra() };
-    }
-
-    // Merge homepage-specific FAQ rows. When empty, the public homepage falls
-    // back to the global Admin → FAQs records.
-    if (form.section_key.trim() === 'faq' || faqRows.some((f) => f.question.trim() || f.answer.trim())) {
-      extra = { ...extra, faqs: faqRowsToExtra() };
     }
 
     if (form.section_key.trim() === 'why_us') {
@@ -2162,36 +2137,24 @@
           </div>
         {/if}
 
-        <!-- homepage FAQ repeater -->
+        <!-- The questions themselves live in the FAQ library, so there is one
+             place to write them. A new tab keeps this section's unsaved edits. -->
         {#if form.section_key.trim() === 'faq'}
           <div class="grid gap-3 rounded-xl border border-ink/10 bg-sand/25 p-4">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-forest/70">Homepage FAQ rows</p>
-                <p class="mt-1 text-xs text-ink/50">These rows render in the homepage FAQ section. If you leave them empty, the homepage uses published records from Admin → FAQs.</p>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-forest/70">Home page questions</p>
+                <p class="mt-1 text-xs text-ink/50">Home page questions come from the FAQ library. Mark a question 'Home page' there to show it here.</p>
               </div>
-              <CmsButton variant="ghost" type="button" class="inline-flex h-9 items-center gap-1.5 rounded-xl border border-ink/10 bg-surface px-3 text-xs font-semibold text-ink shadow-sm transition hover:border-goldfinch-gold/35 hover:bg-sand/70" onclick={addFaqRow}>
-                <Plus size={14} />Add FAQ
-              </CmsButton>
+              <a class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-ink/10 bg-surface px-3 text-xs font-semibold text-ink shadow-sm transition hover:border-goldfinch-gold/35 hover:bg-sand/70" href="/admin/faqs?placement=home" target="_blank" rel="noopener">
+                Manage home page FAQs <ExternalLink size={13} />
+              </a>
             </div>
-
-            {#if faqRows.length === 0}
-              <p class="rounded-xl border border-dashed border-ink/15 bg-surface/60 py-4 text-center text-xs text-ink/45">No homepage-specific FAQ rows. The public homepage will use published Admin FAQs instead.</p>
+            {#if legacyFaqCount}
+              <p class="rounded-lg border border-amber-200/80 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
+                This section still stores {legacyFaqCount === 1 ? '1 question' : `${legacyFaqCount} questions`} typed here before the FAQ library. They no longer show on the site, and saving this section removes them — add any you still need in the FAQ library first.
+              </p>
             {/if}
-
-            {#each faqRows as row, i (i)}
-              <div class="grid gap-3 rounded-xl border border-ink/10 bg-surface p-3 shadow-sm sm:grid-cols-[1fr_auto] sm:items-start">
-                <div class="grid gap-2">
-                  <CmsInput class="h-10 rounded-lg border border-ink/10 bg-surface px-3 text-sm font-semibold outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15" placeholder="Question" bind:value={row.question} />
-                  <CmsTextarea class="min-h-[92px] rounded-lg border border-ink/10 bg-surface px-3 py-2 text-sm leading-6 outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15" placeholder="Answer" bind:value={row.answer}></CmsTextarea>
-                </div>
-                <div class="flex items-center justify-end gap-1 sm:flex-col">
-                  <CmsButton variant="ghost" type="button" class="grid h-8 w-8 place-items-center rounded-xl border border-ink/10 bg-surface text-ink/50 shadow-sm transition hover:bg-sand/60 disabled:opacity-30" aria-label="Move FAQ up" disabled={i === 0} onclick={() => moveFaqRow(i, 'up')}><ArrowUp size={14} /></CmsButton>
-                  <CmsButton variant="ghost" type="button" class="grid h-8 w-8 place-items-center rounded-xl border border-ink/10 bg-surface text-ink/50 shadow-sm transition hover:bg-sand/60 disabled:opacity-30" aria-label="Move FAQ down" disabled={i === faqRows.length - 1} onclick={() => moveFaqRow(i, 'down')}><ArrowDown size={14} /></CmsButton>
-                  <CmsButton variant="ghost" type="button" class="grid h-8 w-8 place-items-center rounded-xl border border-red-200 bg-surface text-red-600 shadow-sm transition hover:bg-red-50" aria-label="Remove FAQ" onclick={() => removeFaqRow(i)}><Trash2 size={14} /></CmsButton>
-                </div>
-              </div>
-            {/each}
           </div>
         {/if}
 

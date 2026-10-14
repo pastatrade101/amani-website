@@ -22,7 +22,8 @@
 	import type { PageProps } from './$types';
 	let { data, form }: PageProps = $props();
 	let interest = $state('');
-	let visible = $derived(data.sections.filter((section) => section.is_active !== false).map((section) => section.section_key));
+	// The FAQ section renders only with questions placed on the home page.
+	let visible = $derived(data.sections.filter((section) => section.is_active !== false && !(section.section_key === 'faq' && !data.faqs?.length)).map((section) => section.section_key));
 	let hero = $derived(data.sections.find((section) => section.section_key === 'hero'));
 	let pageTitle = $derived(`${hero?.title || 'Tanzania Safaris'} | ${siteInfo.company}`);
 	let structuredData = $derived(JSON.stringify(websiteSchema(data.siteOrigin)).replace(/</g, '\\u003c'));

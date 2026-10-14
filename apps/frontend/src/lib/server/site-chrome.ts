@@ -10,18 +10,24 @@ import type { Activity, Category, Destination, HomepageSection, Paginated, Stay,
  * the Tours and Stays menus. Each part fails soft, so a slow API never blanks a page.
  */
 export async function loadSiteChrome(fetch: typeof globalThis.fetch) {
-	const [homepage, destinations, activities, categories, tours, stays] = await Promise.allSettled([
+	const [homepage, destinations, activities, categories, tours, stays, homeFaqs] = await Promise.allSettled([
 		apiGet<HomepageSection[]>('homepage', fetch),
 		apiGet<Paginated<Destination>>('destinations?status=published&limit=100', fetch),
 		apiGet<Paginated<Activity>>('activities?status=published&limit=12', fetch),
 		apiGet<Paginated<Category>>('categories?status=published&limit=100', fetch),
 		apiGet<Paginated<Tour>>('tours?status=published&limit=6', fetch),
-		apiGet<Paginated<Stay>>('lodges?status=published&limit=4', fetch)
+		apiGet<Paginated<Stay>>('lodges?status=published&limit=4', fetch),
+		apiGet<Paginated<{ id: string }>>('faqs?placement=home&limit=1', fetch)
 	]);
 	const sections = mergeSections(homepage.status === 'fulfilled' && Array.isArray(homepage.value) ? homepage.value : []);
+	// The home FAQ section only renders with questions placed on it, so the
+	// footer's link to it follows the same rule.
+	const noHomeFaqs = homeFaqs.status === 'fulfilled' && homeFaqs.value.pagination.total === 0;
 	return {
 		sections,
-		visible: sections.filter((section) => section.is_active !== false).map((section) => section.section_key),
+		visible: sections
+			.filter((section) => section.is_active !== false && !(section.section_key === 'faq' && noHomeFaqs))
+			.map((section) => section.section_key),
 		destinations: destinations.status === 'fulfilled' ? destinations.value.items.filter((item) => !item.country || item.country.toLowerCase() === 'tanzania') : referenceDestinations,
 		destinationsAreReference: destinations.status === 'rejected',
 		activities: activities.status === 'fulfilled' ? activities.value.items : referenceActivities,

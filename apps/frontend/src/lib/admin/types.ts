@@ -679,27 +679,33 @@ export type MigrationEntry = {
   is_published?: boolean;
 };
 
-/** The collections an FAQ can be attached to — the database's table names. */
-export type FaqEntityType =
-  | 'destinations'
-  | 'tours'
-  | 'tour_categories'
-  | 'safari_packages'
-  | 'lodges'
-  | 'activities';
+/** A record an FAQ is placed on, named by the API so the CMS never shows a bare uuid. */
+export type FaqPlacementTarget = { id: string; name: string; slug: string | null };
+
+/**
+ * Every place one question shows. FAQs are one shared library: each question
+ * is written once and placed on the home page and on any number of travel
+ * styles (tour_categories), tours and destinations.
+ */
+export type FaqPlacements = {
+  home: boolean;
+  categories: FaqPlacementTarget[];
+  tours: FaqPlacementTarget[];
+  destinations: FaqPlacementTarget[];
+};
 
 export type FAQ = {
   id: string;
   question: string;
   answer: string;
+  /** An editorial topic for the library (Safari, Visas, Payments…), not a travel style. */
   category?: string | null;
   status?: 'archived' | 'draft' | 'published';
   sort_order?: number;
-  /** Null on both halves means a general question, shown wherever nothing more specific is attached. */
-  entity_type?: FaqEntityType | null;
-  entity_id?: string | null;
-  /** Resolved by the API so a list can show a name instead of a uuid. Null if the record is gone. */
-  entity?: { id: string; type: FaqEntityType; label: string; slug: string | null } | null;
+  created_at?: string;
+  updated_at?: string;
+  /** Sent to staff only; public pages ask for their questions by placement instead. */
+  placements?: FaqPlacements;
 };
 
 export type AiChatResponse = {

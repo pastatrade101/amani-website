@@ -5,7 +5,6 @@
   import { Monitor, Smartphone, RefreshCw } from '@lucide/svelte';
   import { api } from '$lib/admin/api/client';
   import { blocksForSaving, lines, routeTourSlugs, type Block } from '$lib/admin/safariPackageBlocks';
-  import { attachedFaqQuery, generalFaqQuery, mergeFaqs } from '$lib/admin/faqEntities';
   import type { SafariPackage, Tour, Lodge, FAQ } from '$lib/admin/types';
 
   export let record: SafariPackage;
@@ -48,14 +47,14 @@
     }).filter(Boolean));
     if (linkedSlug) slugs.add(linkedSlug);
     // Only public records are needed. Draft text stays in this browser and is never saved by preview.
-    const [tourRows, lodges, homepage, categories, gateways, attached, general] = await Promise.all([
+    // Packages cannot be FAQ placements, so the preview shows the home page's questions.
+    const [tourRows, lodges, homepage, categories, gateways, homeFaqs] = await Promise.all([
       Promise.all([...slugs].map((slug) => safely(`tour “${slug}”`, async () => (await api.tours.get(slug)).data as Tour, null))),
       safely('accommodation', async () => (await api.lodges.list({ status: 'published', limit: 200 })).data.items ?? [], [] as Lodge[]),
       safely('advisor note', () => read('/api/homepage'), []),
       safely('trip interests', () => read('/api/categories?status=published&limit=30'), { items: [] }),
       safely('starting points', () => read('/api/trip-points?status=published&limit=30'), { items: [] }),
-      record.id ? safely('attached FAQs', () => read(`/api/faqs?${attachedFaqQuery('safari_packages', record.id, 8)}`), { items: [] }) : Promise.resolve({ items: [] }),
-      safely('general FAQs', () => read(`/api/faqs?${generalFaqQuery(8)}`), { items: [] })
+      safely('FAQs', async () => (await api.faqs.list({ placement: 'home', status: 'published', limit: 8 })).data.items ?? [], [] as FAQ[])
     ]);
     related = tourRows.filter((tour): tour is Tour => Boolean(tour));
     linked = related.find((tour) => tour.id === record.tour_id) ?? null;
@@ -63,7 +62,7 @@
     homeSections = Object.fromEntries((Array.isArray(homepage) ? homepage : []).map((section) => [section.section_key, section]));
     interests = categories.items ?? [];
     startPoints = (gateways.items ?? []).filter((point: Record<string, unknown>) => ['start', 'both'].includes(String(point.role)));
-    moduleFaqs = mergeFaqs(attached.items ?? [], general.items ?? [], 8);
+    moduleFaqs = homeFaqs;
     loading = false;
     if (failures.length) warning = `Some linked content could not be loaded: ${failures.join(', ')}. Your draft is unchanged. Retry to see the complete preview.`;
   };

@@ -18,7 +18,7 @@ export const load:PageServerLoad=async({fetch,params,url,setHeaders})=>{
     apiGet<Paginated<Tour>>(`tours?status=published&destination_id=${id}&limit=6`,fetch),
     apiGet<Paginated<Stay>>(`lodges?status=published&destination_id=${id}&limit=6`,fetch),
     apiGet<Paginated<Activity>>(`activities?status=published&destination_id=${id}&limit=24`,fetch),
-    apiGet<Paginated<{id:string;question:string;answer:string}>>(`faqs?status=published&destination_id=${id}&limit=100`,fetch)
+    apiGet<Paginated<{id:string;question:string;answer:string}>>(`faqs?placement=destination&target_id=${id}&limit=100`,fetch)
   ]);
   return {destination,chrome,siteOrigin:url.origin,
     tours:tours.status==='fulfilled'?tours.value.items:[],tourTotal:tours.status==='fulfilled'?tours.value.pagination.total:0,

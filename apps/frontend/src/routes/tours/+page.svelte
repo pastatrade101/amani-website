@@ -6,6 +6,7 @@
 	import SearchPanel from '$lib/components/home/search.svelte';
 	import Enquiry from '$lib/components/home/enquiry.svelte';
 	import TourCard from '$lib/components/tours/tour-card.svelte';
+	import FaqList from '$lib/components/faq/faq-list.svelte';
 	import SavedTours from '$lib/components/tours/saved-tours.svelte';
 	import { siteInfo } from '$lib/site-info';
 	import { planHref } from '$lib/planner/plan-href';
@@ -25,6 +26,7 @@
 		...(data.filters.search ? [{ key: 'search', kind: 'Interests', label: `“${data.filters.search}”` }] : [])
 	]);
 	let heading = $derived(data.toursUnavailable ? 'Safari tours' : `${data.tourTotal} ${data.tourTotal === 1 ? 'safari' : 'safaris'}`);
+	let styleName = $derived(data.categories.find((item) => item.id === data.filters.category_id)?.name ?? '');
 
 	const description = 'Browse our published Tanzania safari itineraries by destination and safari style, then make one your own with our local team.';
 	let pageTitle = $derived(`Safari tours & itineraries${data.page > 1 ? ` – page ${data.page}` : ''} | ${siteInfo.company}`);
@@ -127,6 +129,11 @@
 			{#if data.pageCount > 1}<nav aria-label="Safari tour pages" class="mt-8 flex items-center justify-center gap-4"><Button href={toursHref({ page: String(data.page - 1) })} disabled={data.page <= 1} variant="outline">Previous</Button><span class="text-xs">Page {data.page} of {data.pageCount}</span><Button href={toursHref({ page: String(data.page + 1) })} disabled={data.page >= data.pageCount} variant="outline">Next</Button></nav>{/if}
 		</div>
 	</section>
+	{#if data.faqs.length}
+		<section id="style-faqs" class="page-container py-14 md:py-18">
+			<FaqList faqs={data.faqs} title={styleName ? `Questions about ${styleName}` : 'Frequently Asked Questions'} intro="Quick answers to help you choose the right safari." />
+		</section>
+	{/if}
 	{#if enquiry}<Enquiry section={enquiry} {form} {interest} />{/if}
 </main>
 <SiteFooter visible={data.visible} destinations={data.destinations} onInterest={chooseInterest} {onPage} />

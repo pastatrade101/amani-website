@@ -208,7 +208,7 @@ export const ENTITIES: Record<string, Entity> = {
   faqs: {
     table: 'faqs',
     label: 'FAQs',
-    description: 'Frequently asked questions. Leave "destination" blank for a general FAQ, or set it to attach the question to a specific destination.',
+    description: 'Frequently asked questions. Leave "destination" blank to show the question on the home page, or set it to show it on that destination. Add more places (travel styles, tours) in the FAQ library.',
     permission: 'faqs.create',
     keys: ['question', 'destination_id'],
     fields: [
@@ -322,6 +322,33 @@ export const resetContent = async (): Promise<ResetResult[]> => {
   return out;
 };
 
+// Pages read FAQs through faq_placements, so an imported question is placed
+// where its row says: on its destination, or on the home page without one.
+// Places added later in the FAQ library are kept on re-import.
+const placeImportedFaq = async (faqId: string, destinationId: unknown) => {
+  const row: Record<string, string> = typeof destinationId === 'string' && destinationId
+    ? { faq_id: faqId, placement: 'destination', destination_id: destinationId }
+    : { faq_id: faqId, placement: 'home' };
+  const { error } = await supabase.from('faq_placements').insert(row);
+  // 23505: already placed there by an earlier import or in the library.
+  if (error && error.code !== '23505') throw new Error(`Saved, but could not place it on the site: ${error.message}`);
+};
+
+/** The live FAQ with this question already placed on that destination (or the home page). */
+const findPlacedFaq = async (question: string, destinationId: unknown): Promise<string | null> => {
+  let query = supabase
+    .from('faq_placements')
+    .select('faq_id, faqs!inner(id)')
+    .eq('faqs.question', question)
+    .is('faqs.deleted_at', null);
+  query = typeof destinationId === 'string' && destinationId
+    ? query.eq('placement', 'destination').eq('destination_id', destinationId)
+    : query.eq('placement', 'home');
+  const { data, error } = await query.limit(1).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? String(data.faq_id) : null;
+};
+
 // ── foreign-key resolution ──────────────────────────────────────────────────
 const resolveRef = async (ref: Ref, value: string, warnings: string[]): Promise<string | null> => {
   const name = value.trim();
@@ -395,7 +422,10 @@ export const importEntity = async (entityKey: string, csvText: string, userId?: 
         const v = payload[k];
         query = v === null || v === undefined ? query.is(k, null) : query.eq(k, v as string);
       }
-      const existing = await query.limit(1).maybeSingle();
+      // An FAQ saved in the CMS no longer carries destination_id; it is the
+      // same question when it is already placed where this row would put it.
+      const placed = cfg.table === 'faqs' ? await findPlacedFaq(String(payload.question ?? ''), payload.destination_id) : null;
+      const existing = placed ? { data: { id: placed } } : await query.limit(1).maybeSingle();
 
       const title = String(payload.title ?? payload.name ?? payload.question ?? payload.client_name ?? '');
       let action: 'created' | 'updated';
@@ -403,11 +433,13 @@ export const importEntity = async (entityKey: string, csvText: string, userId?: 
       // rich-text gate is applied here — a spreadsheet cell is just as capable
       // of carrying markup as the editor is.
       const clean = sanitizeRichFields(cfg.table, payload);
+      let recordId: string;
       if (existing.data) {
         const update: Record<string, unknown> = { ...clean, updated_at: new Date().toISOString() };
         if (cfg.userFields && userId) update.updated_by = userId;
         const { error } = await supabase.from(cfg.table).update(update).eq('id', existing.data.id);
         if (error) throw new Error(error.message);
+        recordId = String(existing.data.id);
         action = 'updated';
       } else {
         const insert: Record<string, unknown> = { ...clean };
@@ -415,10 +447,12 @@ export const importEntity = async (entityKey: string, csvText: string, userId?: 
           insert.created_by = userId;
           insert.updated_by = userId;
         }
-        const { error } = await supabase.from(cfg.table).insert(insert);
+        const { data: created, error } = await supabase.from(cfg.table).insert(insert).select('id').single();
         if (error) throw new Error(error.message);
+        recordId = String(created.id);
         action = 'created';
       }
+      if (cfg.table === 'faqs') await placeImportedFaq(recordId, payload.destination_id);
 
       results.push({ line, status: 'ok', action, title, slug: String(payload.slug ?? ''), warnings: warnings.length ? warnings : undefined });
     } catch (err) {

@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
 		apiGet<Paginated<Tour>>(`tours?${query}`, fetch),
 		apiGet<Paginated<Season>>('seasons?status=published&limit=24', fetch),
 		apiGet<Paginated<GuestReview>>('reviews?status=approved&limit=3', fetch),
-		apiGet<Paginated<{question:string;answer:string}>>('faqs?status=published&entity_type=null&destination_id=null&limit=12', fetch),
+		apiGet<Paginated<{id:string;question:string;answer:string}>>('faqs?placement=home&limit=12', fetch),
 		apiGet<Paginated<GalleryPhoto>>('gallery?status=published&media_type=image&limit=24', fetch),
         apiGet<import('$lib/types/api').TourActivityItem[]>('activities/optional',fetch)
 	]);
