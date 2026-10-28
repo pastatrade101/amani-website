@@ -1,4 +1,8 @@
 <script lang="ts">
+	import HomeReferenceSections from '$lib/components/home/home-reference-sections.svelte';
+	import HomeCarousel from '$lib/components/home/home-carousel.svelte';
+	import HomeReviews from '$lib/components/home/home-reviews.svelte';
+	import { refreshSections } from '$lib/homepage-refresh';
 	import TravelGallery from '$lib/components/home/travel-gallery.svelte';
 	import SafariGuide from '$lib/components/home/safari-guide.svelte';
 	import { guideSections } from '$lib/homepage-guides';
@@ -11,13 +15,11 @@
 	import Faq from '$lib/components/home/faq.svelte';
 	import SiteFooter from '$lib/components/home/site-footer.svelte';
 	import Hero from '$lib/components/home/hero.svelte';
-	import SearchPanel from '$lib/components/home/search.svelte';
 	import Experiences from '$lib/components/home/experiences.svelte';
 	import Destinations from '$lib/components/home/destinations.svelte';
 	import Seasons from '$lib/components/home/seasons.svelte';
 	import Enquiry from '$lib/components/home/enquiry.svelte';
 	import TourCard from '$lib/components/tours/tour-card.svelte';
-	import CardSlider from '$lib/components/card-slider.svelte';
 	import { siteInfo, websiteSchema } from '$lib/site-info';
 	import { textContent, tourPhotos } from '$lib/home-content';
 	import type { PageProps } from './$types';
@@ -51,18 +53,21 @@
 	<meta name="twitter:title" content={pageTitle} />
 	<meta name="twitter:description" content={siteInfo.description} />
 	<meta name="twitter:image" content={`${data.siteOrigin}/images/tanzania-safari-hero.jpg`} />
-	<meta name="theme-color" content="#14314d" />
+	<meta name="theme-color" content="#36312b" />
 	<link rel="canonical" href={`${data.siteOrigin}/`} />
 	{@html `<script type="application/ld+json">${structuredData}</script>`}
 </svelte:head>
 <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-sun focus:p-4">Skip to content</a>
-<div id="top" class="border-b border-border bg-secondary/50"><div class="page-container flex items-center justify-between gap-4 py-2 text-[9px] text-muted-foreground"><p>Home <span class="mx-2">/</span> Destinations <span class="mx-2">/</span> <span class="text-primary">Tanzania Safari</span></p><span class="hidden tracking-wider sm:block">YOUR TANZANIA. YOUR WAY.</span></div></div>
+<div id="top"></div>
 <SiteHeader {visible} activities={data.activities} destinations={data.destinations} onInterest={chooseInterest} tours={data.navTours} categories={data.categories} stays={data.navStays} />
-<main id="main">
+<main id="main" class="home-page">
 	{#each data.sections.filter((section) => section.is_active !== false) as section (section.section_key)}
 		{#if section.section_key === 'hero'}
-			<Hero {section} canEnquire={visible.includes('enquiry')} showPackages={visible.includes('safari_packages')} />
-			{#if visible.includes('safari_packages')}<SearchPanel destinations={data.destinationsAreReference ? [] : data.destinations} categories={data.categories} filters={data.filters} />{/if}
+			<Hero {section} canEnquire={visible.includes('enquiry')} showPackages={visible.includes('safari_packages')} form={form?.formKind === 'hero' ? form : null} reviewTotal={data.reviewTotal} />
+		{:else if refreshSections.some(item => item.section_key === section.section_key)}
+			<HomeReferenceSections {section} heroFormAvailable={visible.includes('hero')&&visible.includes('enquiry')} categories={data.categories} activities={data.activities} />
+		{:else if section.section_key === 'reviews_section'}
+			<HomeReviews {section} reviews={data.reviews} reviewTotal={data.reviewTotal} />
 		{:else if section.section_key === 'gallery_preview'}
 			<TravelGallery {section} photos={data.gallery} />
 		{:else if section.section_key === 'why_us'}
@@ -72,16 +77,16 @@
 		{:else if section.section_key === 'faq'}
 			<Faq {section} faqs={data.faqs} canEnquire={visible.includes('enquiry')} />
 		{:else if section.section_key === 'experiences'}
-			<Experiences items={data.activities} {section} onInterest={chooseInterest} canEnquire={visible.includes('enquiry')} />
+			<Experiences items={data.activities} categories={data.categories} {section} />
 		{:else if section.section_key === 'destinations'}
 			<Destinations items={data.destinations} {section} reference={data.destinationsAreReference} onInterest={chooseInterest} canEnquire={visible.includes('enquiry')} showPackages={visible.includes('safari_packages')} />
 		{:else if section.section_key === 'safari_packages'}
-			<section id="tanzania-safari-packages" class="my-6 bg-secondary/45 py-14 md:py-18">
-				<div class="page-container">
+			<section id="tanzania-safari-packages" class="home-band home-tour-section">
+				<div class="home-container">
 					<div data-motion="reveal" class="flex flex-wrap items-end justify-between gap-5"><div class="max-w-2xl"><p class="eyebrow text-muted-foreground">{section.subtitle}</p><h2 class="section-heading mt-3">{section.title}</h2><p class="mt-3 text-sm leading-7 text-muted-foreground">{textContent(section.content)}</p></div><div class="flex flex-wrap items-center gap-3">{#if data.filters.search || data.filters.destination_id || data.filters.category_id}<Button href="/#tanzania-safari-packages" variant="outline">Clear filters</Button>{/if}<Button href="/tours" variant="outline" class="border-navy/20">View all tours <ArrowRight class="size-4" /></Button></div></div>
 					{#if data.filters.search}<p class="mt-5 text-sm">Results for “{data.filters.search}”</p>{/if}
 					{#if data.tours.length}
-						<div class="mt-8"><CardSlider items={data.tours} label="Safari tours" key={(tour) => tour.id} class="card-grid">{#snippet card(tour, i)}<TourCard {tour} photo={photos[i]} />{/snippet}</CardSlider></div>
+						<div class="mt-8"><HomeCarousel items={data.tours} label="safaris">{#snippet card(tour, i)}<TourCard {tour} photo={photos[i]} variant="home" />{/snippet}</HomeCarousel></div>
 					{:else}
 					<div class="card-grid mt-8">
                             <div data-motion="image" class="col-span-full grid overflow-hidden rounded-2xl border border-border bg-white md:grid-cols-2">
@@ -98,8 +103,19 @@
 		{:else if guideSections.some(item => item.section_key === section.section_key)}
 			<SafariGuide {section} canEnquire={visible.includes('enquiry')} onInterest={chooseInterest} reviews={data.reviews} reviewTotal={data.reviewTotal} />
 		{:else if section.section_key === 'enquiry'}
-			<Enquiry {section} {form} {interest} optionalActivities={data.optionalActivities} />
+			<Enquiry {section} form={form?.formKind === 'hero' ? null : form} {interest} optionalActivities={data.optionalActivities} />
 		{/if}
 	{/each}
 </main>
 <SiteFooter {visible} destinations={data.destinations} onInterest={chooseInterest} />
+
+<style>
+ :global(.home-container){width:92%;max-width:1440px;margin-inline:auto}
+ :global(.home-band){padding-block:72px}
+ :global(.home-cream){background:#f7f5ef;border-block:1px solid #e9e5da}
+ :global(.home-heading){font-size:clamp(26px,2.5vw,36px);font-weight:650;line-height:1.2;letter-spacing:-.025em;color:var(--navy);text-wrap:balance}
+ :global(.home-eyebrow){font-size:11px;font-weight:600;letter-spacing:.18em;color:var(--muted-foreground)}
+ :global(.home-copy){font-size:15px;line-height:1.85;color:var(--muted-foreground)}
+ .home-tour-section :global(.section-heading){font-size:clamp(26px,2.5vw,36px)}
+ @media(max-width:767px){:global(.home-container){width:90%}:global(.home-band){padding-block:48px}}
+</style>

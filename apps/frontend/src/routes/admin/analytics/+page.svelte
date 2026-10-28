@@ -214,10 +214,10 @@
   $: cT = clarity?.totals ?? null;
 
   $: clarityMetrics = [
-    { key: 'rage', label: 'Rage clicks', value: cT?.rageClicks ?? null, source: 'clarity', available: cCfg && cT?.rageClicks != null, deepLink: clarityLink('impressions'), deepLinkLabel: 'Watch recordings', icon: Hand, accent: '#0F6CBD' },
-    { key: 'dead', label: 'Dead clicks', value: cT?.deadClicks ?? null, source: 'clarity', available: cCfg && cT?.deadClicks != null, deepLink: clarityLink('impressions'), deepLinkLabel: 'Watch recordings', icon: MousePointer2, accent: '#0F6CBD' },
-    { key: 'scroll', label: 'Avg scroll depth', value: cT?.avgScrollDepth ?? null, format: 'percent', source: 'clarity', available: cCfg && cT?.avgScrollDepth != null, deepLink: clarityLink('heatmaps'), deepLinkLabel: 'Open heatmap', icon: MoveVertical, accent: '#0F6CBD' },
-    { key: 'quick', label: 'Quick-backs', value: cT?.quickBacks ?? null, source: 'clarity', available: cCfg && cT?.quickBacks != null, deepLink: clarityLink('impressions'), deepLinkLabel: 'Watch recordings', icon: Zap, accent: '#0F6CBD' }
+    { key: 'rage', label: 'Rage clicks', value: cT?.rageClicks ?? null, source: 'clarity', available: cCfg && cT?.rageClicks != null, deepLink: clarityLink('impressions'), deepLinkLabel: 'Watch recordings', icon: Hand, accent: '#977a35' },
+    { key: 'dead', label: 'Dead clicks', value: cT?.deadClicks ?? null, source: 'clarity', available: cCfg && cT?.deadClicks != null, deepLink: clarityLink('impressions'), deepLinkLabel: 'Watch recordings', icon: MousePointer2, accent: '#977a35' },
+    { key: 'scroll', label: 'Avg scroll depth', value: cT?.avgScrollDepth ?? null, format: 'percent', source: 'clarity', available: cCfg && cT?.avgScrollDepth != null, deepLink: clarityLink('heatmaps'), deepLinkLabel: 'Open heatmap', icon: MoveVertical, accent: '#977a35' },
+    { key: 'quick', label: 'Quick-backs', value: cT?.quickBacks ?? null, source: 'clarity', available: cCfg && cT?.quickBacks != null, deepLink: clarityLink('impressions'), deepLinkLabel: 'Watch recordings', icon: Zap, accent: '#977a35' }
   ] as MetricCardModel[];
 
   // Breakdowns prefer GA4 (richer), falling back to Clarity; each stays labeled.
@@ -681,7 +681,7 @@
               <MetricCard
                 label={m.label} value={m.value} format={m.format ?? 'number'} source={m.source}
                 available={m.available} deepLink={m.deepLink} deepLinkLabel={m.deepLinkLabel ?? 'Open in Clarity'}
-                emptyText={m.emptyText ?? ''} icon={m.icon} accent={m.accent ?? '#0F6CBD'} loading={uxLoading && !clarity} />
+                emptyText={m.emptyText ?? ''} icon={m.icon} accent={m.accent ?? '#977a35'} loading={uxLoading && !clarity} />
             {/each}
           </div>
         </div>
@@ -690,8 +690,8 @@
         <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <BreakdownBars title="Devices" source={deviceSource} rows={deviceRows} icon={Monitor} accent="#153733" emptyText="Device split appears once GA4 or Clarity export is live." />
           <BreakdownBars title="Top countries" source={countrySource} rows={countryRows} icon={Globe} accent="#4A3728" emptyText="Country data appears with GA4 or Clarity export." />
-          <BreakdownBars title="Top pages" source={pageSource} rows={pageRows} icon={AppWindow} accent="#0F6CBD" emptyText="Top pages appear with GA4 or Clarity export." />
-          <BreakdownBars title="Browsers" source="clarity" rows={browserRows} icon={AppWindow} accent="#0F6CBD" emptyText="Browser split comes from Clarity data export." />
+          <BreakdownBars title="Top pages" source={pageSource} rows={pageRows} icon={AppWindow} accent="#977a35" emptyText="Top pages appear with GA4 or Clarity export." />
+          <BreakdownBars title="Browsers" source="clarity" rows={browserRows} icon={AppWindow} accent="#977a35" emptyText="Browser split comes from Clarity data export." />
         </div>
 
         <!-- Event timeline — real detected changes only -->

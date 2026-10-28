@@ -9,10 +9,10 @@
     business: { label: 'Makutano AI', color: '#153733' },
     website: { label: 'Website Tracking', color: '#4A3728' },
     ga4: { label: 'GA4', color: '#E37400' },
-    clarity: { label: 'Microsoft Clarity', color: '#0F6CBD' },
-    gsc: { label: 'Search Console', color: '#4285F4' },
-    'google-ads': { label: 'Google Ads', color: '#4285F4' },
-    'meta-ads': { label: 'Meta Ads', color: '#0866FF' },
+    clarity: { label: 'Microsoft Clarity', color: '#977a35' },
+    gsc: { label: 'Search Console', color: '#cbae6b' },
+    'google-ads': { label: 'Google Ads', color: '#cbae6b' },
+    'meta-ads': { label: 'Meta Ads', color: '#bf9b48' },
     hubspot: { label: 'HubSpot', color: '#FF7A59' }
   };
   $: cfg = MAP[source] ?? { label: source, color: '#7A8B87' };

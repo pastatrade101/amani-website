@@ -76,15 +76,15 @@
 </main>
 
 <style>
-  .login-page { display:grid; min-height:100dvh; grid-template-columns:1fr 1fr; background:#f8fafc; }
+  .login-page { display:grid; min-height:100dvh; grid-template-columns:1fr 1fr; background:#fbfaf9; }
   .login-story { position:relative; display:flex; flex-direction:column; min-height:100dvh; padding:48px; overflow:hidden; color:white; background:var(--navy); }
   .login-story > img,.story-shade { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-  .story-shade { background:linear-gradient(180deg,rgb(8 25 41 / .42),rgb(8 25 41 / .25) 25%,rgb(8 25 41 / .88)); }
+  .story-shade { background:linear-gradient(180deg,rgb(27 25 22 / .42),rgb(27 25 22 / .25) 25%,rgb(27 25 22 / .88)); }
   .story-brand { position:relative; display:flex; align-items:center; gap:13px; width:fit-content; color:white; }
   .story-brand > span { display:grid; place-items:center; width:50px; height:50px; border:1px solid rgb(246 210 27 / .85); border-radius:50%; color:#f6d21b; }
   .story-brand strong { display:block; font-size:23px; line-height:1.2; letter-spacing:-.6px; }
   .story-brand small { display:block; margin-top:5px; font-size:9px; letter-spacing:3px; }
-  .story-brand-logo { padding:12px 18px; border-radius:18px; background:rgb(255 255 255 / .95); box-shadow:0 12px 32px rgb(8 25 41 / .28); }
+  .story-brand-logo { padding:12px 18px; border-radius:18px; background:rgb(255 255 255 / .95); box-shadow:0 12px 32px rgb(27 25 22 / .28); }
   .story-brand-logo img { display:block; width:auto; height:64px; }
   .card-logo { display:none; }
   .story-copy { position:relative; margin-top:auto; padding-top:160px; max-width:490px; }
@@ -97,7 +97,7 @@
   .back-link { position:absolute; top:42px; left:48px; display:flex; align-items:center; gap:9px; font-size:12px; color:var(--muted-foreground); }
   .back-link:hover { color:var(--navy); }
   .login-card { width:100%; max-width:390px; margin:auto; }
-  .login-mark { display:grid; place-items:center; width:52px; height:52px; margin-bottom:28px; border:1px solid var(--border); border-radius:15px; background:white; color:var(--navy); box-shadow:0 4px 12px rgb(15 45 78 / .04); }
+  .login-mark { display:grid; place-items:center; width:52px; height:52px; margin-bottom:28px; border:1px solid var(--border); border-radius:15px; background:white; color:var(--navy); box-shadow:0 4px 12px rgb(52 47 41 / .04); }
   .login-eyebrow { margin-bottom:10px; color:var(--muted-foreground); font-size:10px; font-weight:600; letter-spacing:2px; }
   .login-card h2 { color:var(--navy); font-size:34px; font-weight:600; line-height:1.3; letter-spacing:-1px; }
   .login-description { margin-top:12px; color:var(--muted-foreground); font-size:13px; line-height:1.85; }

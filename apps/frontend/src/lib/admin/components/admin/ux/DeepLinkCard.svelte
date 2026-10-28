@@ -8,7 +8,7 @@
   export let desc: string;
   export let href: string;
   export let icon: typeof ArrowUpRight;
-  export let accent = '#0F6CBD';
+  export let accent = '#977a35';
   export let enabled = true;
 </script>
 

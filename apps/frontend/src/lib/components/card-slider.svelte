@@ -48,7 +48,7 @@
 	.slider-track { margin: 0; padding: 0; list-style: none; }
 	.slider-item { display: flex; flex-direction: column; min-width: 0; }
 	.slider-dots { display: none; justify-content: center; gap: 8px; margin-top: 18px; }
-	.slider-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: #d7dde0; cursor: pointer; transition: background-color 0.2s ease; }
+	.slider-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: #e0ddd7; cursor: pointer; transition: background-color 0.2s ease; }
 	.slider-dots button.on { background: var(--sun); }
 	@media (max-width: 767px) {
 		/* Runs edge to edge of the screen; --slider-bleed is the page's side padding. */

@@ -35,6 +35,6 @@
 	blockquote.quote :global(.rich-text strong) { color: inherit; }
 	blockquote.quote :global(.rich-text a) { color: inherit; text-decoration-color: var(--sun); }
 	/* Faint contour rings, like a map of the plains (as on the photo placeholder). */
-	.rings { background: radial-gradient(120% 90% at 50% 0%, oklch(0.38 0.07 252) 0%, var(--navy) 55%, oklch(0.22 0.05 252) 100%); }
+	.rings { background: radial-gradient(120% 90% at 50% 0%, oklch(0.38 0.015 75) 0%, var(--navy) 55%, oklch(0.22 0.015 75) 100%); }
 	.rings::before { content: ''; position: absolute; inset: -40%; z-index: -1; background: repeating-radial-gradient(circle at 70% 120%, transparent 0 22px, rgb(255 255 255 / 0.08) 22px 23px); }
 </style>

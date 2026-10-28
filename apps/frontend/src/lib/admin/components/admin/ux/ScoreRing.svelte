@@ -12,7 +12,7 @@
   $: r = (size - stroke) / 2;
   $: circ = 2 * Math.PI * r;
   // band colour: green ≥ 70, amber ≥ 50, red below
-  $: color = score == null ? '#9ca3af' : score >= 70 ? '#0f9d58' : score >= 50 ? '#E37400' : '#e04a3f';
+  $: color = score == null ? '#b0a99b' : score >= 70 ? '#0f9d58' : score >= 50 ? '#E37400' : '#e04a3f';
 
   const tw = tweened(0, { duration: 900, easing: cubicOut });
   $: tw.set(score ?? 0);

@@ -237,7 +237,7 @@
 </header>
 
 <style>
-	.site-header { position: sticky; top: 0; z-index: 50; box-shadow: 0 8px 24px -20px rgb(15 35 55 / .3); border-bottom: 1px solid var(--border); background: var(--background); transition: transform .25s ease; }
+	.site-header { position: sticky; top: 0; z-index: 50; box-shadow: 0 8px 24px -20px rgb(39 36 31 / .3); border-bottom: 1px solid var(--border); background: var(--background); transition: transform .25s ease; }
 	/* A page's own sticky bar can take the header's place while it is stuck
 	   (tour pages); keyboard focus inside the header still brings it back. */
 	:global(html[data-header-hidden]) .site-header:not(:focus-within) { transform: translateY(-100%); box-shadow: none; }
@@ -253,7 +253,7 @@
 	:global(.main-menu-trigger) { height: 44px; width: 30px; padding: 0; border: 0; border-radius: 0 9px 9px 0; background: transparent; color: var(--navy); }
 	:global(.main-menu-trigger > svg) { margin-left: 0; top: 0; }
 	:global(.main-menu-trigger:hover), :global(.main-menu-trigger[data-state="open"]), :global(.main-menu-trigger[data-open]), :global(.main-menu-trigger[data-popup-open]) { background: transparent; }
-	:global(.mega-panel) { position: absolute; top: 100%; left: 32px; right: 32px; width: auto; margin: 0; max-height: calc(100dvh - 150px); overflow-y: auto; border: 1px solid var(--border); border-radius: 0 0 20px 20px; padding: 0; background: var(--background); box-shadow: 0 24px 50px -20px oklch(.3 .07 252 / .28); transform: none; animation: menu-enter 180ms ease-out; }
+	:global(.mega-panel) { position: absolute; top: 100%; left: 32px; right: 32px; width: auto; margin: 0; max-height: calc(100dvh - 150px); overflow-y: auto; border: 1px solid var(--border); border-radius: 0 0 20px 20px; padding: 0; background: var(--background); box-shadow: 0 24px 50px -20px oklch(.3 0.015 75 / .28); transform: none; animation: menu-enter 180ms ease-out; }
 	@keyframes menu-enter { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 	.menu-eyebrow { display: block; font-size: 9px; font-weight: 600; line-height: 1.5; letter-spacing: .14em; }
 	.menu-heading { margin-bottom: 18px; }
@@ -261,7 +261,7 @@
 	.menu-heading h2 { margin-top: 5px; font-size: 20px; font-weight: 600; letter-spacing: -.04em; line-height: 1.4; }
 	.experience-menu { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 28px; padding: 26px; }
 	:global(.menu-feature) { position: relative; display: block; min-height: 285px; overflow: hidden; border-radius: 12px; padding: 0; color: white; isolation: isolate; }
-	:global(.menu-feature)::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(5 20 28 / .03) 10%, rgb(5 20 28 / .85) 100%); }
+	:global(.menu-feature)::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(18 17 15 / .03) 10%, rgb(18 17 15 / .85) 100%); }
 	:global(.menu-feature > img) { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform 240ms ease-out; }
 	:global(.menu-feature:hover > img) { transform: scale(1.035); }
 	.feature-copy { position: absolute; inset-inline: 22px; bottom: 24px; }
@@ -306,7 +306,7 @@
 	:global(.destination-link) { display: flex; justify-content: space-between; gap: 6px; padding: 7px 6px; margin-left: -6px; font-size: 11px; border-radius: 6px; line-height: 1.5; }
 	:global(.destination-link > svg) { flex-shrink: 0; opacity: 0; transition: opacity 150ms ease-out; }
 	:global(.destination-link:hover > svg), :global(.destination-link:focus-visible > svg) { opacity: 1; }
-	.menu-footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 13px 26px; border-top: 1px solid var(--border); background: oklch(.985 .003 250); }
+	.menu-footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 13px 26px; border-top: 1px solid var(--border); background: oklch(.985 0.003 75); }
 	.menu-footer > span { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--muted-foreground); }
 	:global(.menu-footer-link) { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 11px; font-weight: 600; background: transparent; }
 	.header-actions { display: flex; align-items: center; gap: 9px; }

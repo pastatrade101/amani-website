@@ -107,7 +107,7 @@
 	<meta name="twitter:title" content={seo.title} />
 	<meta name="twitter:description" content={seo.description} />
 	<meta name="twitter:image" content={seo.image} />
-	<meta name="theme-color" content="#14314d" />
+	<meta name="theme-color" content="#36312b" />
 	<link rel="canonical" href={seo.canonical} />
 	{@html `<script type="application/ld+json">${seo.jsonLd}</script>`}
 </svelte:head>

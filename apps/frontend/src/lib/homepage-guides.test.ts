@@ -9,7 +9,9 @@ test('CMS guide copy, ordering, and hidden markers override defaults', () => {
   assert.equal(duration.title,'A custom heading');
   assert.equal(duration.content,'A real CMS introduction');
   assert.equal(duration.subtitle,'TRAVEL SLOWLY');
-  assert.equal(sections[1],duration);
+  assert.equal(duration.sort_order,2);
+  assert.ok(sections.indexOf(duration)<sections.findIndex(s=>s.section_key==='destinations'));
+  assert.ok(sections.every((section,index)=>index===0||(sections[index-1].sort_order??0)<=(section.sort_order??0)));
   assert.deepEqual(guideRows(duration),[{label:'9 days',title:'Our longer safari',text:'Personal route'}]);
   assert.equal(sections.find(s=>s.section_key==='safari_day')?.is_active,false);
 });

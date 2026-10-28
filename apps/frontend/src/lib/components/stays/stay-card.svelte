@@ -23,7 +23,7 @@
 </script>
 
 <!-- A framed card (the site-wide hover shadow needs an edge to sit on): photo flush to the top, padded copy below. -->
-<article data-motion="card" data-motion-hover="card" class="stay-card relative flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_18px_40px_-34px_rgb(15_35_55/.45)] ring-1 ring-navy/10">
+<article data-motion="card" data-motion-hover="card" class="stay-card relative flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_18px_40px_-34px_rgb(39_36_31/.45)] ring-1 ring-navy/10">
 	<div class="relative isolate aspect-[5/4] overflow-hidden bg-navy">
 		<div class="stay-media absolute inset-0">
 			<StayPhoto {stay} {destination} {srcset} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />

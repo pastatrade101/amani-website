@@ -15,7 +15,7 @@
 	let tours = $derived(stay.featured_in_tours?.length ?? 0);
 </script>
 
-<aside aria-labelledby="plan-title" class="h-fit rounded-2xl bg-white p-7 shadow-[0_30px_60px_-40px_rgb(15_35_55/.45)] ring-1 ring-navy/10 lg:sticky lg:top-[calc(var(--site-header-height)+5rem)]">
+<aside aria-labelledby="plan-title" class="h-fit rounded-2xl bg-white p-7 shadow-[0_30px_60px_-40px_rgb(39_36_31/.45)] ring-1 ring-navy/10 lg:sticky lg:top-[calc(var(--site-header-height)+5rem)]">
 	<h3 id="plan-title" class="eyebrow text-[var(--gold-ink)]">Plan your stay</h3>
 	<p class="mt-3 font-display text-[28px] leading-tight font-medium text-navy">{stay.name}</p>
 	<p class="mt-1 text-sm text-muted-foreground">{kind}</p>

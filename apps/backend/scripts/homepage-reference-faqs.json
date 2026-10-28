@@ -1,0 +1,79 @@
+[
+  {
+    "question": "How much does an African safari cost?",
+    "answer": "Safari prices vary depending on the country, number of travelers, trip duration, season, accommodation level, destinations, and whether the safari is private or shared. We offer different safari styles, from comfortable mid-range trips to luxury experiences, and can tailor an itinerary to suit your budget.",
+    "category": "Safari planning",
+    "status": "published",
+    "sort_order": 0
+  },
+  {
+    "question": "How many days do I need for an African safari?",
+    "answer": "A short safari of two to three days can offer a memorable wildlife experience, while four to seven days allow you to explore more parks at a comfortable pace. Longer trips of eight to fourteen days or more can combine multiple destinations, countries, cultural experiences, and beach extensions.",
+    "category": "Safari planning",
+    "status": "published",
+    "sort_order": 1
+  },
+  {
+    "question": "What is the best time to go on an African safari?",
+    "answer": "The best time depends on your destination and interests. Tanzania and Kenya offer excellent wildlife viewing throughout the year, with dry-season months often popular for game viewing. Green seasons can provide lush landscapes, fewer visitors in some areas, and excellent photography and birdwatching opportunities.",
+    "category": "Safari planning",
+    "status": "published",
+    "sort_order": 2
+  },
+  {
+    "question": "Which African safari destinations should I visit?",
+    "answer": "Popular destinations include Tanzania’s Serengeti and Ngorongoro Crater, Kenya’s Maasai Mara and Amboseli, and other remarkable wildlife areas across East Africa. The best destinations depend on your travel dates, interests, available time, and budget.",
+    "category": "Safari planning",
+    "status": "published",
+    "sort_order": 3
+  },
+  {
+    "question": "Can I combine a safari with a Zanzibar beach holiday?",
+    "answer": "Yes. You can combine a Tanzania safari with a relaxing beach holiday in Zanzibar. Domestic flights and transfers can connect safari destinations with the island, allowing you to enjoy wildlife, local culture, and beautiful beaches in one trip.",
+    "category": "Safari planning",
+    "status": "published",
+    "sort_order": 4
+  },
+  {
+    "question": "Is an African safari private or shared?",
+    "answer": "Both options may be available depending on the itinerary. A private safari offers your own vehicle and guide, with flexibility around your schedule and interests. A shared or joining safari allows you to travel with other guests and can be a more economical option.",
+    "category": "Safari planning",
+    "status": "published",
+    "sort_order": 5
+  },
+  {
+    "question": "What type of accommodation is available on safari?",
+    "answer": "Options range from comfortable hotels and standard lodges to tented safari camps, luxury lodges, and premium properties. Accommodation can be selected according to your preferred comfort level, destinations, travel dates, and budget.",
+    "category": "Safari planning",
+    "status": "published",
+    "sort_order": 6
+  },
+  {
+    "question": "What is included in an African safari package?",
+    "answer": "Inclusions depend on the specific itinerary. Packages may include accommodation, park and conservation fees, a 4x4 safari vehicle, a professional guide, meals, drinking water, airport transfers, and domestic flights where specified. Your quote should clearly outline all inclusions and exclusions.",
+    "category": "Safari planning",
+    "status": "published",
+    "sort_order": 7
+  },
+  {
+    "question": "Do I need domestic flights for an African safari?",
+    "answer": "Not always. Many safari routes can be completed by road, while domestic flights can save time when traveling between distant parks or connecting a safari with Zanzibar. We can recommend the most practical option for your itinerary.",
+    "category": "Safari planning",
+    "status": "published",
+    "sort_order": 8
+  },
+  {
+    "question": "Are African safaris suitable for families with children?",
+    "answer": "Yes. Many safari destinations offer memorable family experiences. The ideal itinerary depends on the children’s ages, travel pace, accommodation requirements, and activities planned. We can recommend suitable destinations and family-friendly accommodation.",
+    "category": "Safari planning",
+    "status": "published",
+    "sort_order": 9
+  },
+  {
+    "question": "How far in advance should I book an African safari?",
+    "answer": "Booking several months in advance is recommended, especially for peak travel periods, popular camps, and migration-season accommodation. Early booking generally provides more choice of lodges, camps, flights, and travel dates.",
+    "category": "Safari planning",
+    "status": "published",
+    "sort_order": 10
+  }
+]

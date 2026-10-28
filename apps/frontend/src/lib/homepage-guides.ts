@@ -40,7 +40,7 @@ export const guideSections: HomepageSection[] = [
     { label: '18:30', title: 'The golden hour', text: 'Take in the changing colours as you return towards camp. Sundowners depend on your itinerary.' },
     { label: '19:30', title: 'Stories around the table', text: 'Dinner and a chance to share the day’s moments before a restful night.' }
   ] } },
-  { section_key: 'reviews_section', sort_order: 47, title: 'Their journeys. In their own words.', subtitle: 'TRAVELLER STORIES', content: 'Experiences shared by guests and published by our team.' }
+  { section_key: 'reviews_section', sort_order: 47, title: 'Reviews from real people', subtitle: 'TRAVELLER STORIES', content: 'Experiences shared by guests and published by our team.' }
 ];
 
 export function sectionDefault(key: string) { return guideSections.find(s => s.section_key === key); }

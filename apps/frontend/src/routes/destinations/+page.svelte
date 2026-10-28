@@ -65,5 +65,5 @@
 </main>
 <SiteFooter visible={chrome.visible} destinations={chrome.destinations} onInterest={chooseInterest} {onPage}/>
 <style>
-.destination-search{display:grid;grid-template-columns:1.5fr 1fr 1fr auto;gap:18px;align-items:end;padding:24px;background:#f5f6f3;border:1px solid #e4e7e5;border-radius:16px}.destination-search>div{min-width:0}.results-count{display:flex;justify-content:space-between;gap:20px;font-size:12px;color:#647586;margin:26px 0}.results-count a{color:#14314d;text-decoration:underline;text-underline-offset:4px}@media(max-width:1023px){.destination-search{grid-template-columns:1fr 1fr}}@media(max-width:639px){.destination-search{grid-template-columns:minmax(0,1fr);padding:20px}}
+.destination-search{display:grid;grid-template-columns:1.5fr 1fr 1fr auto;gap:18px;align-items:end;padding:24px;background:#f5f6f3;border:1px solid #e4e7e5;border-radius:16px}.destination-search>div{min-width:0}.results-count{display:flex;justify-content:space-between;gap:20px;font-size:12px;color:#837a67;margin:26px 0}.results-count a{color:#36312b;text-decoration:underline;text-underline-offset:4px}@media(max-width:1023px){.destination-search{grid-template-columns:1fr 1fr}}@media(max-width:639px){.destination-search{grid-template-columns:minmax(0,1fr);padding:20px}}
 </style>

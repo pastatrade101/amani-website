@@ -25,7 +25,7 @@
 	.steps article { padding: 28px; background: white; border: 1px solid var(--border); border-radius: 16px; }
 	.step-top { display: flex; align-items: center; justify-content: space-between; }
 	.step-icon { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 14px; background: var(--secondary); }
-	.step-number { font-size: 35px; font-weight: 500; letter-spacing: -.06em; color: oklch(.87 .016 252); }
+	.step-number { font-size: 35px; font-weight: 500; letter-spacing: -.06em; color: oklch(.87 0.015 75); }
 	.steps h3 { margin-top: 27px; font-size: 17px; font-weight: 600; letter-spacing: -.025em; }
 	.steps p { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--muted-foreground); }
 	.planning-cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 25px; margin-top: 36px; font-size: 13px; }

@@ -43,14 +43,14 @@ export const SEASON_ICONS: { key: string; label: string; icon: Icon }[] = [
  */
 export const SEASON_TONES: { key: string; label: string; card: string; icon: string; strip: string; swatch: string }[] = [
 	{ key: 'green', label: 'Green', card: 'bg-[#F3F9F4]', icon: 'text-[#4F8A5B]', strip: 'bg-[#E8F3EA] text-[#2F6B3C]', swatch: 'bg-[#4F8A5B]' },
-	{ key: 'blue', label: 'Blue', card: 'bg-[#F1F6FC]', icon: 'text-[#3B78B5]', strip: 'bg-[#E6F0FA] text-[#1E4F80]', swatch: 'bg-[#3B78B5]' },
+	{ key: 'blue', label: 'Sand', card: 'bg-[#f8f7f5]', icon: 'text-[#867d6a]', strip: 'bg-[#f2f1ee] text-[#585146]', swatch: 'bg-[#867d6a]' },
 	{ key: 'amber', label: 'Amber', card: 'bg-[#FFFAE8]', icon: 'text-[#D9A900]', strip: 'bg-[#FFF6D6] text-[#7A5A00]', swatch: 'bg-[#D9A900]' },
 	{ key: 'rose', label: 'Rose', card: 'bg-[#FDF3F2]', icon: 'text-[#C2554A]', strip: 'bg-[#FBE6E3] text-[#8A2E25]', swatch: 'bg-[#C2554A]' },
-	{ key: 'slate', label: 'Slate', card: 'bg-[#F4F5F7]', icon: 'text-[#5B6474]', strip: 'bg-[#E9ECF1] text-[#374151]', swatch: 'bg-[#5B6474]' }
+	{ key: 'slate', label: 'Stone', card: 'bg-[#f7f6f4]', icon: 'text-[#746c5b]', strip: 'bg-[#efeeeb] text-[#4c453c]', swatch: 'bg-[#746c5b]' }
 ];
 
 /** A month no season covers. */
-export const UNASSIGNED_MONTH = 'bg-[#F4F5F7] text-[#9CA3AF]';
+export const UNASSIGNED_MONTH = 'bg-[#f7f6f4] text-[#b0a99b]';
 
 export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 export const MONTH_SHORT = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];

@@ -39,10 +39,10 @@
 </section>
 
 <style>
-	.style-card { position: relative; display: flex; gap: 1rem; overflow: hidden; border: 1px solid var(--border); border-radius: 1.25rem; background: white; padding: 1.4rem 1.25rem; box-shadow: 0 18px 40px -34px rgb(15 35 55 / .45); transition: border-color 200ms ease-out, box-shadow 250ms ease-out, translate 250ms ease-out; }
+	.style-card { position: relative; display: flex; gap: 1rem; overflow: hidden; border: 1px solid var(--border); border-radius: 1.25rem; background: white; padding: 1.4rem 1.25rem; box-shadow: 0 18px 40px -34px rgb(39 36 31 / .45); transition: border-color 200ms ease-out, box-shadow 250ms ease-out, translate 250ms ease-out; }
 	/* The style's colour runs along the top, as on the price tabs. */
 	.style-card::before { content: ''; position: absolute; inset: 0 0 auto; height: 4px; background: var(--style-color); }
-	.style-card:hover { translate: 0 -2px; box-shadow: 0 22px 40px -28px rgb(15 35 55 / .45); }
+	.style-card:hover { translate: 0 -2px; box-shadow: 0 22px 40px -28px rgb(39 36 31 / .45); }
 	.style-card.active { border-color: var(--style-color); background: var(--style-light); }
 	.style-card:has(.style-link:focus-visible) { outline: 3px solid var(--sun); outline-offset: 4px; }
 	.style-link::after { content: ''; position: absolute; inset: 0; z-index: 1; }

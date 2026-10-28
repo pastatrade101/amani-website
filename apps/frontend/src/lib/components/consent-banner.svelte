@@ -19,7 +19,7 @@
 {#if mounted && hasTags && $consent === null}
 	<!-- The strip lets clicks through beside the card. -->
 	<div class="pointer-events-none fixed inset-x-0 bottom-4 z-[80] flex justify-center px-4 sm:bottom-8" transition:fly={{ y: 24, duration: 240 }}>
-		<div role="dialog" aria-label="Cookie choices" class="pointer-events-auto w-full max-w-2xl rounded-2xl border border-border bg-white p-4 shadow-[0_24px_70px_-20px_rgba(16,45,65,.35)] sm:p-5">
+		<div role="dialog" aria-label="Cookie choices" class="pointer-events-auto w-full max-w-2xl rounded-2xl border border-border bg-white p-4 shadow-[0_24px_70px_-20px_rgba(45,41,36,.35)] sm:p-5">
 			<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
 				<div class="flex min-w-0 items-start gap-3">
 					<span class="grid size-10 shrink-0 place-items-center rounded-xl bg-sun/20 text-navy"><Cookie class="size-5" /></span>

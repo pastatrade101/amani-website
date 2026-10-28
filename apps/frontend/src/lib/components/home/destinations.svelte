@@ -40,7 +40,7 @@
 	:global(.circuit-tab) { height: 44px; min-width: 0; gap: 8px; border: 0; border-radius: 999px; padding: 0 12px; background: transparent; color: var(--muted-foreground); font-size: 13px; font-weight: 500; line-height: 1.4; white-space: nowrap; box-shadow: none; transition: color 160ms ease-out, background 160ms ease-out, box-shadow 160ms ease-out; }
 	:global(.circuit-tab:last-child:nth-child(odd)) { grid-column: 1 / -1; }
 	:global(.circuit-tab::after) { display: none; }
-	:global(.circuit-tab[data-state="active"]), :global(.circuit-tab[data-active]) { background: var(--navy); color: white; box-shadow: 0 3px 8px rgb(15 35 55 / .13); }
+	:global(.circuit-tab[data-state="active"]), :global(.circuit-tab[data-active]) { background: var(--navy); color: white; box-shadow: 0 3px 8px rgb(39 36 31 / .13); }
 	:global(.circuit-tab:focus-visible) { outline: 2px solid var(--sun); outline-offset: 2px; }
 	/* Hover only where there is a pointer, so a tapped tab doesn't stay lit. */
 	@media (hover: hover) { :global(.circuit-tab:not([data-state="active"]):not([data-active]):hover) { background: white; color: var(--navy); } }

@@ -1,18 +1,20 @@
+import { refreshSections } from './homepage-refresh';
 import { guideSections } from './homepage-guides';
 import { formatPrice } from './safari-pricing.js';
 import type { Destination, HomepageSection, Tour } from './types/api.js';
 
 export const defaultSections: HomepageSection[] = [
 	...guideSections,
+	...refreshSections,
 	{ section_key: 'gallery_preview', title: 'A thousand moments. Your next story.', subtitle: 'TANZANIA, THROUGH OUR LENS', content: 'A glimpse of the landscapes, wildlife and quiet moments waiting along the way.', sort_order: 42 },
-	{ section_key: 'hero', title: 'Tanzania Safari Tours', subtitle: 'DISCOVER. EXPLORE. BELONG.', content: 'Follow the wild. Find your quiet. Discover Tanzania on a private journey from the Serengeti plains to the shores of Zanzibar — thoughtfully planned around you.', button_text: 'Plan My Safari', button_url: '/plan-my-trip?from=home_hero', sort_order: 0 },
+	{ section_key: 'hero', title: 'Discover Tanzania. Your Way.', subtitle: 'TAILOR-MADE TANZANIA SAFARI HOLIDAYS', content: 'Explore incredible wildlife, iconic national parks, and authentic African experiences with a locally owned safari company. We create tailor-made journeys around your interests, travel style, and budget.', button_text: 'Start Planning', button_url: '#plan-form', sort_order: 0 },
 	{ section_key: 'why_us', title: 'More than a safari. A connection to Tanzania.', subtitle: 'THE KEY2AFRICA APPROACH', content: 'The best journeys feel personal. We bring local insight and thoughtful planning to the moments you’ve been dreaming of, and the ones you haven’t imagined yet.', button_text: 'Create my Tanzania journey', button_url: '#request-quote', sort_order: 5 },
-	{ section_key: 'experiences', title: 'Moments that become your favourite stories.', subtitle: 'EXPERIENCE SOMETHING EXTRAORDINARY', content: 'Feel the thrill of the wild, the stillness of the plains and the freedom to explore your way.', sort_order: 10 },
+	{ section_key: 'experiences', title: 'Explore East Africa Experiences', subtitle: 'EXPERIENCE SOMETHING EXTRAORDINARY', content: 'Discover extraordinary safaris, wildlife encounters, and beach escapes across Tanzania and East Africa.', sort_order: 2 },
 	{ section_key: 'destinations', title: 'Where Will Your Tanzania Safari Take You?', subtitle: 'EXPLORE TANZANIA', content: 'Discover the iconic parks, landscapes and wildlife areas that make Tanzania an unforgettable safari destination.', sort_order: 20 },
-	{ section_key: 'safari_packages', title: 'Find a Safari That Feels Like You', subtitle: 'YOUR JOURNEY STARTS HERE', content: 'Explore our published itineraries, then make them your own with our local team.', sort_order: 30 },
+	{ section_key: 'safari_packages', title: 'Which Safari Should You Choose?', subtitle: 'YOUR JOURNEY STARTS HERE', content: 'Explore our published itineraries, then make them your own with our local team.', sort_order: 30 },
 	{ section_key: 'when_to_go', title: 'When Should You Go?', subtitle: 'BEST TIME TO VISIT', content: 'Every season tells a different story. Choose the landscapes, wildlife and pace that speak to you.', sort_order: 40 },
 	{ section_key: 'how_it_works', title: 'Your dream safari, thoughtfully put together.', subtitle: 'FROM A FIRST IDEA TO A GREAT ADVENTURE', content: 'You bring the curiosity. We help with the details. Together, we’ll turn your ideas into a journey that feels right for you.', sort_order: 43 },
-	{ section_key: 'faq', title: 'A few things you might be wondering.', subtitle: 'GOOD TO KNOW', content: 'A little clarity before your next adventure.', sort_order: 46 },
+	{ section_key: 'faq', title: 'Frequently Asked Questions About African Safaris', subtitle: 'GOOD TO KNOW', content: 'A little clarity before your next adventure.', sort_order: 46 },
 	{ section_key: 'enquiry', title: 'Let’s Plan Your Tanzania Story', subtitle: 'MADE AROUND YOU', content: 'Tell us a little about your dream trip. Our team will help turn your ideas into a safari designed around you.', sort_order: 50 }
 ];
 

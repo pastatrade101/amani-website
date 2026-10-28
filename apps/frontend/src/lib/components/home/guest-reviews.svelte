@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { ArrowRight, ArrowUpRight, Check, Star } from '@lucide/svelte';
+  import { onMount, tick } from 'svelte';
+  import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, Check, Star } from '@lucide/svelte';
   import * as Dialog from '$lib/components/ui/dialog';
   import { safeUrl, textContent } from '$lib/home-content';
   import { approvedReviews, type GuestReview } from '$lib/homepage-guides';
@@ -7,7 +8,7 @@
   // Every review card on the site: green stars, the quote, then who wrote it
   // and where. A grid on larger screens, a swipeable row with dots on phones.
   // "View more reviews" pages through the rest of the approved reviews.
-  let { reviews, variant = 'default', total = 0 }: { reviews: GuestReview[]; variant?: 'default' | 'tour'; total?: number } = $props();
+  let { reviews, variant = 'default', total = 0 }: { reviews: GuestReview[]; variant?: 'default' | 'tour' | 'home'; total?: number } = $props();
 
   const PAGE = 6;
   const LIMIT = 260;
@@ -25,6 +26,8 @@
 
   let track = $state<HTMLDivElement>();
   let active = $state(0);
+  let atStart = $state(true), atEnd = $state(false);
+  onMount(() => { if(!track)return;const observer=new ResizeObserver(syncDots);observer.observe(track);syncDots();return()=>observer.disconnect(); });
 
   const plain = (message: string) => textContent(message).replace(/\s+/g, ' ').trim();
   const excerpt = (message: string) => {
@@ -42,6 +45,8 @@
       extra = [...extra, ...approvedReviews(body.data.items, PAGE)];
       known = Number(body.data.pagination?.total) || known;
       nextPage += 1;
+      await tick();
+      syncDots();
     } catch {
       failed = true;
     } finally {
@@ -53,24 +58,26 @@
   function syncDots() {
     if (!track) return;
     const card = track.children[0] as HTMLElement | undefined;
-    const step = card ? card.getBoundingClientRect().width + 16 : 1;
+    const step = card ? card.getBoundingClientRect().width + parseFloat(getComputedStyle(track).gap) : 1;
+    atStart = track.scrollLeft <= 2; atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
     active = Math.min(shown.length - 1, Math.max(0, Math.round(track.scrollLeft / step)));
   }
   function showCard(index: number) {
     const card = track?.children[index] as HTMLElement | undefined;
     if (!track || !card) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    track.scrollTo({ left: card.offsetLeft - track.offsetLeft, behavior: reduce ? 'auto' : 'smooth' });
+    track.scrollTo({ left: track.scrollLeft + card.getBoundingClientRect().left - track.getBoundingClientRect().left - parseFloat(getComputedStyle(track).paddingLeft), behavior: reduce ? 'auto' : 'smooth' });
   }
 </script>
 
-<div class="reviews" class:tour-reviews={variant === 'tour'}>
+<div class="reviews" class:tour-reviews={variant === 'tour'} class:home-reviews={variant === 'home'}>
+  {#if variant === 'home'}<div class="home-review-controls"><button type="button" aria-label="Previous review" disabled={atStart} onclick={()=>showCard(Math.max(0,active-1))}><ChevronLeft size={20} /></button><button type="button" aria-label="Next review" disabled={atEnd} onclick={()=>showCard(Math.min(shown.length-1,active+1))}><ChevronRight size={20} /></button></div>{/if}
   <div class="review-track" bind:this={track} onscroll={syncDots}>
     {#each shown as review (review.id)}
       {@const text = plain(review.message)}
       <article class="review-card" data-motion="card">
         <div class="stars" role="img" aria-label={`${review.rating} out of 5 stars`}>
-          {#each Array(5) as _, j}<Star size={18} strokeWidth={0} fill={j < review.rating ? 'currentColor' : '#d7dde0'} aria-hidden="true" />{/each}
+          {#each Array(5) as _, j}<Star size={18} strokeWidth={0} fill={j < review.rating ? 'currentColor' : '#e0ddd7'} aria-hidden="true" />{/each}
         </div>
         <blockquote>“{excerpt(review.message)}”</blockquote>
         {#if text.length > LIMIT}
@@ -119,7 +126,7 @@
 <style>
   .review-track { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: stretch; }
   .tour-reviews .review-track { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .review-card { display: flex; flex-direction: column; min-width: 0; padding: 28px; color: var(--navy); background: white; border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 12px 32px -26px rgb(20 49 77 / .25); }
+  .review-card { display: flex; flex-direction: column; min-width: 0; padding: 28px; color: var(--navy); background: white; border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 12px 32px -26px rgb(54 49 43 / .25); }
   .stars { display: flex; gap: 6px; color: #22a352; }
   .review-card blockquote { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 7; line-clamp: 7; overflow: hidden; overflow-wrap: anywhere; margin: 18px 0 0; font-size: 16px; line-height: 1.6; color: var(--navy); }
   .review-card :global(.review-more) { display: inline-flex; align-items: center; gap: 4px; width: fit-content; min-height: 32px; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--navy); font-size: 13px; font-weight: 600; text-decoration: underline; text-decoration-color: var(--sun); text-underline-offset: 4px; cursor: pointer; }
@@ -129,10 +136,10 @@
   .review-author p { margin: 4px 0 0; font-size: 14px; color: var(--muted-foreground); }
   .review-author .review-source { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
   .tick { display: grid; flex: none; place-items: center; width: 22px; height: 22px; border-radius: 999px; background: color-mix(in oklch, #22a352 16%, white); color: #22a352; }
-  .full-review { max-height: 55dvh; overflow-y: auto; padding-right: 8px; white-space: pre-line; overflow-wrap: anywhere; font-size: 15px; line-height: 1.85; color: #334b60; margin: 0; }
+  .full-review { max-height: 55dvh; overflow-y: auto; padding-right: 8px; white-space: pre-line; overflow-wrap: anywhere; font-size: 15px; line-height: 1.85; color: #524b41; margin: 0; }
   .original-review { display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: var(--navy); font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
   .review-dots { display: none; justify-content: center; gap: 8px; margin-top: 18px; }
-  .review-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: #d7dde0; cursor: pointer; transition: background-color .2s ease; }
+  .review-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: #e0ddd7; cursor: pointer; transition: background-color .2s ease; }
   .review-dots button.on { background: var(--sun); }
   .review-actions { display: grid; justify-items: center; gap: 8px; margin-top: 28px; }
   .review-load { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 22px; border: 1.5px solid var(--sun); border-radius: 10px; background: white; color: var(--navy); font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color .2s ease; }
@@ -149,4 +156,11 @@
     .review-dots { display: flex; }
     .review-actions { margin-top: 20px; }
   }
+
+ .home-review-controls{display:flex;justify-content:flex-end;gap:12px;margin-bottom:20px}.home-review-controls button{display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--border);border-radius:50%;background:white}.home-review-controls button:disabled{opacity:.35}
+ .home-reviews .review-track{position:relative;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:4px 2px 12px;gap:24px}
+ .home-reviews .review-card{flex:0 0 calc((100% - 24px)/2);scroll-snap-align:start;min-height:340px}
+ .home-reviews .review-card blockquote{font-size:14px;-webkit-line-clamp:5;line-clamp:5}
+ .home-reviews .review-author h3{font-size:14px}.home-reviews .review-author p{font-size:12px}.home-reviews .review-dots{display:none}
+ @media(max-width:639px){.home-reviews .review-track{margin:0;padding:4px 2px 12px}.home-reviews .review-card{flex-basis:93%}}
 </style>

@@ -67,7 +67,7 @@
 	.night-card, .night-line { position: relative; border-radius: 1rem; background: color-mix(in oklch, var(--sun) 7%, white); box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--navy) 10%, transparent); }
 	.night-card { display: grid; overflow: hidden; transition: box-shadow 200ms ease-out; }
 	.night-card.has-photo { grid-template-columns: 6.5rem minmax(0, 1fr); }
-	.night-card:hover { box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--navy) 22%, transparent), 0 14px 30px -24px rgb(15 35 55 / 0.45); }
+	.night-card:hover { box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--navy) 22%, transparent), 0 14px 30px -24px rgb(39 36 31 / 0.45); }
 	.night-photo { position: relative; min-height: 100%; background: var(--secondary); }
 	.night-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: scale 450ms ease-out; }
 	.night-card:hover .night-photo img { scale: 1.04; }

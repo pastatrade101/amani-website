@@ -23,7 +23,7 @@
 {#snippet navigation(compact: boolean)}
   <a class="cms-brand" href="/admin" onclick={onCloseMobile} aria-label="Key2africa dashboard">
     {#if emblem}
-      <span class="cms-brand-mark" style="background:#fff;box-shadow:inset 0 0 0 1px rgb(18 50 82 / .12)"><img src={emblem} alt="" class="size-8 object-contain" /></span>
+      <span class="cms-brand-mark" style="background:#fff;box-shadow:inset 0 0 0 1px rgb(56 51 44 / .12)"><img src={emblem} alt="" class="size-8 object-contain" /></span>
     {:else}
       <span class="cms-brand-mark"><Compass size={25} strokeWidth={1.7} /></span>
     {/if}

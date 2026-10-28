@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { refreshSections, refreshLabels } from '$lib/homepage-refresh';
+  import { defaultSections } from '$lib/home-content';
   import HomeGuideFields from '$lib/admin/components/admin/HomeGuideFields.svelte';
   import { guideSections, guideKeys, guideRows, sectionDefault, type GuideRow } from '$lib/homepage-guides';
   import * as CmsDialog from '$lib/components/ui/dialog';
@@ -453,17 +455,29 @@
     }
   ];
 
-  for (const section of guideSections) {
+  for (const section of [...guideSections, ...refreshSections]) {
     const existing = sectionRegistry.find(item => item.key === section.section_key);
     const entry: SectionRegistryItem = {
       key: section.section_key,
-      label: ({ why_tanzania: 'Why Tanzania', safari_duration: 'Safari length guide', safari_inclusions: 'Inclusions & exclusions', safari_day: 'A day on safari', cost_ranges: 'Safari cost guide', reviews_section: 'Traveller reviews' } as Record<string,string>)[section.section_key],
+      label: refreshLabels[section.section_key] || ({ why_tanzania: 'Why Tanzania', safari_duration: 'Safari length guide', safari_inclusions: 'Inclusions & exclusions', safari_day: 'A day on safari', cost_ranges: 'Safari cost guide', reviews_section: 'Traveller reviews' } as Record<string,string>)[section.section_key],
       surface: 'public',
-      description: section.section_key === 'reviews_section' ? 'Shows approved records from Admin → Reviews. With no approved reviews, this section stays hidden.' : 'Editable homepage guide. Manage its heading, introduction, image and content rows here; visibility and order apply on the homepage.',
+      description: refreshLabels[section.section_key] ? 'Reference homepage section. Edit its heading, copy, image and buttons here. Trust features use content rows; offers use the card editor. Saved visibility and order apply to the homepage.' : section.section_key === 'reviews_section' ? 'Shows approved records from Admin → Reviews. With no approved reviews, this section stays hidden.' : 'Editable homepage guide. Manage its heading, introduction, image and content rows here; visibility and order apply on the homepage.',
       fields: ['title', 'subtitle', 'image', 'button', 'extra: eyebrow, content rows'],
       preset: { title: section.title || '', subtitle: section.content || '', button_text: section.button_text || '', button_url: section.button_url || '', sort_order: String(section.sort_order), extra_data: { ...section.extra_data, eyebrow: section.subtitle } }
     };
     if (existing) Object.assign(existing,entry); else sectionRegistry.push(entry);
+  }
+
+  // Creating a CMS record starts from the same copy currently shown publicly.
+  for (const key of ['hero', 'experiences', 'safari_packages', 'faq']) {
+    const section = defaultSections.find(item => item.section_key === key)!;
+    const entry = sectionRegistry.find(item => item.key === key);
+    if (entry) entry.preset = {
+      title: section.title || '', subtitle: section.content || '',
+      button_text: section.button_text || '', button_url: section.button_url || '',
+      sort_order: String(section.sort_order),
+      extra_data: { eyebrow: section.subtitle, ...(key === 'hero' ? { secondary_cta_text: 'View Our Safaris', secondary_cta_url: '/tours', hero_image_fit: 'cover', form_title: 'Plan Your Safari', form_intro: 'Tell us about your trip and we’ll help create a personalized safari proposal.' } : {}) }
+    };
   }
 
   const sectionSuggestions = sectionRegistry.filter((item) => item.surface !== 'orphan');
@@ -617,6 +631,9 @@
   let howCaptionEyebrow = 'Planned With You';
   let howCaption = 'From first message to arrival, we shape it together.';
   let experienceSource: Record<string, unknown>[] = [];
+  let heroFormTitle = 'Plan Your Safari';
+  let heroFormIntro = 'Tell us about your trip and we’ll help create a personalized safari proposal.';
+  let introFootnote = '';
   let experienceCards: ExperienceCardRow[] = [];
   let experienceCardsUseOverride = false;
   let experienceMoreLabel = 'More experiences';
@@ -670,7 +687,7 @@
   ];
   const HERO_FIT_VALUES = HERO_FIT_OPTIONS.map((option) => option.value);
   const HERO_SLIDE_FIT_OPTIONS = [{ label: 'Use the section setting', value: '' }, ...HERO_FIT_OPTIONS];
-  let heroImageFit = 'contain';
+  let heroImageFit = 'cover';
 
   const emptyHeroSlide = (): HeroSlideRow => ({
     image_url: '', image_fit: '', eyebrow: '', title: '', title_highlight: '', subtitle: '', primary_label: '', primary_url: '', secondary_label: '', secondary_url: ''
@@ -708,7 +725,7 @@
         slug: String(category.slug ?? ''),
         description: toMetaText(category.short_description ?? category.description ?? category.who_its_for ?? '', 170),
         image_url: String(category.image_url ?? ''),
-        href: `/safari-styles/${String(category.slug ?? '')}`,
+        href: `/tours?category_id=${encodeURIComponent(String(category.id ?? ''))}`,
         meta: categoryMeta(category),
         tags: categoryHighlights(category.highlights),
         best_for: categoryAudience(category.who_its_for),
@@ -843,8 +860,11 @@
   const howStepsToExtra = () => howSteps.slice(0, 4).map((step) => ({ title: step.title.trim(), text: step.text.trim() }));
 
   const hydrateReferenceEditors = (key: string, ed: Record<string, unknown>) => {
-    guideItems = guideKeys.includes(key) ? guideRows({section_key:key,extra_data:ed}) : [];
+    guideItems = key === 'trust_features' ? ((ed.rows ?? refreshSections.find(s=>s.section_key===key)?.extra_data?.rows ?? []) as GuideRow[]) : guideKeys.includes(key) ? guideRows({section_key:key,extra_data:ed}) : [];
     guideNote = String(ed.note ?? sectionDefault(key)?.extra_data?.note ?? '');
+    heroFormTitle = String(ed.form_title ?? 'Plan Your Safari');
+    heroFormIntro = String(ed.form_intro ?? 'Tell us about your trip and we’ll help create a personalized safari proposal.');
+    introFootnote = String(ed.footnote ?? refreshSections.find(s=>s.section_key===key)?.extra_data?.footnote ?? '');
     sectionEyebrow = String(ed.eyebrow ?? '');
     secondaryCtaText = String(ed.secondary_cta_text ?? '');
     secondaryCtaUrl = String(ed.secondary_cta_url ?? '');
@@ -871,14 +891,14 @@
       ? String(ed.caption ?? 'From first message to arrival, we shape it together.')
       : 'From first message to arrival, we shape it together.';
 
-    experienceCardsUseOverride = key === 'experiences' && Array.isArray(ed.items) && ed.items.length > 0;
-    experienceCards = key === 'experiences' ? extraToExperienceCards(ed) : [];
-    experienceMoreLabel = key === 'experiences' ? String(ed.more_label ?? 'More experiences') : 'More experiences';
-    experienceBestForLabel = key === 'experiences' ? String(ed.best_for_label ?? 'Best for') : 'Best for';
-    experiencePrimaryCtaPrefix = key === 'experiences' ? String(ed.primary_cta_prefix ?? 'Explore') : 'Explore';
-    experiencePrimaryCount = key === 'experiences' ? String(ed.primary_count ?? 6) : '6';
+    experienceCardsUseOverride = ['experiences','safari_offers'].includes(key) && Array.isArray(ed.items) && ed.items.length > 0;
+    experienceCards = ['experiences','safari_offers'].includes(key) ? extraToExperienceCards(ed) : [];
+    experienceMoreLabel = ['experiences','safari_offers'].includes(key) ? String(ed.more_label ?? 'More experiences') : 'More experiences';
+    experienceBestForLabel = ['experiences','safari_offers'].includes(key) ? String(ed.best_for_label ?? 'Best for') : 'Best for';
+    experiencePrimaryCtaPrefix = ['experiences','safari_offers'].includes(key) ? String(ed.primary_cta_prefix ?? 'Explore') : 'Explore';
+    experiencePrimaryCount = ['experiences','safari_offers'].includes(key) ? String(ed.primary_count ?? 6) : '6';
     heroSlides = key === 'hero' ? extraToHeroSlides(ed) : [];
-    heroImageFit = key === 'hero' && HERO_FIT_VALUES.includes(String(ed.hero_image_fit ?? '')) ? String(ed.hero_image_fit) : 'contain';
+    heroImageFit = key === 'hero' && HERO_FIT_VALUES.includes(String(ed.hero_image_fit ?? '')) ? String(ed.hero_image_fit) : 'cover';
   };
 
   const addLogo = () => {
@@ -1217,7 +1237,7 @@
       return;
     }
 
-    if (sectionKey === 'experiences') {
+    if (['experiences','safari_offers'].includes(sectionKey)) {
       if (!experienceCards.length) {
         validationError = 'Add at least one experience card before saving Ways to Travel.';
         showToast(validationError, 'error');
@@ -1343,7 +1363,7 @@
       };
     }
 
-    if (form.section_key.trim() === 'experiences') {
+    if (['experiences','safari_offers'].includes(form.section_key.trim())) {
       extra = {
         ...extra,
         items: experienceCardsToExtra(),
@@ -1354,11 +1374,12 @@
       };
     }
 
+    if (form.section_key.trim() === 'company_intro') extra = {...extra, footnote: introFootnote.trim()};
     if (form.section_key.trim() === 'hero') {
-      extra = { ...extra, hero_slides: heroSlidesToExtra(), hero_image_fit: heroImageFit };
+      extra = { ...extra, hero_slides: heroSlidesToExtra(), hero_image_fit: heroImageFit, form_title: heroFormTitle.trim(), form_intro: heroFormIntro.trim() };
     }
 
-    if (guideKeys.includes(form.section_key.trim())) extra = { ...extra, rows: guideItems.map(row => ({label:row.label.trim(),title:row.title.trim(),text:row.text.trim()})).filter(row => row.title) };
+    if (guideKeys.includes(form.section_key.trim()) || form.section_key.trim() === 'trust_features') extra = { ...extra, rows: guideItems.map(row => ({label:row.label.trim(),title:row.title.trim(),text:row.text.trim()})).filter(row => row.title) };
     if (['safari_inclusions','cost_ranges'].includes(form.section_key.trim())) extra = { ...extra, note: guideNote.trim() };
 
     saving = true;
@@ -1442,7 +1463,7 @@
     try {
       const response = await api.categories.list({ status: 'published', limit: 100 });
       experienceSource = (response.data.items ?? []) as unknown as Record<string, unknown>[];
-      if (modalOpen && form.section_key.trim() === 'experiences' && !experienceCardsUseOverride) experienceCards = sourceExperienceCards();
+      if (modalOpen && ['experiences','safari_offers'].includes(form.section_key.trim()) && !experienceCardsUseOverride) experienceCards = sourceExperienceCards();
     } catch {
       // The existing saved homepage overrides stay editable if category lookup is unavailable.
     }
@@ -1795,7 +1816,9 @@
           </div>
         {/if}
 
+        {#if form.section_key.trim() === 'company_intro'}<AdminFormInput label="Reassurance below the introduction" name="intro_footnote" bind:value={introFootnote} />{/if}
         {#if form.section_key.trim() === 'hero'}
+          <div class="grid gap-4 rounded-xl border border-ink/10 p-4"><AdminFormInput label="Enquiry card heading" name="hero_form_title" bind:value={heroFormTitle} /><AdminTextArea label="Enquiry card introduction" name="hero_form_intro" bind:value={heroFormIntro} rows={2} /></div>
           <div class="grid gap-5 rounded-xl border border-goldfinch-gold/30 bg-goldfinch-gold/[0.055] p-4">
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -1941,12 +1964,12 @@
           </div>
         {/if}
 
-        {#if form.section_key.trim() === 'experiences'}
+        {#if ['experiences','safari_offers'].includes(form.section_key.trim())}
           <div class="grid gap-5 rounded-xl border border-ink/10 bg-sand/25 p-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-forest/70">Ways to Travel selector</p>
-                <p class="mt-1 max-w-2xl text-xs leading-5 text-ink/50">Every visible tab, left-hand detail, image tile and CTA is edited here. The rows below start from published Safari Styles; after saving, this homepage keeps its own ordered version.</p>
+                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-forest/70">Homepage image carousel</p>
+                <p class="mt-1 max-w-2xl text-xs leading-5 text-ink/50">Edit the portrait cards, images and destinations shown in the carousel. Start from published Safari Styles, then save your own selection and order.</p>
               </div>
               <CmsButton variant="ghost" type="button" class="inline-flex h-9 items-center gap-1.5 rounded-xl border border-ink/10 bg-surface px-3 text-xs font-semibold text-ink shadow-sm transition hover:border-goldfinch-gold/35 hover:bg-sand/70" onclick={addExperienceCard}>
                 <Plus size={14} />Add experience
@@ -2105,7 +2128,7 @@
           </div>
         {/if}
 
-        {#if guideKeys.includes(form.section_key.trim()) || form.section_key.trim() === 'cost_ranges'}
+        {#if guideKeys.includes(form.section_key.trim()) || ['cost_ranges','trust_features'].includes(form.section_key.trim())}
           <HomeGuideFields sectionKey={form.section_key.trim()} bind:rows={guideItems} bind:note={guideNote}/>
         {/if}
 

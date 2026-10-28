@@ -83,7 +83,7 @@
 	/* The header has slid away (see the marker above): the bar moves up into its place. */
 	:global(html[data-header-hidden]) .section-nav { top: 0; }
 	@media (prefers-reduced-motion: reduce) { .section-nav { transition: none; } }
-	.nav-shell { width:100%; border-block:1px solid var(--border); background:white; box-shadow:0 4px 20px -16px #14314d66; overflow:hidden; }
+	.nav-shell { width:100%; border-block:1px solid var(--border); background:white; box-shadow:0 4px 20px -16px #36312b66; overflow:hidden; }
 	/* Same width and side padding as .tour-container, so the tabs start where the page's headings do. */
 	.nav-inner { display:flex; align-items:stretch; width:100%; max-width:1440px; margin-inline:auto; }
 	.nav-tabs { position:relative; display:flex; flex:1; min-width:0; overflow-x:auto; padding-inline:20px; gap:24px; }

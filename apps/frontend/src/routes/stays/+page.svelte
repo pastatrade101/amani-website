@@ -65,7 +65,7 @@
 	<meta name="twitter:title" content={pageTitle} />
 	<meta name="twitter:description" content={description} />
 	<meta name="twitter:image" content={`${data.siteOrigin}/images/activity-bush-lunch.jpg`} />
-	<meta name="theme-color" content="#14314d" />
+	<meta name="theme-color" content="#36312b" />
 	<link rel="canonical" href={canonical} />
 	{@html `<script type="application/ld+json">${structuredData}</script>`}
 </svelte:head>

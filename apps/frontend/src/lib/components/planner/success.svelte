@@ -18,7 +18,7 @@
 </script>
 
 <section class="bg-secondary/70 px-4 py-14 md:py-20" data-conversion="lead-submitted">
-	<div class="mx-auto max-w-xl rounded-2xl border border-border bg-white p-6 text-center shadow-[0_20px_60px_-30px_rgba(16,45,65,.2)] md:p-10" in:fly={{ y: 24, duration: ms(560), easing: quintOut }}>
+	<div class="mx-auto max-w-xl rounded-2xl border border-border bg-white p-6 text-center shadow-[0_20px_60px_-30px_rgba(45,41,36,.2)] md:p-10" in:fly={{ y: 24, duration: ms(560), easing: quintOut }}>
 		<span class="relative mx-auto grid size-14 place-items-center" in:scale={{ start: 0.3, duration: ms(560), delay: ms(160), easing: backOut }}>
 			<span class="pm-burst absolute inset-0 rounded-full" aria-hidden="true"></span>
 			<span class="relative grid size-14 place-items-center rounded-full bg-sun/25 text-navy"><Check class="pm-tick size-7" strokeWidth={2.4} /></span>

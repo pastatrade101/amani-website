@@ -386,7 +386,7 @@
 		<div class="bg-secondary/70">
 			<!-- items-start: each column keeps its own height. -->
 			<div class="page-container grid items-start gap-6 py-8 md:py-14 lg:grid-cols-[minmax(0,1fr)_320px]">
-				<div bind:this={card} class="min-w-0 scroll-mt-28 rounded-2xl border border-border bg-white p-5 shadow-[0_20px_60px_-30px_rgba(16,45,65,.2)] md:p-7">
+				<div bind:this={card} class="min-w-0 scroll-mt-28 rounded-2xl border border-border bg-white p-5 shadow-[0_20px_60px_-30px_rgba(45,41,36,.2)] md:p-7">
 					<Progress steps={STEPS} {step} onedit={edit} />
 
 					{#key step}
@@ -668,8 +668,8 @@
 	.planner-range::-webkit-slider-runnable-track { height: 8px; border-radius: 9999px; background: linear-gradient(var(--sun), var(--sun)) 0 0 / var(--fill, 0%) 100% no-repeat, color-mix(in oklch, var(--navy) 14%, transparent); }
 	.planner-range::-moz-range-track { height: 8px; border-radius: 9999px; background: color-mix(in oklch, var(--navy) 14%, transparent); }
 	.planner-range::-moz-range-progress { height: 8px; border-radius: 9999px; background: var(--sun); }
-	.planner-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 30px; height: 30px; margin-top: -11px; border-radius: 9999px; background: var(--navy); border: 4px solid white; box-shadow: 0 0 0 1px rgb(16 45 65 / .2), 0 4px 12px rgb(16 45 65 / .2); }
-	.planner-range::-moz-range-thumb { width: 24px; height: 24px; border-radius: 9999px; background: var(--navy); border: 4px solid white; box-shadow: 0 0 0 1px rgb(16 45 65 / .2), 0 4px 12px rgb(16 45 65 / .2); }
+	.planner-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 30px; height: 30px; margin-top: -11px; border-radius: 9999px; background: var(--navy); border: 4px solid white; box-shadow: 0 0 0 1px rgb(45 41 36 / .2), 0 4px 12px rgb(45 41 36 / .2); }
+	.planner-range::-moz-range-thumb { width: 24px; height: 24px; border-radius: 9999px; background: var(--navy); border: 4px solid white; box-shadow: 0 0 0 1px rgb(45 41 36 / .2), 0 4px 12px rgb(45 41 36 / .2); }
 	.planner-range:focus-visible { outline: none; }
 	.planner-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px color-mix(in oklch, var(--sun) 60%, transparent); }
 	.planner-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px color-mix(in oklch, var(--sun) 60%, transparent); }

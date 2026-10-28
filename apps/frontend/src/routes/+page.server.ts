@@ -1,6 +1,7 @@
 import { publishedGallery, type GalleryPhoto } from '$lib/homepage-gallery';
 import { approvedReviews, type GuestReview } from '$lib/homepage-guides';
-import { apiGet } from '$lib/server/api';
+import { createHeroEnquiry } from '$lib/server/hero-enquiry';
+import { apiGet, apiRequest } from '$lib/server/api';
 import { enquire } from '$lib/server/enquiry';
 import { mergeSections, tourFilters } from '$lib/home-content';
 import { referenceActivities, referenceDestinations } from '$lib/data/reference';
@@ -55,5 +56,6 @@ export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
 };
 
 export const actions: Actions = {
-	enquire
+	enquire,
+	heroEnquire: createHeroEnquiry((payload, event) => apiRequest('bookings', event.fetch, {method:'POST', headers:{'X-Forwarded-For':event.getClientAddress()}, body:JSON.stringify(payload)}))
 };

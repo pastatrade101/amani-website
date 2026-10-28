@@ -155,7 +155,7 @@
 	.day-head :global(.day-pill) { display: none; }
 	.timeline-day:not(:last-child)::before { content: ""; position: absolute; top: calc(var(--marker) + 6px); bottom: calc(6px - var(--row-gap)); left: calc(var(--marker) / 2 - 1px); border-left: 2px dashed var(--border); }
 	.timeline-marker > span { display: grid; place-items: center; width: var(--marker); height: var(--marker); border-radius: 999px; background: var(--sun); color: var(--navy); font-size: 11px; font-weight: 700; line-height: 1; letter-spacing: -0.01em; box-shadow: 0 10px 22px -14px oklch(0.55 0.14 90 / 0.8); }
-	.day-card { min-width: 0; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--card); box-shadow: 0 14px 34px -28px rgb(15 35 55 / 0.4); }
+	.day-card { min-width: 0; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--card); box-shadow: 0 14px 34px -28px rgb(39 36 31 / 0.4); }
 	.day-head { display: flex; width: 100%; align-items: flex-start; gap: 0.75rem; padding: 1rem; border-radius: 0.75rem; text-align: left; }
 	.day-chevron { display: grid; flex-shrink: 0; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 999px; background: color-mix(in oklch, var(--sun) 18%, white); color: var(--navy); transition: background 160ms ease-out; }
 	button.day-head:hover .day-chevron { background: color-mix(in oklch, var(--sun) 32%, white); }

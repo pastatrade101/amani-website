@@ -84,7 +84,7 @@
 		<h2 class={`text-center font-bold tracking-tight text-primary ${headingClass}`}>Safari Price by Group Size</h2>
 		{#if showSelector && tabs.length > 1}
 			<div class="mt-5 md:mt-6">
-				<p class="mb-2 text-center text-[13px] leading-relaxed text-[#64748B] md:mb-3 md:text-sm">Explore the safari style that best matches the way you want to experience Tanzania.</p>
+				<p class="mb-2 text-center text-[13px] leading-relaxed text-[#867c69] md:mb-3 md:text-sm">Explore the safari style that best matches the way you want to experience Tanzania.</p>
 				<SafariStyleSelector value={selected} onChange={choose} styles={tabs} label="Safari style for prices" />
 			</div>
 		{/if}

@@ -58,7 +58,7 @@
 		showCloseButton={false}
 		{onkeydown}
 		onCloseAutoFocus={(event) => { if (opener?.isConnected) { event.preventDefault(); opener.focus(); } }}
-		class="grid h-[100dvh] w-screen max-w-none grid-rows-[auto_minmax(0,1fr)_auto] gap-0 rounded-none border-0 bg-[oklch(.16_.03_252)] p-0 text-white ring-0 sm:max-w-none"
+		class="grid h-[100dvh] w-screen max-w-none grid-rows-[auto_minmax(0,1fr)_auto] gap-0 rounded-none border-0 bg-[oklch(.16_0.015_75)] p-0 text-white ring-0 sm:max-w-none"
 	>
 		<div class="flex items-center gap-4 px-4 py-3 md:px-6">
 			<Dialog.Title class="sr-only">{title} photos</Dialog.Title>

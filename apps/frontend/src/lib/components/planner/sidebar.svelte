@@ -22,7 +22,7 @@
 </script>
 
 <aside class="grid min-w-0 content-start gap-4 lg:sticky lg:top-[calc(var(--site-header-height,88px)+24px)] lg:self-start" aria-label="Your trip so far">
-	<div class="overflow-hidden rounded-2xl bg-navy text-white shadow-[0_18px_40px_-24px_rgba(16,45,65,.6)]">
+	<div class="overflow-hidden rounded-2xl bg-navy text-white shadow-[0_18px_40px_-24px_rgba(45,41,36,.6)]">
 		<button type="button" class="flex min-h-12 w-full items-center justify-between px-5 lg:hidden" aria-expanded={openSummary} onclick={() => (openSummary = !openSummary)}>
 			<span class="flex items-center gap-2 text-[11px] font-bold tracking-[.16em] text-sun uppercase"><Sparkles class="size-3.5" />Your trip so far</span>
 			<span class="flex items-center gap-2 text-[11px] font-semibold text-white/60">{step + 1}/{total}<ChevronDown class={`size-4 transition ${openSummary ? 'rotate-180' : ''}`} /></span>
