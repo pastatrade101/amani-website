@@ -1,0 +1,66 @@
+/*
+ * The tour page (Key2Africa safari handoff, 11 Nov 2026), set in the rest of
+ * the site's system: the home page's 92% / 1440px container, Poppins
+ * throughout, its heading, eyebrow and copy sizes, white and cream bands.
+ * Everything is scoped to .safari-page.
+ */
+.safari-page {
+	--sp-canvas: #fff;
+	--sp-cream: #f7f5ef;
+	--sp-ink: var(--navy, #2b2722);
+	--sp-muted: var(--muted-foreground, #7a7266);
+	--sp-kicker: var(--muted-foreground, #7a7266);
+	--sp-sun: var(--sun, #ffcc00);
+	--sp-sun-dark: #d4ac00;
+	--sp-line: #e9e5da;
+	--sp-line-soft: #ece8de;
+	--sp-green: #16834a;
+	--sp-display: var(--font-sans, 'Poppins', ui-sans-serif, system-ui, sans-serif);
+	--sp-sans: var(--font-sans, 'Poppins', ui-sans-serif, system-ui, sans-serif);
+	/* Side gutter that lines content up with the home page's .home-container. */
+	--sp-gutter: max(4%, calc((100% - 1440px) / 2));
+	background: var(--sp-canvas);
+	color: var(--sp-ink);
+	font-family: var(--sp-sans);
+	-webkit-tap-highlight-color: transparent;
+}
+@media (max-width: 767px) { .safari-page { --sp-gutter: 5%; } }
+.safari-page *,
+.safari-page *::before,
+.safari-page *::after { box-sizing: border-box; }
+.safari-page .sp-wrap { width: 100%; }
+
+/* Bands like the home page: white and cream in turn, 72px apart (48px on phones). */
+.safari-page .sp-section { background: #fff; padding: 72px var(--sp-gutter); }
+.safari-page .sp-section.sp-cream { background: var(--sp-cream); border-block: 1px solid var(--sp-line); }
+/* Two white bands in a row share one rule instead of a double gap. */
+.safari-page .sp-section:not(.sp-cream) + .sp-section:not(.sp-cream) { padding-top: 0; }
+.safari-page .sp-section:not(.sp-cream) + .sp-section:not(.sp-cream) > :first-child { padding-top: 56px; border-top: 1px solid var(--sp-line); }
+@media (max-width: 767px) {
+	.safari-page .sp-section { padding-block: 48px; }
+	.safari-page .sp-section:not(.sp-cream) + .sp-section:not(.sp-cream) { padding-top: 0; }
+	.safari-page .sp-section:not(.sp-cream) + .sp-section:not(.sp-cream) > :first-child { padding-top: 40px; }
+}
+
+/* A section's opening: eyebrow, heading, short intro — the home page's sizes. */
+.safari-page .sp-head { margin-bottom: 36px; }
+.safari-page .sp-eyebrow { margin: 0 0 14px; font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sp-kicker); }
+.safari-page .sp-h2 { margin: 0 0 14px; font-family: var(--sp-display); font-size: clamp(26px, 2.5vw, 36px); font-weight: 650; line-height: 1.2; letter-spacing: -0.025em; color: var(--sp-ink); text-wrap: balance; }
+.safari-page .sp-sub { margin: 0; max-width: 720px; font-size: 15px; line-height: 1.85; color: var(--sp-muted); }
+
+/* Buttons: the site's yellow pill and its outline partner. */
+.safari-page .sp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 12px 26px; border-radius: 999px; font-size: 14px; font-weight: 700; line-height: 1.3; text-decoration: none; cursor: pointer; transition: background-color 0.18s ease, border-color 0.18s ease; }
+.safari-page .sp-btn :where(svg) { width: 16px; height: 16px; }
+.safari-page .sp-btn-sun { background: var(--sp-sun); color: #2b2722; border: 0; }
+.safari-page .sp-btn-sun:hover { background: color-mix(in oklab, var(--sp-sun) 90%, black); }
+.safari-page .sp-btn-whatsapp { background: #fff; color: #128345; border: 1px solid #cfe5d5; }
+.safari-page .sp-btn-whatsapp:hover { background: #f3faf5; }
+.safari-page .sp-btn-whatsapp :where(svg) { width: 18px; height: 18px; }
+.safari-page :focus-visible { outline: 3px solid var(--sp-sun); outline-offset: 3px; }
+
+/* CMS rich text at the site's body-copy size. */
+.safari-page .sp-rich.rich-text { font-size: 15px; line-height: 1.85; color: var(--sp-muted); }
+.safari-page .sp-rich.rich-text strong { color: var(--sp-ink); font-weight: 600; }
+/* Links read as bold text, no underline; they warm to gold on hover. */
+.safari-page .sp-rich.rich-text a { color: var(--sp-ink); font-weight: 600; text-decoration: none; }
+.safari-page .sp-rich.rich-text a:hover { color: #7b6500; }

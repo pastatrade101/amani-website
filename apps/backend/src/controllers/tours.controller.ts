@@ -58,7 +58,8 @@ const dayColumns = 'id,day_number,title,description,accommodation,accommodation_
 const dayLodgeEmbed = (columns: string) =>
   `lodge:lodges!itinerary_days_accommodation_id_fkey(${columns},destinations!lodges_destination_id_fkey(name),lodge_images(id,image_url,alt_text,caption,sort_order,is_cover))`;
 const dayLodgeColumns = 'id,name,slug,lodge_type,accommodation_level,hero_image_url,image_url';
-const dayDestinationEmbed = 'destination:destinations!itinerary_days_destination_id_fkey(id,name,slug)';
+// Coordinates pin the day on the tour page's route map.
+const dayDestinationEmbed = 'destination:destinations!itinerary_days_destination_id_fkey(id,name,slug,latitude,longitude)';
 // Hinted by constraint name: itinerary_day_stays is a second path between days
 // and lodges, so an unhinted lodges embed would be ambiguous (PGRST201).
 // status + show_property_publicly tell the tour page whether a stay page exists to link to;

@@ -138,7 +138,7 @@ export type ItineraryDay = {
 	/** Sanitised rich text. */
 	description?: string | null;
 	destination_id?: string | null;
-	destination?: { id: string; name: string; slug: string } | null;
+	destination?: { id: string; name: string; slug: string; latitude?: number | string | null; longitude?: number | string | null } | null;
 	travel_mode?: 'DRIVE' | 'FLY' | 'BOAT' | null;
 	meals?: string | null;
 	activities?: string | null;
@@ -174,7 +174,9 @@ export type TourPricingSeasonPublic = {
 };
 
 export type TourDetail = Tour & {
-	specialist?: { name: string; role: string; photo_url?: string | null; status?: string; blurb?: string | null } | null;
+	specialist?: { name: string; role: string; photo_url?: string | null; status?: string; blurb?: string | null; whatsapp_number?: string | null } | null;
+	/** "Ideal for" audiences, e.g. couples or families. */
+	persona_tags?: string[] | null;
 	customization_intro?: string | null;
 	customization_options?: string[] | null;
 	full_description?: string | null;
