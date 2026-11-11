@@ -41,7 +41,9 @@
 </section>
 
 <style>
-	.similar :global(.tour-grid) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+	/* Three across from tablets up; on phones the slider shows one card at a time. */
+	@media (min-width: 768px) { .similar :global(.tour-grid) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; } }
+	@media (min-width: 768px) and (max-width: 960px) { .similar :global(.tour-grid) { gap: 16px; } .tour-body { padding: 18px; } h3 { font-size: 17px; } }
 	.tour-card { position: relative; display: flex; flex-direction: column; height: 100%; min-width: 0; overflow: hidden; border: 1px solid var(--sp-line); border-radius: 20px; background: #fff; }
 	.tour-image { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: #e2ddd0; }
 	.tour-image img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.35s ease; }
