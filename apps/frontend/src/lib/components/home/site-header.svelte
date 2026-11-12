@@ -200,8 +200,10 @@
 			</NavigationMenu.List>
 		</NavigationMenu.Root>
 		<div class="header-actions"><Button href={searchHref} variant="ghost" size="icon" aria-label="Search safaris" class=""><Search class="size-5" /></Button>{#if !onPlanner}<Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" class="h-11 px-5 text-[13px]">Plan my safari <ArrowRight class="size-4" /></Button>{/if}</div>
+		<div class="mobile-actions">
+		<a href={searchHref} class="mobile-search" aria-label="Search safaris"><Search class="size-[22px]" strokeWidth={1.9} /></a>
 		<Sheet.Root bind:open>
-			<Sheet.Trigger class="mobile-navigation rounded-md p-2" aria-label="Open navigation"><Menu class="size-6" /></Sheet.Trigger>
+			<Sheet.Trigger class="mobile-navigation" aria-label="Open navigation"><Menu class="size-6" strokeWidth={1.9} /></Sheet.Trigger>
             <Sheet.Content side="right" class="mobile-menu-panel">
                 <Sheet.Header class="mobile-menu-header">
                     <div class="mobile-brand"><span>{#if emblem}<img src={emblem} alt="" class="size-7 object-contain" />{:else}<Compass class="size-5" strokeWidth={1.5} />{/if}</span><div><Sheet.Title class="text-base font-semibold">{siteInfo.brand}</Sheet.Title><Sheet.Description class="mt-1 text-[12px]">Your Tanzania. Your way.</Sheet.Description></div></div>
@@ -238,11 +240,12 @@
                 {#if !onPlanner}<div class="mobile-menu-footer"><p>A journey, designed around you.</p><Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" onclick={closeMenu} class="h-12 w-full">Plan my safari <ArrowRight class="size-4" /></Button></div>{/if}
             </Sheet.Content>
 		</Sheet.Root>
+		</div>
 	</div>
 </header>
 
 <style>
-	.site-header { position: sticky; top: 0; z-index: 50; box-shadow: 0 8px 24px -20px rgb(39 36 31 / .3); border-bottom: 1px solid var(--border); background: var(--background); transition: transform .25s ease; }
+	.site-header { view-transition-name: site-header; position: sticky; top: 0; z-index: 50; box-shadow: 0 8px 24px -20px rgb(39 36 31 / .3); border-bottom: 1px solid var(--border); background: var(--background); transition: transform .25s ease; }
 	/* A page's own sticky bar can take the header's place while it is stuck
 	   (tour pages); keyboard focus inside the header still brings it back. */
 	:global(html[data-header-hidden]) .site-header:not(:focus-within) { transform: translateY(-100%); box-shadow: none; }
@@ -317,7 +320,6 @@
 	.menu-footer > span { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted-foreground); }
 	:global(.menu-footer-link) { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 12px; font-weight: 600; background: transparent; }
 	.header-actions { display: flex; align-items: center; gap: 9px; }
-	:global(.mobile-navigation) { display: none; }
     :global(.mobile-menu-panel) { display: flex; width: min(92vw,400px); flex-direction: column; gap: 0; padding: 0; overflow: hidden; background: white; }
     :global(.mobile-menu-header) { flex-shrink: 0; padding: 25px 22px; border-bottom: 1px solid var(--border); text-align: left; }
     .mobile-brand { display: flex; align-items: center; gap: 12px; }
@@ -347,6 +349,12 @@
     .mobile-menu-footer { flex-shrink: 0; padding: 18px 22px max(22px,env(safe-area-inset-bottom)); border-top: 1px solid var(--border); }
     .mobile-menu-footer > p { margin-bottom: 12px; color: var(--muted-foreground); font-size: 12px; text-align: center; }
 
-	@media (max-width: 1099px) { :global(.desktop-navigation), .header-actions { display: none; } :global(.mobile-navigation) { display: inline-flex; } }
+	.mobile-actions { display: none; align-items: center; gap: 4px; margin-right: -10px; }
+	.mobile-search, :global(.mobile-navigation) { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--radius-control); color: var(--navy); transition: background-color 0.16s ease; }
+	.mobile-search:hover, .mobile-search:active, :global(.mobile-navigation:hover), :global(.mobile-navigation:active) { background: var(--secondary); }
+	.mobile-search:focus-visible, :global(.mobile-navigation:focus-visible) { outline: 2px solid var(--navy); outline-offset: 0; }
+	@media (max-width: 1099px) { :global(.desktop-navigation), .header-actions { display: none; } .mobile-actions { display: flex; } }
+	/* Phones: a compact app bar, logo left, search and menu right. */
+	@media (max-width: 767px) { .header-shell { padding-inline: 5vw; } .site-logo { height: 44px; } }
 	@media (prefers-reduced-motion: reduce) { :global(.mega-panel) { animation: none; } }
 </style>

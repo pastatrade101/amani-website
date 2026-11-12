@@ -227,6 +227,7 @@ a[data-slot="button"]:hover svg:last-child { translate: 2px 0; }
 }
 
 @media (max-width: 1099px) { :root { --site-header-height: 76px; } }
+@media (max-width: 767px) { :root { --site-header-height: 64px; } }
 @media (min-width: 640px) { .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 1440px) { .card-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
@@ -297,7 +298,34 @@ a[data-slot="button"]:hover svg:last-child { translate: 2px 0; }
 .home-heading { font-family: var(--font-display); font-size: clamp(30px, 3vw, 42px); font-weight: 600; line-height: 1.12; letter-spacing: -0.03em; color: var(--navy); text-wrap: balance; }
 .home-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.18em; color: var(--muted-foreground); }
 .home-copy { font-size: 15px; line-height: 1.85; color: var(--muted-foreground); }
-/* The label above every home heading: a short sun rule, then the words. */
-.home-kicker { display: inline-flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 700; line-height: 1.4; letter-spacing: 0.16em; text-transform: uppercase; color: #7a5a26; }
-.home-kicker::before { content: ''; flex: none; width: 26px; height: 2px; border-radius: 2px; background: var(--sun); }
 @media (max-width: 767px) { .home-container { width: 90%; } .home-band { padding-block: 48px; } }
+/* The plain arrow link that closes a heading row ("See all"), no underline. */
+.home-see-all { display: inline-flex; flex: none; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; font-weight: 700; color: var(--navy); text-decoration: none; transition: color 0.2s ease; }
+.home-see-all:hover { color: #7a5a26; }
+.home-see-all svg { width: 16px; height: 16px; transition: transform 0.2s ease; }
+.home-see-all:hover svg { transform: translateX(3px); }
+@media (prefers-reduced-motion: reduce) { .home-see-all:hover svg { transform: none; } }
+@media (max-width: 767px) { .home-heading { font-size: 27px; line-height: 1.15; } .home-copy { font-size: 15px; line-height: 1.7; } }
+
+/* Phones and tablets: the app tab bar (app-tab-bar.svelte) owns the bottom of
+   the screen, so anything fixed or last on the page sits above it. */
+@media (max-width: 1023px) { :root:has(.app-tabs) { --tab-offset: calc(66px + env(safe-area-inset-bottom)); } }
+.consent-wrap { bottom: calc(var(--tab-offset, 0px) + 16px); }
+@media (min-width: 640px) { .consent-wrap { bottom: calc(var(--tab-offset, 0px) + 24px); } }
+
+/* use:glide (src/lib/motion/glide.ts): one marker that slides to the active
+   tab. Long, soft ease-out so it settles rather than stops. */
+.glide { position: relative; isolation: isolate; }
+.glide-mark { position: absolute; top: 0; left: 0; z-index: -1; pointer-events: none; opacity: 0; border-radius: 8px; background: var(--navy); will-change: transform, width; }
+.glide-ready > .glide-mark { transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), width 0.55s cubic-bezier(0.22, 1, 0.36, 1), height 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease; }
+@media (prefers-reduced-motion: reduce) { .glide-ready > .glide-mark { transition: opacity 0.2s ease; } }
+
+/* Page changes: the page settles in while the header and the tab bar hold
+   still and the tab marker slides to its new place (see +layout.svelte). */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) { animation: 160ms cubic-bezier(0.4, 0, 1, 1) both vt-fade-out; }
+  ::view-transition-new(root) { animation: 360ms cubic-bezier(0.22, 1, 0.36, 1) both vt-rise-in; }
+  ::view-transition-group(tab-mark) { animation-duration: 0.55s; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+  @keyframes vt-fade-out { to { opacity: 0; } }
+  @keyframes vt-rise-in { from { opacity: 0; transform: translateY(12px); } }
+}

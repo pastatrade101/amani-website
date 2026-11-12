@@ -161,13 +161,16 @@
   }
 
  /* Home: the heading and arrows on the left, two reviews at a time on the right. */
- .home-reviews{display:grid;grid-template-columns:minmax(0,.3fr) minmax(0,.7fr);gap:48px;align-items:center}
+ .home-reviews{display:grid;grid-template-columns:minmax(0,.32fr) minmax(0,.68fr);gap:56px;align-items:center}
  .home-review-side{min-width:0}
  .home-review-controls{display:flex;gap:10px;margin-top:28px}.home-review-controls button{display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--border);border-radius:var(--radius-control);background:white;color:var(--navy);cursor:pointer;transition:border-color .2s ease,background-color .2s ease}.home-review-controls button:hover:not(:disabled){border-color:var(--navy)}.home-review-controls button:disabled{opacity:.35;cursor:default}.home-review-controls button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
  .home-reviews .review-track{position:relative;display:flex;min-width:0;margin:0;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:4px 2px 12px;gap:24px}
  .home-reviews .review-card{flex:0 0 calc((100% - 24px)/2);scroll-snap-align:start;min-height:330px}
  .home-reviews .review-card blockquote{font-size:15px;-webkit-line-clamp:6;line-clamp:6}
  .home-reviews .review-author h3{font-size:15px}.home-reviews .review-author p{font-size:13px}.home-reviews .review-dots{display:none}
- @media(max-width:900px){.home-reviews{grid-template-columns:1fr;gap:20px}.home-review-side{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}.home-review-controls{margin-top:0}}
- @media(max-width:639px){.home-reviews .review-track{margin:0;padding:4px 2px 12px;gap:16px}.home-reviews .review-card{flex-basis:88%}}
+ @media(max-width:900px){.home-reviews{grid-template-columns:1fr;gap:28px}.home-review-controls{margin-top:20px}}
+ /* Touch screens swipe; the arrows are for a mouse. */
+ @media(hover:none){.home-review-controls{display:none}}
+ /* Phones: an edge-to-edge rail, the next review peeking in, dots under it. */
+ @media(max-width:767px){.home-reviews .review-track{margin-inline:calc(50% - 50vw);padding:4px calc(50vw - 50%) 12px;scroll-padding-inline:calc(50vw - 50%);gap:14px}.home-reviews .review-card{flex-basis:84%;min-height:0}.home-reviews .review-dots{display:flex;margin-top:12px}}
 </style>

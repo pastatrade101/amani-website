@@ -17,8 +17,9 @@
 		intro = '',
 		eyebrow = '',
 		id,
-		head
-	}: { faqs: FaqItem[]; title?: string; intro?: string; eyebrow?: string; id?: string; head?: Snippet } = $props();
+		head,
+		list = false
+	}: { faqs: FaqItem[]; title?: string; intro?: string; eyebrow?: string; id?: string; head?: Snippet; list?: boolean } = $props();
 
 	let items = $derived(
 		faqs
@@ -26,7 +27,9 @@
 			.map((faq, index) => ({ ...faq, key: faq.id ?? `faq-${index}` }))
 	);
 	// Column by column, so the left column reads first, in the library's order.
+	// `list`: one ruled column and no heading of its own; the page places the heading.
 	let columns = $derived.by(() => {
+		if (list) return [items];
 		const half = Math.ceil(items.length / 2);
 		return [items.slice(0, half), items.slice(half)].filter((column) => column.length);
 	});
@@ -36,9 +39,9 @@
 </script>
 
 {#if items.length}
-	<div {id} class="faq-block">
+	<div {id} class="faq-block" class:list>
 		<!-- `head` replaces the default heading, for a page with its own heading style. -->
-		{#if head}{@render head()}{:else}<header class="mx-auto max-w-2xl text-center">
+		{#if head}{@render head()}{:else if !list}<header class="mx-auto max-w-2xl text-center">
 			{#if eyebrow}<p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{eyebrow}</p>{/if}
 			<h2 class={`faq-title ${eyebrow ? 'mt-3' : ''}`}>{title}</h2>
 			{#if intro}<p class="mt-3 text-sm leading-6 text-muted-foreground md:text-[15px]">{intro}</p>{/if}
@@ -75,6 +78,13 @@
 	.faq-block :global(.faq-trigger:focus-visible) { outline: 2px solid var(--sun); outline-offset: 4px; border-radius: 6px; }
 	.faq-icon { display: grid; flex: none; place-items: center; width: 26px; height: 26px; border-radius: 999px; background: var(--secondary); color: var(--navy); transition: background-color 0.2s ease; }
 	.faq-block :global(.faq-trigger[aria-expanded='true'] .faq-icon) { background: var(--sun); }
+	/* The ruled list: rows split by hairlines instead of separate cards. */
+	.faq-block.list :global(.faq-grid) { margin-top: 0; }
+	.faq-block.list :global(.faq-grid > div) { gap: 0; }
+	.faq-block.list :global(.faq-card) { border: 0; border-bottom: 1px solid #e3ddcf; border-radius: 0; background: transparent; padding-inline: 0; box-shadow: none; }
+	.faq-block.list :global(.faq-card:first-child) { border-top: 1px solid #e3ddcf; }
+	.faq-block.list :global(.faq-trigger) { padding-block: 22px; font-size: 16px; }
+	.faq-block.list .faq-icon { background: #f1ede3; }
 	@media (min-width: 768px) {
 		.faq-title { font-size: 32px; }
 		.faq-block :global(.faq-grid.two) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }

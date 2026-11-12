@@ -9,6 +9,7 @@
 	import { resetConsent } from '$lib/admin/consent';
 	import { tagMode } from '$lib/tracking/tags';
 	import { onMount } from 'svelte';
+	import AppTabBar from './app-tab-bar.svelte';
 	import type { Destination } from '$lib/types/api';
 	let { visible, destinations, onInterest, onPage }: { visible: string[]; destinations: Destination[]; onInterest: (name: string) => void; onPage?: string[] } = $props();
 	let canEnquire = $derived(visible.includes('enquiry'));
@@ -24,7 +25,7 @@
 </script>
 <footer class="site-footer">
 	<div class="page-container">
-		{#if canEnquire}<div data-motion="reveal" class="footer-invitation"><div><p class="eyebrow">THE NEXT CHAPTER IS YOURS</p><h2>Let Tanzania stay with you.</h2><p>Extraordinary places. Personal journeys. Stories you’ll carry home.</p></div><Button variant="safari" href={planHref({ from: 'footer' })} data-cta="plan_my_trip" data-cta-location="footer" class="h-12 shrink-0 px-7">Plan my safari <ArrowRight class="size-4" /></Button></div>{/if}
+		{#if canEnquire}<div data-motion="reveal" class="footer-invitation"><div><h2>Start planning your Tanzania trip</h2><p>Tell us your dates and interests, and our team in Arusha will send a free quote.</p></div><Button variant="safari" href={planHref({ from: 'footer' })} data-cta="plan_my_trip" data-cta-location="footer" class="h-12 shrink-0 px-7">Plan my safari <ArrowRight class="size-4" /></Button></div>{/if}
 		<div class="footer-grid">
 			<div data-motion="reveal" class="footer-brand"><a href="/" aria-label={`${siteInfo.brand} home`} class="inline-flex items-center gap-3">{#if logo}<span class="footer-logo"><img src={logo} alt={siteInfo.brand} width="305" height="176" loading="lazy" /></span>{:else}<span class="grid size-11 place-items-center rounded-full border-2 border-sun"><Compass class="size-6" strokeWidth={1.5} /></span><span><strong class="block text-2xl leading-none">Key2africa</strong><span class="mt-1.5 block text-[12px] uppercase tracking-[.2em] text-white/60">Safaris</span></span>{/if}</a><p class="footer-company">{siteInfo.company}</p><p>Thoughtfully planned journeys through Tanzania, from the wild heart of the savannah to the shores of the Indian Ocean.</p><span class="footer-location"><MapPin class="size-4" /> Tanzania, East Africa</span></div>
 			<nav data-motion="reveal" aria-label="Explore in footer"><h3>Explore</h3><a href="/tours">Safari tours</a><a href="/stays">Where to stay</a>{#if visible.includes('experiences')}<a href={anchor('experiences')}>Safari experiences</a>{/if}<a href="/destinations">Destinations</a>{#if visible.includes('safari_packages')}<a href={anchor('tanzania-safari-packages')}>Safari packages</a>{/if}{#if canEnquire}<a href={anchor('request-quote')} onclick={() => onInterest('Safari + Zanzibar')}>Safari & Zanzibar</a>{/if}</nav>
@@ -34,12 +35,12 @@
 		<div class="footer-bottom"><p>© {new Date().getFullYear()} {siteInfo.company}. All rights reserved.</p><p class="footer-motto">DISCOVER. EXPLORE. BELONG.</p><div class="footer-actions">{#if hasTags}<button type="button" class="cookie-settings" onclick={resetConsent}>Cookie settings</button>{/if}<a href="#top" class="back-to-top">Back to top <ArrowUp class="size-3.5" /></a></div></div>
 	</div>
 </footer>
+<AppTabBar {canEnquire} />
 <style>
 	.site-footer { position: relative; overflow: hidden; background: var(--navy); color: white; }
 	.footer-invitation { display: flex; align-items: center; justify-content: space-between; gap: 35px; padding: 58px 0 48px; border-bottom: 1px solid rgb(255 255 255 / .14); }
-	.footer-invitation .eyebrow { color: var(--sun); font-size: 12px; }
-	.footer-invitation h2 { margin-top: 14px; font-size: clamp(26px,3vw,37px); font-weight: 500; line-height: 1.3; letter-spacing: -.045em; }
-	.footer-invitation p:last-child { margin-top: 13px; color: rgb(255 255 255 / .65); font-size: 12px; line-height: 1.8; }
+	.footer-invitation h2 { font-size: clamp(26px,3vw,36px); font-weight: 500; line-height: 1.2; letter-spacing: -.035em; }
+	.footer-invitation p:last-child { margin-top: 10px; color: rgb(255 255 255 / .7); font-size: 14px; line-height: 1.7; }
 	.footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.1fr; gap: 60px; padding: 54px 0; }
 	/* The logo's dark lettering needs a light ground on the navy footer. */
 	.footer-logo { display: inline-flex; border-radius: var(--radius-surface); background: white; padding: 10px 14px; box-shadow: 0 10px 24px -18px rgb(0 0 0 / .6); }
@@ -58,6 +59,6 @@
 	.footer-actions { display: flex; align-items: center; gap: 20px; }
 	.cookie-settings { color: rgb(255 255 255 / .7); text-decoration: underline; text-underline-offset: 3px; }
 	.cookie-settings:hover { color: white; }
-	@media (max-width: 1023px) { .footer-grid { gap: 30px; grid-template-columns: 1.25fr 1fr 1fr; } .footer-grid nav:last-child { display: none; } }
+	@media (max-width: 1023px) { .site-footer { padding-bottom: var(--tab-offset, 0px); } .footer-grid { gap: 30px; grid-template-columns: 1.25fr 1fr 1fr; } .footer-grid nav:last-child { display: none; } }
 	@media (max-width: 639px) { .footer-invitation { flex-direction: column; align-items: start; padding-block: 42px; gap: 24px; } .footer-grid { grid-template-columns: 1fr 1fr; gap: 35px 20px; padding-block: 40px; } .footer-brand { grid-column: 1 / -1; } .footer-brand > p { max-width: 100%; } .footer-bottom { gap: 16px; } .footer-motto { display: none; } }
 </style>

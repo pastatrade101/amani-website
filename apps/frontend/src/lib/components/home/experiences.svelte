@@ -13,7 +13,7 @@
 
 <section id="experiences" class="home-band">
 	<div class="home-container">
-		{#snippet head()}{#if section.subtitle}<p class="home-kicker">{section.subtitle}</p>{/if}<h2 class="home-heading mt-4">{section.title}</h2>{#if textContent(section.content)}<p class="home-copy mt-3">{textContent(section.content)}</p>{/if}{/snippet}
+		{#snippet head()}<h2 class="home-heading">{section.title}</h2>{#if textContent(section.content)}<p class="home-copy mt-3">{textContent(section.content)}</p>{/if}{/snippet}
 		{#if cards.length}
 			<div data-motion="reveal"><HomeCarousel items={cards} label="experiences" {head}>{#snippet card(item, i)}
 				<a class="experience-card" href={safeUrl(item.href, '/tours')} aria-label={`${item.cta_label} ${item.name}`}>
@@ -42,6 +42,6 @@
 	.experience-card:hover > img { transform: scale(1.05); }
 	.experience-card:hover .experience-cta { gap: 14px; background: color-mix(in oklab, var(--sun) 92%, black); }
 	.experience-card:focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; }
-	@media (max-width: 639px) { .experience-card { min-height: 410px; } }
+	@media (max-width: 639px) { .experience-card { min-height: 380px; } .experience-heading { padding: 20px 18px 0; } .experience-cta { margin: 0 18px 18px; } }
 	@media (prefers-reduced-motion: reduce) { .experience-card:hover > img { transform: none; } }
 </style>

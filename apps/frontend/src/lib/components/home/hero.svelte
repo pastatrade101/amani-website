@@ -24,7 +24,7 @@
  let slides=$derived.by(()=>{const saved=Array.isArray(extra.hero_slides)?extra.hero_slides.filter(s=>s&&typeof s==='object'&&s.image_url):[];return saved.length?saved:[{image_url:section.image_url||PHOTO.balloonPlains}];});
  let current=$derived(slides[index%slides.length] as Record<string,unknown>);
  let title=$derived(textContent(String(current.title||section.title||'Discover Tanzania. Your Way.')));
- let trust=$derived(Array.isArray(extra.trust_points)?extra.trust_points.map(String):['Locally Owned in Tanzania','Tailor-Made Experiences','Private 4×4 Safaris']);
+ let trust=$derived(Array.isArray(extra.trust_points)?extra.trust_points.map(String):['Locally owned in Tanzania','Planned around you','Private 4×4 safaris']);
  // The rating comes from the approved reviews themselves.
  let stars=$derived(reviewAverage?Math.round(reviewAverage):0);
  let ratingLabel=$derived(reviewAverage==null?'':reviewAverage>=4.95?'5-Star':`${reviewAverage.toFixed(1)} / 5`);

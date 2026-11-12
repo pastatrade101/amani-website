@@ -29,6 +29,9 @@
  /* Heading left, buttons right, both resting on the same bottom line. */
  .carousel-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px 40px;margin-bottom:32px}.head-copy{min-width:0;max-width:42rem}.head-actions{display:flex;flex:none;align-items:center;gap:12px}.head-actions .arrows{margin-left:auto}.head-actions :global([data-slot='button']:not([data-size='icon'])){height:2.75rem;padding-inline:1.25rem}.divider{width:1px;height:28px;margin-inline:4px;background:var(--border)}
  @media(max-width:1023px){.slide{flex-basis:calc((100% - 24px)/2)}}
- @media(max-width:767px){.carousel-head{flex-direction:column;align-items:stretch;margin-bottom:24px}.head-actions{justify-content:space-between}.divider{display:none}}
- @media(max-width:639px){.track{gap:16px}.slide{flex-basis:86%}.controls{margin-bottom:16px}}
+ /* Touch screens swipe; the arrows are for a mouse. */
+ @media(hover:none){.arrows,.divider,.controls{display:none}}
+ /* Phones: an app rail. It runs edge to edge (the home container leaves a 5vw
+    gutter), cards snap to the gutter and the next one peeks in. */
+ @media(max-width:767px){.carousel-head{flex-direction:column;align-items:stretch;gap:14px;margin-bottom:20px}.head-actions{justify-content:flex-start}.divider,.arrows{display:none}.track{gap:14px;margin-inline:-5vw;padding:4px 5vw 14px;scroll-padding-inline:5vw}.slide{flex-basis:80%}}
 </style>

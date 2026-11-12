@@ -21,7 +21,7 @@
 	let chatHref = $derived(safeUrl(extra('secondary_cta_url') || WHATSAPP_URL, WHATSAPP_URL));
 	// The highlighted words of the heading, when the heading contains them.
 	let title = $derived.by(() => {
-		const text = section.title || 'Ready for Your Dream Safari?';
+		const text = section.title || 'Ready to plan your safari?';
 		const mark = extra('title_highlight');
 		const at = mark ? text.lastIndexOf(mark) : -1;
 		return at < 0 ? { before: text, mark: '', after: '' } : { before: text.slice(0, at), mark, after: text.slice(at + mark.length) };
@@ -33,7 +33,6 @@
 		<div class="consultant" data-motion="reveal">
 			<div class="consultant-photo"><img src={image} alt="" loading="lazy" width="1200" height="800" /></div>
 			<div class="consultant-copy">
-				{#if section.subtitle}<p class="consultant-eyebrow">{section.subtitle}</p>{/if}
 				<h2 id="consultant-title">{title.before}{#if title.mark}<span class="mark">{title.mark}</span>{/if}{title.after}</h2>
 				{#if textContent(section.content)}<p class="consultant-intro">{textContent(section.content)}</p>{/if}
 				{#if team}
@@ -64,8 +63,6 @@
 			linear-gradient(0deg, rgb(43 39 34 / 0.35) 0%, rgb(43 39 34 / 0) 40%);
 	}
 	.consultant-copy { display: flex; flex-direction: column; justify-content: center; padding: 56px 8px 56px 60px; }
-	.consultant-eyebrow { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sun); }
-	.consultant-eyebrow::before { content: ''; flex: none; width: 32px; height: 1px; background: currentColor; }
 	h2 { max-width: 15ch; margin: 0; font-size: clamp(32px, 3.4vw, 48px); font-weight: 600; line-height: 1.08; letter-spacing: -0.03em; text-wrap: balance; }
 	.mark { color: var(--sun); }
 	.consultant-intro { max-width: 44ch; margin: 16px 0 0; font-size: 16px; line-height: 1.7; color: rgb(255 255 255 / 0.78); }

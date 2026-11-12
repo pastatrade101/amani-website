@@ -1,7 +1,7 @@
 <script lang="ts">
 	import './layout.css';
 	import { onMount } from 'svelte';
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, onNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { setupSiteMotion } from '$lib/motion/site-motion';
 	import { safeUrl } from '$lib/home-content';
@@ -33,6 +33,20 @@
 			stopConsent();
 			motion();
 		};
+	});
+	// Moving between public pages: a short view transition, so the page settles
+	// in under a still header and tab bar instead of swapping in one frame.
+	// Filters and anchors on the same page, the admin, and reduced motion skip it.
+	onNavigate((navigation) => {
+		const from = navigation.from?.url, to = navigation.to?.url;
+		if (!document.startViewTransition || !from || !to || from.pathname === to.pathname) return;
+		if (isAdminPath(from.pathname) || isAdminPath(to.pathname) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
 	});
 	// Runs for the first page too: the tags are set not to send their own page view.
 	afterNavigate(({ to }) => {

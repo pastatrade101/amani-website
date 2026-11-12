@@ -22,46 +22,38 @@
 
 {#if reviews.length}
 	<section id="reviews-section" class="home-band home-cream" aria-labelledby="reviews-title">
-		<div class="home-container">
-			<header class="reviews-head" data-motion="reveal">
-				<h2 id="reviews-title" class="home-heading">{title.before}{#if title.mark}<span class="mark">{title.mark}</span>{/if}{title.after}</h2>
-				<p class="reviews-rating">
-					{#if reviewAverage}<span class="stars" role="img" aria-label={`${reviewAverage} out of 5 stars`}>{#each Array(5) as _, i}<Star size={17} strokeWidth={0} fill={i < stars ? 'currentColor' : '#d9d4ca'} aria-hidden="true" />{/each}</span><strong>{reviewAverage.toFixed(1)}</strong><span class="sep" aria-hidden="true"></span>{/if}
-					<span>{reviewTotal} guest {reviewTotal === 1 ? 'review' : 'reviews'}</span><span class="sep" aria-hidden="true"></span>
-					<a href={profile} target="_blank" rel="noopener noreferrer">View us on Tripadvisor<ArrowUpRight aria-hidden="true" /></a>
-				</p>
-			</header>
-			<div class="reviews-body" data-motion="reveal">
-				{#snippet aside()}
-					<div class="reviews-aside">
-						<span class="quote" aria-hidden="true">“</span>
-						<h3>What our guests are saying</h3>
+		<div class="home-container" data-motion="reveal">
+			{#snippet aside()}
+				<div class="reviews-aside">
+					<h2 id="reviews-title" class="home-heading">{title.before}{#if title.mark}<span class="mark">{title.mark}</span>{/if}{title.after}</h2>
+					<div class="score">
+						{#if reviewAverage}<strong class="score-value">{reviewAverage.toFixed(1)}</strong>{/if}
+						<div class="score-meta">
+							{#if reviewAverage}<span class="stars" role="img" aria-label={`${reviewAverage.toFixed(1)} out of 5 stars`}>{#each Array(5) as _, i}<Star size={16} strokeWidth={0} fill={i < stars ? 'currentColor' : '#d9d4ca'} aria-hidden="true" />{/each}</span>{/if}
+							<span>{reviewTotal} guest {reviewTotal === 1 ? 'review' : 'reviews'}</span>
+						</div>
 					</div>
-				{/snippet}
-				<GuestReviews {reviews} total={reviewTotal} variant="home" {aside} />
-			</div>
+					<a class="home-see-all" href={profile} target="_blank" rel="noopener noreferrer">View us on Tripadvisor <ArrowUpRight /></a>
+				</div>
+			{/snippet}
+			<GuestReviews {reviews} total={reviewTotal} variant="home" {aside} />
 		</div>
 	</section>
 {/if}
 
 <style>
-	.reviews-head { text-align: center; }
 	.mark { color: #9a6a2f; }
-	.reviews-rating { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; margin: 16px 0 0; font-size: 14px; color: var(--muted-foreground); }
+	.reviews-aside .home-heading { max-width: 11ch; }
+	.score { display: flex; align-items: center; gap: 16px; margin-top: 28px; }
+	.score-value { font-family: var(--font-display); font-size: 56px; font-weight: 600; line-height: 1; letter-spacing: -0.04em; color: var(--navy); font-variant-numeric: tabular-nums; }
+	.score-meta { display: grid; gap: 6px; font-size: 14px; color: var(--muted-foreground); }
 	.stars { display: inline-flex; gap: 3px; color: #22a352; }
-	.reviews-rating strong { font-weight: 700; color: var(--navy); }
-	.sep { width: 1px; height: 14px; background: #d9d4ca; }
-	.reviews-rating a { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; color: var(--navy); text-decoration: none; transition: color 0.2s ease; }
-	.reviews-rating a:hover { color: #7a5a26; }
-	.reviews-rating a :global(svg) { width: 15px; height: 15px; }
-	.reviews-body { margin-top: 48px; }
-	.quote { display: block; height: 64px; font-family: Georgia, 'Times New Roman', serif; font-size: 112px; line-height: 1; color: #9a6a2f; }
-	.reviews-aside h3 { max-width: 12ch; margin: 18px 0 0; font-size: clamp(22px, 2vw, 28px); font-weight: 650; line-height: 1.22; letter-spacing: -0.02em; color: var(--navy); }
+	.reviews-aside .home-see-all { margin-top: 18px; }
 	@media (max-width: 900px) {
-		.reviews-body { margin-top: 32px; }
-		.quote { height: 40px; font-size: 76px; }
-		.reviews-aside h3 { margin-top: 8px; max-width: 14ch; }
+		.reviews-aside { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 20px; }
+		.reviews-aside .home-heading { grid-column: 1 / -1; max-width: none; }
+		.score { margin-top: 20px; }
+		.score-value { font-size: 44px; }
+		.reviews-aside .home-see-all { margin-top: 0; font-size: 13px; }
 	}
-	/* Phones: the link takes its own line, so no divider is left hanging. */
-	@media (max-width: 600px) { .sep { display: none; } .reviews-rating a { flex-basis: 100%; justify-content: center; } }
 </style>
