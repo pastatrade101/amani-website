@@ -139,14 +139,14 @@
 	article a { font-weight: 600; color: var(--sp-ink); text-decoration: none; }
 	article a:hover { color: #7b6500; }
 	article ul { margin: 0; padding-left: 1.2rem; list-style: disc; }
-	.compare-wrap { margin: 0 0 18px; overflow-x: auto; border: 1px solid var(--sp-line); border-radius: 14px; background: #fff; }
+	.compare-wrap { margin: 0 0 18px; overflow-x: auto; border: 1px solid var(--sp-line); border-radius: var(--radius-surface); background: #fff; }
 	table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 14px; line-height: 1.6; }
 	th { padding: 14px 16px; background: #efeadd; font-weight: 600; text-align: left; color: var(--sp-ink); }
 	td { padding: 14px 16px; border-top: 1px solid var(--sp-line-soft); vertical-align: top; color: var(--sp-muted); }
 	td:first-child { font-weight: 600; white-space: nowrap; color: var(--sp-ink); }
-	.guide-cta { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 36px; padding: 24px 28px; border-radius: 16px; background: #fff; border: 1px solid var(--sp-line); }
+	.guide-cta { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 36px; padding: 24px 28px; border-radius: var(--radius-surface); background: #fff; border: 1px solid var(--sp-line); }
 	.guide-cta p { margin: 0; font-size: 15px; line-height: 1.7; color: var(--sp-muted); }
-	.guide-cta a { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 12px 26px; border-radius: 999px; background: var(--sp-sun); color: #2b2722; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+	.guide-cta a { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 12px 26px; border-radius: var(--radius-control); background: var(--sp-sun); color: #2b2722; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; }
 	.guide-cta a :global(svg) { width: 16px; height: 16px; }
 	@media (max-width: 900px) {
 		.guide-layout { grid-template-columns: minmax(0, 1fr); gap: 28px; }

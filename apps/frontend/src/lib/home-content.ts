@@ -2,14 +2,15 @@ import { refreshSections } from './homepage-refresh';
 import { guideSections } from './homepage-guides';
 import { formatPrice } from './safari-pricing.js';
 import type { Destination, HomepageSection, Tour } from './types/api.js';
+import { LANDSCAPES, PHOTO } from './media-photos';
 
 export const defaultSections: HomepageSection[] = [
 	...guideSections,
 	...refreshSections,
-	{ section_key: 'gallery_preview', title: 'A thousand moments. Your next story.', subtitle: 'TANZANIA, THROUGH OUR LENS', content: 'A glimpse of the landscapes, wildlife and quiet moments waiting along the way.', sort_order: 42 },
+	{ section_key: 'gallery_preview', title: 'A thousand moments. Your next story.', subtitle: 'TANZANIA, THROUGH OUR LENS', content: 'A glimpse of the landscapes, wildlife and quiet moments waiting along the way.', sort_order: 42, is_active: false },
 	{ section_key: 'hero', title: 'Discover Tanzania. Your Way.', subtitle: 'TAILOR-MADE TANZANIA SAFARI HOLIDAYS', content: 'Explore incredible wildlife, iconic national parks, and authentic African experiences with a locally owned safari company. We create tailor-made journeys around your interests, travel style, and budget.', button_text: 'Start Planning', button_url: '#plan-form', sort_order: 0 },
 	{ section_key: 'why_us', title: 'More than a safari. A connection to Tanzania.', subtitle: 'THE KEY2AFRICA APPROACH', content: 'The best journeys feel personal. We bring local insight and thoughtful planning to the moments you’ve been dreaming of, and the ones you haven’t imagined yet.', button_text: 'Create my Tanzania journey', button_url: '#request-quote', sort_order: 5 },
-	{ section_key: 'experiences', title: 'Explore East Africa Experiences', subtitle: 'EXPERIENCE SOMETHING EXTRAORDINARY', content: 'Discover extraordinary safaris, wildlife encounters, and beach escapes across Tanzania and East Africa.', sort_order: 2 },
+	{ section_key: 'experiences', title: 'Explore Tanzania Experiences', subtitle: 'EXPERIENCE SOMETHING EXTRAORDINARY', content: 'Discover safaris, wildlife encounters and beach escapes across Tanzania.', sort_order: 2 },
 	{ section_key: 'destinations', title: 'Where Will Your Tanzania Safari Take You?', subtitle: 'EXPLORE TANZANIA', content: 'Discover the iconic parks, landscapes and wildlife areas that make Tanzania an unforgettable safari destination.', sort_order: 20 },
 	{ section_key: 'safari_packages', title: 'Which Safari Should You Choose?', subtitle: 'YOUR JOURNEY STARTS HERE', content: 'Explore our published itineraries, then make them your own with our local team.', sort_order: 30 },
 	{ section_key: 'when_to_go', title: 'When Should You Go?', subtitle: 'BEST TIME TO VISIT', content: 'Every season tells a different story. Choose the landscapes, wildlife and pace that speak to you.', sort_order: 40 },
@@ -17,6 +18,40 @@ export const defaultSections: HomepageSection[] = [
 	{ section_key: 'faq', title: 'Frequently Asked Questions About African Safaris', subtitle: 'GOOD TO KNOW', content: 'A little clarity before your next adventure.', sort_order: 46 },
 	{ section_key: 'enquiry', title: 'Let’s Plan Your Tanzania Story', subtitle: 'MADE AROUND YOU', content: 'Tell us a little about your dream trip. Our team will help turn your ideas into a safari designed around you.', sort_order: 50 }
 ];
+
+/** The safari guide page: practical planning sections moved off the homepage. */
+export const GUIDE_PATH = '/safari-guide';
+/** Sections drawn on the guide page instead of the homepage. Their CMS switches still apply there. */
+export const GUIDE_PAGE_KEYS = ['why_tanzania', 'why_us', 'cost_ranges', 'safari_duration', 'safari_inclusions', 'safari_day', 'faq'];
+/**
+ * The home page, top to bottom: who we are, what to book, ways to travel, a
+ * person to talk to, deeper inspiration, then trust, guest proof and answers.
+ * The hero comes first. A section not listed here is not drawn on the home page,
+ * whatever its CMS switch says; the CMS still switches listed ones off.
+ */
+export const HOME_LAYOUT = ['hero', 'company_intro', 'safari_packages', 'experiences', 'planning_cta', 'safari_offers', 'trust_features', 'reviews_section', 'faq'];
+/** CMS switches that are not home page blocks: enquiries on or off, and the destination links. */
+const SITE_SWITCHES = ['enquiry', 'destinations'];
+
+/** The active sections in home page order. */
+export function homeSections(sections: HomepageSection[]): HomepageSection[] {
+	return HOME_LAYOUT.map((key) => sections.find((section) => section.section_key === key)).filter((section): section is HomepageSection => Boolean(section && section.is_active !== false));
+}
+
+/**
+ * The section keys the header and footer may use: switched on and drawn somewhere
+ * (the home page or the safari guide), plus the site-wide switches. Menus never
+ * link to a home page section that is not there. FAQs need questions placed on the home page.
+ */
+export function linkedSections(sections: HomepageSection[], noHomeFaqs = false): string[] {
+	return sections
+		.filter((section) => section.is_active !== false && !(section.section_key === 'faq' && noHomeFaqs))
+		.map((section) => section.section_key)
+		.filter((key) => HOME_LAYOUT.includes(key) || GUIDE_PAGE_KEYS.includes(key) || SITE_SWITCHES.includes(key));
+}
+
+/** Homepage sections that are off unless the CMS has a record switching them on. */
+export const DEFAULT_OFF_KEYS = defaultSections.filter((section) => section.is_active === false).map((section) => section.section_key);
 
 /** Longest text that still reads as the small uppercase label above a heading. */
 export const EYEBROW_MAX = 40;
@@ -29,12 +64,13 @@ const trimmed = (value: unknown) => (typeof value === 'string' ? value.trim() : 
  * label is `extra_data.eyebrow` and the paragraph is `subtitle` (or `content`).
  * Map one onto the other here, once. A label longer than EYEBROW_MAX is not a
  * label, so the default one is kept rather than printing a paragraph in caps.
- * Disabled CMS markers must never be replaced with fallback copy.
+ * Disabled CMS markers must never be replaced with fallback copy. A section
+ * that is off by default stays off until a CMS record switches it on.
  */
 export function mergeSections(rows: HomepageSection[]): HomepageSection[] {
 	return defaultSections.map((fallback) => {
 		const row = rows.find((item) => item.section_key === fallback.section_key);
-		if (row?.is_active === false) return { section_key: fallback.section_key, is_active: false, sort_order: row.sort_order ?? fallback.sort_order };
+		if (row?.is_active === false || (!row && fallback.is_active === false)) return { section_key: fallback.section_key, is_active: false, sort_order: row?.sort_order ?? fallback.sort_order };
 		const filled = Object.fromEntries(Object.entries(row ?? {}).filter(([, value]) => value !== null && value !== undefined));
 		const eyebrow = trimmed(row?.extra_data?.eyebrow);
 		const paragraph = trimmed(row?.subtitle) || trimmed(row?.content);
@@ -62,22 +98,21 @@ export const textContent = (value?: string | null): string => (value ?? '')
 	.replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
 
 /**
- * Bundled photos for well-known places, used only while a destination has no
- * CMS image. Without this every image-less card showed the same hero shot.
+ * Media library photos of well-known places, used only while a destination has
+ * no CMS image. Without this every image-less card showed the same hero shot.
  */
 const PLACE_PHOTOS: [RegExp, string][] = [
-	[/serengeti/, '/images/serengeti.jpg'],
-	[/ngorongoro/, '/images/ngorongoro.jpg'],
-	[/tarangire/, '/images/tarangire.jpg'],
-	[/manyara/, '/images/lake-manyara.jpg'],
-	[/zanzibar|stone town|pemba|mafia/, '/images/experience-zanzibar.jpg'],
-	[/nyerere|selous|rufiji/, '/images/itinerary-game-drive.jpg'],
-	[/ruaha/, '/images/itinerary-lions.jpg'],
-	[/mikumi/, '/images/itinerary-elephants.jpg'],
-	[/arusha|kilimanjaro/, '/images/itinerary-rhino.jpg']
+	[/serengeti/, PHOTO.wildebeest],
+	[/ngorongoro/, PHOTO.ngorongoroGate],
+	[/tarangire/, PHOTO.baobabVehicles],
+	[/zanzibar|stone town|pemba|mafia/, PHOTO.zanzibarBeach]
 ];
-/** Rotated by position for anything unmatched, so neighbouring cards differ. */
-const SPARE_PHOTOS = ['/images/itinerary-elephants.jpg', '/images/itinerary-lions.jpg', '/images/itinerary-baobab-sunset.jpg', '/images/itinerary-rhino.jpg', '/images/tanzania-hero-2.jpg', '/images/itinerary-crater.jpg'];
+/**
+ * Rotated by position for anything unmatched, so neighbouring cards differ.
+ * Landscapes only: a lion or rhino standing in for Arusha or Kilimanjaro
+ * misleads anyone who knows the place.
+ */
+const SPARE_PHOTOS = LANDSCAPES;
 
 /** The CMS image when there is one; otherwise a photo of the place, or a rotating spare. */
 export function destinationPhoto(item: Destination, index = 0): string {
@@ -150,9 +185,9 @@ export function tourFromPrice(tour: Pick<Tour, 'pricing_summary' | 'price_from' 
 }
 
 /**
- * One photo per tour in a list: the tour's own image, else a bundled photo of
+ * One photo per tour in a list: the tour's own image, else a media library photo of
  * a place on its route, else a spare. Image-less tours in the same list never
- * share a bundled photo while an unused one is left.
+ * share a photo while an unused one is left.
  */
 export function tourPhotos(tours: Pick<Tour, 'main_image_url' | 'main_image_url_thumbnail' | 'banner_image_url' | 'tour_destinations' | 'destinations'>[]): string[] {
 	const used = new Set<string>();

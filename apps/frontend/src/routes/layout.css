@@ -1,12 +1,8 @@
 @import "tailwindcss";
 @import "shadcn-svelte/tailwind.css";
-@import "@fontsource/poppins/400.css";
-@import "@fontsource/poppins/500.css";
-@import "@fontsource/poppins/600.css";
-@import "@fontsource/poppins/700.css";
-@import "@fontsource/cormorant-garamond/500.css";
-@import "@fontsource/cormorant-garamond/600.css";
-@import "@fontsource/cormorant-garamond/500-italic.css";
+/* Type: Plus Jakarta Sans for everything, headings and text. Free under the
+   SIL Open Font License, self-hosted from @fontsource-variable (weights 200-800). */
+@import "@fontsource-variable/plus-jakarta-sans";
 @import "tw-animate-css";
 @import "$lib/admin/admin-theme.css";
 
@@ -27,21 +23,23 @@
  */
 
 @theme inline {
-  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
-  /* Editorial serif for large headings, quotes and fact values (22px and up only). */
-  --font-display: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  /* Editorial serif for page and section headings, quotes and fact values. */
+  --font-display: var(--font-sans);
   --color-sun: var(--sun);
   --color-sun-foreground: var(--sun-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-navy: var(--navy);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  /* Two corners for the public site (see --radius-control / --radius-surface
+     in :root); the CMS keeps its own scale in admin-theme.css. */
+  --radius-sm: var(--ui-radius-sm);
+  --radius-md: var(--ui-radius-md);
+  --radius-lg: var(--ui-radius-lg);
+  --radius-xl: var(--ui-radius-xl);
+  --radius-2xl: var(--ui-radius-2xl);
+  --radius-3xl: var(--ui-radius-3xl);
+  --radius-4xl: var(--ui-radius-4xl);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -79,10 +77,23 @@
 
 :root {
   --site-header-height: 86px;
-  /* Content width. 1280px left ~220px of empty margin a side on a 16" laptop,
-     so wide screens get more; the header uses the same value to stay aligned. */
-  --page-max: 1280px;
+  /* Content width for every page: 8% side margins from tablets up, never wider
+     than this (phones keep a 16-20px edge). The header, home page, tour page,
+     other pages and footer all line up on it. */
+  --page-max: 1200px;
   --radius: 0.625rem;
+  /* One gentle corner everywhere, never a pill: 8px on buttons, fields, tabs
+     and chips; 12px on cards, photos, panels and forms. Dots, avatars and
+     small icon marks stay round. */
+  --radius-control: 8px;
+  --radius-surface: 12px;
+  --ui-radius-sm: 6px;
+  --ui-radius-md: var(--radius-control);
+  --ui-radius-lg: var(--radius-control);
+  --ui-radius-xl: var(--radius-surface);
+  --ui-radius-2xl: var(--radius-surface);
+  --ui-radius-3xl: var(--radius-surface);
+  --ui-radius-4xl: var(--radius-surface);
   --charcoal: oklch(0.255 0.012 75);
   --navy: var(--charcoal); /* Compatibility for existing components; no blue. */
   --sun: oklch(0.864 0.173 97);
@@ -178,21 +189,28 @@
   button:not(:disabled), [role="tab"] { cursor: pointer; }
   :focus-visible { outline: 3px solid var(--sun); outline-offset: 4px; }
   ::selection { background: var(--sun); color: var(--navy); }
+  /* Page and section headings speak in the serif; card titles and UI share the same family. */
+  h1, h2 { font-family: var(--font-display); font-optical-sizing: auto; font-variant-numeric: lining-nums; }
 }
 @layer components {
   .page-container { width: 100%; max-width: var(--page-max); padding-inline: 1rem; margin-inline: auto; }
-  .section-heading { font-size: clamp(1.7rem, 2.8vw, 2.5rem); font-weight: 600; line-height: 1.22; letter-spacing: -.045em; color: var(--navy); }
+  .section-heading { font-family: var(--font-display); font-size: clamp(1.9rem, 3vw, 2.65rem); font-weight: 600; line-height: 1.12; letter-spacing: -.03em; color: var(--navy); text-wrap: balance; }
   .section-description { font-size: 14px; line-height: 1.9; color: var(--muted-foreground); }
-  .eyebrow { font-size: .65rem; font-weight: 600; letter-spacing: .19em; text-transform: uppercase; }
+  .eyebrow { font-size: .75rem; font-weight: 600; letter-spacing: .19em; text-transform: uppercase; }
   .gold-line { height: 3px; width: 50px; background: var(--sun); border-radius: 3px; }
-  .lux-heading { font-family: var(--font-display); font-weight: 500; font-size: clamp(2rem, 3.6vw, 3.1rem); line-height: 1.08; letter-spacing: -.01em; color: var(--navy); text-wrap: balance; }
-  /* Cormorant's old-style figures read as letters ("01" looks like "oI"); headings and facts need lining ones. */
+  .lux-heading { font-family: var(--font-display); font-weight: 600; font-size: clamp(2rem, 3.4vw, 3rem); line-height: 1.08; letter-spacing: -.01em; color: var(--navy); text-wrap: balance; }
+  /* Headings and facts use lining figures, so "01" never reads as "oI". */
   .lux-heading, .font-display { font-variant-numeric: lining-nums; }
   /* Tour and stay cards: 1 on phones, 2 from 640px, 3 from 1024px, 4 from 1440px. */
   .card-grid { display: grid; gap: 1.5rem; grid-template-columns: minmax(0, 1fr); }
 }
-@media (min-width: 768px) { .page-container { padding-inline: 2rem; } }
+@media (min-width: 768px) { .page-container { width: min(84%, var(--page-max)); padding-inline: 0; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+
+/* One heading voice on the public site: Plus Jakarta Sans at semibold with
+   tight tracking. Components size their headings; they no longer pick the weight.
+   The CMS (.key2africa-admin) keeps its own heading font. */
+:is(h1, h2):not(.key2africa-admin *) { font-family: var(--font-display); font-weight: 600 !important; letter-spacing: -0.03em !important; }
 
 /* Motion is progressive enhancement: content is visible before JavaScript and in print. */
 [data-motion="line"] { transform-origin: left center; }
@@ -211,8 +229,7 @@ a[data-slot="button"]:hover svg:last-child { translate: 2px 0; }
 @media (max-width: 1099px) { :root { --site-header-height: 76px; } }
 @media (min-width: 640px) { .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 1440px) { :root { --page-max: 1400px; } .card-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@media (min-width: 1680px) { :root { --page-max: 1560px; } }
+@media (min-width: 1440px) { .card-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
 /* Legacy cool utilities use the same warm neutral scale throughout the app. */
 @theme inline {
@@ -272,3 +289,15 @@ a[data-slot="button"]:hover svg:last-child { translate: 2px 0; }
   --color-slate-900: var(--color-stone-900);
   --color-slate-950: var(--color-stone-950);
 }
+
+/* Home page building blocks, shared with the safari guide page (its FAQ). */
+.home-container { width: 84%; max-width: var(--page-max); margin-inline: auto; }
+.home-band { padding-block: 72px; }
+.home-cream { background: #f7f5ef; border-block: 1px solid #e9e5da; }
+.home-heading { font-family: var(--font-display); font-size: clamp(30px, 3vw, 42px); font-weight: 600; line-height: 1.12; letter-spacing: -0.03em; color: var(--navy); text-wrap: balance; }
+.home-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.18em; color: var(--muted-foreground); }
+.home-copy { font-size: 15px; line-height: 1.85; color: var(--muted-foreground); }
+/* The label above every home heading: a short sun rule, then the words. */
+.home-kicker { display: inline-flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 700; line-height: 1.4; letter-spacing: 0.16em; text-transform: uppercase; color: #7a5a26; }
+.home-kicker::before { content: ''; flex: none; width: 26px; height: 2px; border-radius: 2px; background: var(--sun); }
+@media (max-width: 767px) { .home-container { width: 90%; } .home-band { padding-block: 48px; } }

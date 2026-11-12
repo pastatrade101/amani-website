@@ -3,6 +3,8 @@ export type TripEndpoint = {
   gateway_type: 'airport' | 'city' | 'hotel' | 'border' | 'station';
   airport_code?: string | null; destination_id?: string | null;
   transfer_info?: string | null; status: 'draft' | 'published' | 'archived';
+  /** The endpoint's destination; its coordinates place the start and finish on the route map. */
+  destination?: { id: string; name?: string | null; latitude?: number | string | null; longitude?: number | string | null } | null;
 };
 
 import type { ImageVariants } from '$lib/admin/img';
@@ -116,6 +118,8 @@ export type StayLodge = {
 	short_description?: string | null;
 	park_area?: string | null;
 	region?: string | null;
+	/** The property's photo gallery (most properties keep their photos only here). */
+	lodge_images?: { id: string; image_url: string; alt_text?: string | null; caption?: string | null; sort_order?: number | null; is_cover?: boolean | null }[] | null;
 };
 
 /** Where travellers sleep on a day, for one safari style. */

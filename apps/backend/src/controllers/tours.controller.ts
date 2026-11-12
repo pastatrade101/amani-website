@@ -65,10 +65,13 @@ const dayDestinationEmbed = 'destination:destinations!itinerary_days_destination
 // status + show_property_publicly tell the tour page whether a stay page exists to link to;
 // the short description and area fill the itinerary's overnight card.
 const dayStayLodgeColumns = `${dayLodgeColumns},status,show_property_publicly,short_description,park_area,region`;
-const dayStaysEmbed = `stays:itinerary_day_stays!itinerary_day_stays_itinerary_day_id_fkey(safari_style,lodge_id,accommodation,lodge:lodges!itinerary_day_stays_lodge_id_fkey(${dayStayLodgeColumns}))`;
+// lodge_images: most properties keep their photography only there, and the
+// itinerary shows a lodge's photos when a day has a single stay.
+const stayLodgeImages = 'lodge_images(id,image_url,alt_text,caption,sort_order,is_cover)';
+const dayStaysEmbed = `stays:itinerary_day_stays!itinerary_day_stays_itinerary_day_id_fkey(safari_style,lodge_id,accommodation,lodge:lodges!itinerary_day_stays_lodge_id_fkey(${dayStayLodgeColumns},${stayLodgeImages}))`;
 // The same stays, before the lodge-location migration (no park_area or region).
 const dayStayLodgeColumnsBasic = `${dayLodgeColumns},status,show_property_publicly`;
-const dayStaysEmbedBasic = `stays:itinerary_day_stays!itinerary_day_stays_itinerary_day_id_fkey(safari_style,lodge_id,accommodation,lodge:lodges!itinerary_day_stays_lodge_id_fkey(${dayStayLodgeColumnsBasic}))`;
+const dayStaysEmbedBasic = `stays:itinerary_day_stays!itinerary_day_stays_itinerary_day_id_fkey(safari_style,lodge_id,accommodation,lodge:lodges!itinerary_day_stays_lodge_id_fkey(${dayStayLodgeColumnsBasic},${stayLodgeImages}))`;
 const itineraryEmbeds = {
   stays: `itinerary_days(${dayColumns},summary,image_urls,destination_id,travel_mode,${dayDestinationEmbed},${dayLodgeEmbed(dayStayLodgeColumns)},${dayStaysEmbed})`,
   staysBasic: `itinerary_days(${dayColumns},summary,image_urls,destination_id,travel_mode,${dayDestinationEmbed},${dayLodgeEmbed(dayStayLodgeColumnsBasic)},${dayStaysEmbedBasic})`,

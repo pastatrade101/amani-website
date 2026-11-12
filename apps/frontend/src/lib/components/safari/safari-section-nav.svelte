@@ -80,7 +80,7 @@
 	.section-nav > a[aria-current='location'] { color: var(--sp-ink); font-weight: 600; }
 	.active-line { position: absolute; left: 0; bottom: -1px; z-index: 1; height: 3px; border-radius: 3px; background: var(--sp-sun-dark); pointer-events: none; transition: transform 0.25s ease, width 0.25s ease; }
 	.sticky-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-	.sticky-actions a { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 9px 18px; border-radius: 999px; font-size: 13px; font-weight: 700; line-height: 1.3; text-decoration: none; }
+	.sticky-actions a { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 9px 18px; border-radius: var(--radius-control); font-size: 13px; font-weight: 700; line-height: 1.3; text-decoration: none; }
 	.sticky-actions :global(svg) { width: 15px; height: 15px; }
 	.nav-quote { background: var(--sp-sun); color: #2b2722; }
 	.nav-whatsapp { background: var(--sp-green); color: #fff; }
@@ -97,5 +97,5 @@
 		.section-nav > a :global(svg) { display: none; }
 		.sticky-actions { display: none; }
 	}
-	@media (max-width: 380px) { .section-nav > a { font-size: 11px; } }
+	@media (max-width: 380px) { .section-nav > a { font-size: 12px; } }
 </style>

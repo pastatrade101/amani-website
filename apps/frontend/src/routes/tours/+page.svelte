@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { ArrowRight, ChevronRight, X } from '@lucide/svelte';
+	import { PHOTO } from '$lib/media-photos';
+	import { ArrowDown, ArrowRight, X } from '@lucide/svelte';
+	import PageHero from '$lib/components/page-hero.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import SiteHeader from '$lib/components/home/site-header.svelte';
 	import SiteFooter from '$lib/components/home/site-footer.svelte';
@@ -73,23 +75,12 @@
 <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-sun focus:p-4">Skip to content</a>
 <SiteHeader visible={data.visible} activities={data.activities} destinations={data.destinations} onInterest={chooseInterest} tours={data.navTours} categories={data.categories} stays={data.navStays} {onPage} />
 <main id="main">
-	<section id="top" class="relative isolate overflow-hidden bg-navy text-white" aria-labelledby="tours-title">
-		<img src="/images/related-wildebeest.jpg" alt="Wildebeest herds grazing on the savannah at golden hour" width="1600" height="1008" fetchpriority="high" class="absolute inset-0 -z-20 size-full object-cover object-center" />
-		<div class="absolute inset-0 -z-10 bg-linear-to-r from-black/75 via-black/45 to-black/10 max-md:bg-black/55" aria-hidden="true"></div>
-		<div class="page-container py-12 md:py-20 lg:py-24">
-			<nav aria-label="Breadcrumb">
-				<ol class="flex items-center gap-1.5 text-[11px] text-white/75">
-					<li><a href="/" class="transition-colors hover:text-sun">Home</a></li>
-					<li aria-hidden="true"><ChevronRight class="size-3" /></li>
-					<li aria-current="page" class="font-medium text-white">Tours</li>
-				</ol>
-			</nav>
-			<p data-motion="hero" class="mt-8 text-xs font-semibold tracking-[.25em] md:mt-10">TANZANIA SAFARI TOURS</p>
-			<div data-motion="line" data-motion-delay="0.15" class="mt-3 h-0.5 w-16 bg-sun"></div>
-			<h1 id="tours-title" data-motion="hero" data-motion-delay="0.08" class="mt-5 max-w-2xl text-[36px] leading-[1.1] font-semibold tracking-[-.045em] sm:text-5xl md:text-[56px]">Safari tours &amp; itineraries</h1>
-			<p data-motion="hero" data-motion-delay="0.16" class="mt-5 max-w-xl text-sm leading-[1.9] text-white/85 md:text-base">Day-by-day journeys through Tanzania’s parks and coast, each ready to shape around your dates, pace and comfort.</p>
-		</div>
-	</section>
+	<PageHero titleId="tours-title" image={PHOTO.wildebeest} imageAlt="Wildebeest herds grazing on the Serengeti plains" crumbs={[{ label: 'Home', href: '/' }, { label: 'Tours' }]} eyebrow="Tanzania safari tours" title="Safari tours & itineraries" intro="Day-by-day journeys through Tanzania’s parks and coast, each ready to shape around your dates, pace and comfort.">
+		{#snippet actions()}
+			<Button variant="safari" href="#safari-search">Find your safari <ArrowDown class="size-4" /></Button>
+			{#if enquiry}<Button href={planHref({ from: 'tours_hero' })} data-cta="plan_my_trip" data-cta-location="tours_hero" variant="outline">Plan my safari</Button>{/if}
+		{/snippet}
+	</PageHero>
 	<SearchPanel destinations={data.destinationsAreReference ? [] : data.destinations} categories={data.categories} filters={data.filters} action="/tours#tour-results" />
 	<section id="tour-results" class="bg-secondary/45 py-14 md:py-18" aria-labelledby="tour-results-title">
 		<div class="page-container">
@@ -100,7 +91,7 @@
 					{#if chips.length}
 						<ul class="mt-4 flex flex-wrap gap-2" aria-label="Active filters">
 							{#each chips as chip (chip.key)}
-								<li><a href={toursHref({ [chip.key]: '', page: '1' })} aria-label={`Remove ${chip.kind.toLowerCase()} filter: ${chip.label}`} class="inline-flex h-9 max-w-full items-center gap-1.5 rounded-full border border-border bg-white px-3.5 text-xs text-navy transition-colors hover:border-navy/30"><span class="text-muted-foreground">{chip.kind}:</span><span class="truncate font-semibold">{chip.label}</span><X class="size-3.5 shrink-0 text-muted-foreground" /></a></li>
+								<li><a href={toursHref({ [chip.key]: '', page: '1' })} aria-label={`Remove ${chip.kind.toLowerCase()} filter: ${chip.label}`} class="inline-flex h-9 max-w-full items-center gap-1.5 rounded-md border border-border bg-white px-3.5 text-xs text-navy transition-colors hover:border-navy/30"><span class="text-muted-foreground">{chip.kind}:</span><span class="truncate font-semibold">{chip.label}</span><X class="size-3.5 shrink-0 text-muted-foreground" /></a></li>
 							{/each}
 						</ul>
 					{/if}
@@ -113,7 +104,7 @@
 					<TourCard {tour} photo={photos[i]} />
 				{:else}
 					<div data-motion="image" class="col-span-full grid overflow-hidden rounded-2xl border border-border bg-white md:grid-cols-2">
-						<img src="/images/tanzania-hero-3.jpg" alt="Hot air balloons drifting over the Serengeti at sunrise" loading="lazy" class="h-60 w-full object-cover md:h-full md:min-h-80" />
+						<img src={PHOTO.balloonsDawn} alt="Hot air balloons drifting over the Serengeti at sunrise" loading="lazy" class="h-60 w-full object-cover md:h-full md:min-h-80" />
 						<div class="flex flex-col items-start justify-center p-7 md:p-10">
 							<span class="eyebrow text-muted-foreground">MADE AROUND YOU</span>
 							<h3 class="mt-4 max-w-md text-2xl font-semibold tracking-tight md:text-3xl">{data.toursUnavailable ? 'Your safari starts with a conversation' : filtered ? 'No safaris match your search yet' : 'New itineraries are on their way'}</h3>

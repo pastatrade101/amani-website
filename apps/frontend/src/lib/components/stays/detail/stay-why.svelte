@@ -22,7 +22,7 @@
 			<p id="why-title" class="eyebrow text-sun">Why we recommend it</p>
 			<Quote class={`mt-6 size-10 text-sun ${photo ? '' : 'mx-auto'}`} aria-hidden="true" />
 			<figure>
-				<blockquote class={`quote mt-5 font-display italic ${long ? 'text-[22px] leading-[1.45] sm:text-[26px] lg:text-[30px]' : 'text-[26px] leading-[1.35] sm:text-[34px] lg:text-[40px]'}`}><RichText value={why} /></blockquote>
+				<blockquote class={`quote mt-5 font-display font-medium tracking-[-.02em] ${long ? 'text-[19px] leading-[1.55] sm:text-[21px] lg:text-[24px]' : 'text-[22px] leading-[1.4] sm:text-[27px] lg:text-[32px]'}`}><RichText value={why} /></blockquote>
 				<figcaption class="mt-8 text-xs uppercase tracking-[.2em] text-white/60">— The {team} team</figcaption>
 			</figure>
 		</div>

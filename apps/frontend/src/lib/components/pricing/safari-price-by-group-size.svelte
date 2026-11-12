@@ -96,10 +96,10 @@
 					<div class="mx-auto grid w-full grid-cols-3 gap-px overflow-hidden rounded-xl border sm:grid-cols-6 md:w-[90%]" style={`border-color:${theme.primary};background-color:${theme.light}`}>
 						{#each tiers as tier (tier.key)}
 							<div class="flex flex-col items-center justify-center bg-white px-1 py-3 text-center md:px-4 md:py-5">
-								<span class="text-[11px] font-semibold uppercase tracking-wide text-primary/80 md:text-sm">{tier.label}</span>
+								<span class="text-[12px] font-semibold uppercase tracking-wide text-primary/80 md:text-sm">{tier.label}</span>
 								{#if tier.price != null}
 									<span class="mt-1 text-[15px] font-bold leading-none transition-colors duration-200 md:mt-2 md:text-3xl" style={`color:${theme.priceColor}`}>{formatPrice(tier.price, currency)}</span>
-									<span class="mt-0.5 text-[10px] text-muted-foreground md:text-xs">per person</span>
+									<span class="mt-0.5 text-[12px] text-muted-foreground md:text-xs">per person</span>
 								{:else}
 									<span class="mt-1 text-[13px] font-semibold leading-none text-primary/70 md:mt-2 md:text-base">On request</span>
 								{/if}

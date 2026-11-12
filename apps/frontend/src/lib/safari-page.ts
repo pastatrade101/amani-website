@@ -1,3 +1,4 @@
+import { safeUrl } from './home-content.js';
 import { sortedDays } from './tour-itinerary.js';
 import type { ItineraryDay, TourDetail } from './types/api.js';
 
@@ -54,25 +55,49 @@ export function dayGroups(days?: ItineraryDay[] | null): DayGroup[] {
 }
 
 export type TravelMode = 'FLY' | 'DRIVE' | 'BOAT' | null;
-export type MapStop = { name: string; lat: number; lng: number };
+/** A place on the route; `days` lists the day numbers spent there. */
+/**
+ * A place on the route. `days` lists the day numbers spent there; `n` numbers
+ * the places days are spent in, in travel order; `role` marks the tour's start
+ * and finish points.
+ */
+export type MapStop = { name: string; lat: number; lng: number; days: number[]; n?: number; role?: 'start' | 'end' | 'both' };
 export type MapLeg = { from: number; to: number; mode: TravelMode };
+/** One arrival in travel order: which stop, the days spent there on this visit, or the start / finish. */
+export type RouteVisit = { stop: number; days: number[]; role?: 'start' | 'end' };
+export type Route = { stops: MapStop[]; legs: MapLeg[]; visits: RouteVisit[] };
+type Endpoint = { name?: string | null; destination?: { name?: string | null; latitude?: unknown; longitude?: unknown } | null } | null | undefined;
 
 const coordinate = (value: unknown, limit: number) => {
 	const number = typeof value === 'string' && value.trim() ? Number(value) : value;
 	return typeof number === 'number' && Number.isFinite(number) && Math.abs(number) <= limit ? number : null;
 };
 
+/** Great-circle distance in km between two points (from their CMS coordinates). */
+export function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+	const rad = Math.PI / 180;
+	const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+	const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+	return 2 * 6371 * Math.asin(Math.sqrt(h));
+}
+/** Two pins this close are the same place on a country-scale map. */
+const samePlace = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => distanceKm(a, b) < 15;
+
 /**
- * The route as the map draws it: the places the days are spent in, in order,
+ * The route as the map draws it, all from the CMS: the places the days are
+ * spent in (each day's destination and its latitude/longitude), in order,
  * with how travellers reach each one (the arriving day's travel mode; null is
- * "not stated"). Null unless every day has a place with coordinates and the
- * trip visits at least two places — a partial route would mislead.
+ * "not stated"), plus the tour's start and finish points when their
+ * destination has coordinates. The leg home to the finish has no recorded
+ * mode, so it stays "not stated". Null unless every day has a place with
+ * coordinates and the route has at least two places: a partial route would mislead.
  */
-export function routeMap(days?: ItineraryDay[] | null): { stops: MapStop[]; legs: MapLeg[] } | null {
+export function routeMap(days?: ItineraryDay[] | null, start?: Endpoint, end?: Endpoint): Route | null {
 	const list = sortedDays(days);
 	if (!list.length) return null;
 	const stops: MapStop[] = [];
 	const legs: MapLeg[] = [];
+	const visits: RouteVisit[] = [];
 	let previous = -1;
 	for (const day of list) {
 		const lat = coordinate(day.destination?.latitude, 90);
@@ -80,11 +105,49 @@ export function routeMap(days?: ItineraryDay[] | null): { stops: MapStop[]; legs
 		const name = clean(day.destination?.name);
 		if (lat === null || lng === null || !name) return null;
 		let index = stops.findIndex((stop) => stop.name === name);
-		if (index === -1) index = stops.push({ name, lat, lng }) - 1;
-		if (previous !== -1 && index !== previous) legs.push({ from: previous, to: index, mode: day.travel_mode ?? null });
+		if (index === -1) index = stops.push({ name, lat, lng, days: [] }) - 1;
+		if (index !== previous) {
+			if (previous !== -1) legs.push({ from: previous, to: index, mode: day.travel_mode ?? null });
+			visits.push({ stop: index, days: [] });
+		}
+		if (Number.isFinite(day.day_number)) {
+			visits[visits.length - 1].days.push(day.day_number);
+			if (!stops[index].days.includes(day.day_number)) stops[index].days.push(day.day_number);
+		}
 		previous = index;
 	}
-	return stops.length >= 2 ? { stops, legs } : null;
+	stops.forEach((stop, i) => { stop.n = i + 1; });
+
+	const place = (point: Endpoint) => {
+		const lat = coordinate(point?.destination?.latitude, 90), lng = coordinate(point?.destination?.longitude, 180);
+		const name = clean(point?.name) || clean(point?.destination?.name);
+		return lat === null || lng === null || !name ? null : { name, lat, lng };
+	};
+	const from = place(start), to = place(end);
+	if (from) {
+		const first = stops[visits[0].stop];
+		if (samePlace(from, first)) first.role = 'start';
+		else {
+			stops.unshift({ ...from, days: [], role: 'start' });
+			for (const leg of legs) { leg.from++; leg.to++; }
+			for (const visit of visits) visit.stop++;
+			legs.unshift({ from: 0, to: 1, mode: list[0].travel_mode ?? null });
+			visits.unshift({ stop: 0, days: [], role: 'start' });
+		}
+	}
+	if (to) {
+		const last = visits[visits.length - 1];
+		const mark = (stop: MapStop) => { stop.role = stop.role === 'start' ? 'both' : 'end'; };
+		if (samePlace(to, stops[last.stop])) mark(stops[last.stop]);
+		else {
+			let index = stops.findIndex((stop) => samePlace(stop, to));
+			if (index === -1) index = stops.push({ ...to, days: [] }) - 1;
+			mark(stops[index]);
+			legs.push({ from: last.stop, to: index, mode: null });
+			visits.push({ stop: index, days: [], role: 'end' });
+		}
+	}
+	return stops.length >= 2 ? { stops, legs, visits } : null;
 }
 
 /** Tanzania's outline (lng, lat), from the public-domain world.geo.json (Natural Earth). */
@@ -223,4 +286,39 @@ export const highlightIcon = (text: string): HighlightIcon => ICON_WORDS.find(([
 export function whatsappLink(number?: string | null): string {
 	const digits = (number ?? '').replace(/\D/g, '');
 	return digits.length >= 8 && digits.length <= 15 ? `https://wa.me/${digits}` : '';
+}
+
+/** "Day 1", "Days 2–3", "Days 1, 5": the days a route stop covers, runs joined. */
+export function stopDays(days: number[]): string {
+	const sorted = [...new Set(days)].sort((a, b) => a - b);
+	if (!sorted.length) return '';
+	const runs: string[] = [];
+	for (let i = 0; i < sorted.length; i++) {
+		let j = i;
+		while (j + 1 < sorted.length && sorted[j + 1] === sorted[j] + 1) j++;
+		runs.push(i === j ? `${sorted[i]}` : `${sorted[i]}–${sorted[j]}`);
+		i = j;
+	}
+	return `${sorted.length === 1 ? 'Day' : 'Days'} ${runs.join(', ')}`;
+}
+
+export type TourPhoto = { id: string; src: string; thumb: string; alt: string; caption: string; category: string };
+
+/**
+ * Every photo of a tour, hero first: the banner, then the tour's gallery in
+ * its CMS order, then the day photos. Thumbnails use the CMS thumbnail when
+ * there is one; repeats and unsafe URLs drop out.
+ */
+export function tourGallery(tour: TourDetail, image: string): TourPhoto[] {
+	const candidates = [
+		{ src: image, thumb: '', alt: tour.title, caption: '' },
+		...[...(tour.tour_images ?? [])].sort((a, b) => a.sort_order - b.sort_order).map((photo) => ({ src: photo.image_url, thumb: photo.image_url_thumbnail || '', alt: photo.alt_text || photo.caption || tour.title, caption: photo.caption || '' })),
+		...sortedDays(tour.itinerary_days).flatMap((day) => (day.image_urls ?? []).map((src) => ({ src, thumb: '', alt: day.destination?.name || day.title, caption: day.destination?.name || day.title })))
+	];
+	const seen = new Set<string>();
+	return candidates
+		.map((photo) => ({ ...photo, src: safeUrl(photo.src, ''), thumb: safeUrl(photo.thumb, '') }))
+		.map((photo) => ({ ...photo, thumb: photo.thumb && !photo.thumb.startsWith('#') ? photo.thumb : photo.src }))
+		.filter((photo) => photo.src && !photo.src.startsWith('#') && !seen.has(photo.src) && seen.add(photo.src))
+		.map((photo, index) => ({ ...photo, id: String(index), category: '' }));
 }

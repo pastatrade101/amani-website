@@ -28,12 +28,12 @@
 		<div class="stay-media absolute inset-0">
 			<StayPhoto {stay} {destination} {srcset} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />
 		</div>
-		<span class="absolute top-3 left-3 z-[1] inline-flex h-7 items-center gap-2 rounded-full bg-white/90 px-3 text-[11px] font-semibold tracking-[.12em] text-navy uppercase backdrop-blur"><span class="style-dot" style={`background:${theme.primary}`} aria-hidden="true"></span><span class="sr-only">{'Style: '}</span>{stayStyleLabel(stay)}</span>
-		{#if stay.is_featured}<span class="absolute top-3 right-3 z-[1] inline-flex h-7 items-center rounded-full bg-sun px-3 text-[11px] font-semibold tracking-[.12em] text-navy uppercase">Featured</span>{/if}
+		<span class="absolute top-3 left-3 z-[1] inline-flex h-7 items-center gap-2 rounded-md bg-white/90 px-3 text-[12px] font-semibold tracking-[.12em] text-navy uppercase backdrop-blur"><span class="style-dot" style={`background:${theme.primary}`} aria-hidden="true"></span><span class="sr-only">{'Style: '}</span>{stayStyleLabel(stay)}</span>
+		{#if stay.is_featured}<span class="absolute top-3 right-3 z-[1] inline-flex h-7 items-center rounded-md bg-sun px-3 text-[12px] font-semibold tracking-[.12em] text-navy uppercase">Featured</span>{/if}
 	</div>
 	<div class="flex flex-1 flex-col px-5 pt-5 pb-5 sm:px-6 sm:pt-6">
-		{#if kicker}<p class="text-[11px] font-medium tracking-[.16em] text-muted-foreground uppercase">{kicker}</p>{/if}
-		<svelte:element this={`h${headingLevel}`} class="mt-2 font-display text-[26px] leading-[1.1] font-medium text-balance text-navy sm:text-[28px]"><a {href} class="stay-link">{stay.name}</a></svelte:element>
+		{#if kicker}<p class="text-[12px] font-medium tracking-[.16em] text-muted-foreground uppercase">{kicker}</p>{/if}
+		<svelte:element this={`h${headingLevel}`} class="mt-2 font-display text-[21px] leading-[1.2] font-semibold tracking-[-.02em] text-balance text-navy sm:text-[22px]"><a {href} class="stay-link">{stay.name}</a></svelte:element>
 		{#if excerpt}<p class="mt-3 line-clamp-3 text-sm leading-7 text-navy/70">{excerpt}</p>{/if}
 		{#if suits.length}<p class="mt-3 text-xs leading-5 text-muted-foreground"><span class="sr-only">{'Perfect for: '}</span>{suits.slice(0, 3).join(' · ')}{#if suits.length > 3}{` +${suits.length - 3}`}<span class="sr-only">{' more'}</span>{/if}</p>{/if}
 		<div class="mt-auto pt-5">

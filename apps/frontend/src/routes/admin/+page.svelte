@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { PHOTO } from '$lib/media-photos';
   import { onMount } from 'svelte';
   import { ArrowUpRight, ArrowRight, Plus, Map, CalendarDays, Inbox, Wallet, Compass, Check, Circle, Image, Settings, RefreshCw, AlertCircle, MessageSquare, FileText } from '@lucide/svelte';
   import { api } from '$lib/admin/api/client';
@@ -85,7 +86,7 @@
         <Card.Footer class="cms-panel-footer"><span class="text-xs text-muted-foreground">Based on recorded payments</span><Button href="/admin/payments" variant="ghost" size="sm" class="text-xs">View payments<ArrowRight size={13}/></Button></Card.Footer>
       </Card.Root>
       <section class="cms-inspiration-card">
-        <img src="/images/safari-hero.jpg" alt="Tanzania’s open savanna at sunset"/>
+        <img src={PHOTO.vehiclesAcacia} alt="Tanzania’s open savanna at sunset"/>
         <div class="cms-inspiration-content"><span class="cms-inspiration-label"><Compass size={14}/> THE KEY2AFRICA WAY</span><div><h2>Extraordinary places.<br/>Thoughtfully planned.</h2><p>Build the next journey your travellers will talk about for years.</p><Button href="/admin/tours/new" variant="safari" class="mt-5 h-10 px-4 gap-2 text-xs">Craft an itinerary<ArrowUpRight size={15}/></Button></div></div>
       </section>
     </div>

@@ -39,7 +39,7 @@
 </section>
 
 <style>
-	.style-card { position: relative; display: flex; gap: 1rem; overflow: hidden; border: 1px solid var(--border); border-radius: 1.25rem; background: white; padding: 1.4rem 1.25rem; box-shadow: 0 18px 40px -34px rgb(39 36 31 / .45); transition: border-color 200ms ease-out, box-shadow 250ms ease-out, translate 250ms ease-out; }
+	.style-card { position: relative; display: flex; gap: 1rem; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-surface); background: white; padding: 1.4rem 1.25rem; box-shadow: 0 18px 40px -34px rgb(39 36 31 / .45); transition: border-color 200ms ease-out, box-shadow 250ms ease-out, translate 250ms ease-out; }
 	/* The style's colour runs along the top, as on the price tabs. */
 	.style-card::before { content: ''; position: absolute; inset: 0 0 auto; height: 4px; background: var(--style-color); }
 	.style-card:hover { translate: 0 -2px; box-shadow: 0 22px 40px -28px rgb(39 36 31 / .45); }
@@ -49,7 +49,7 @@
 	.style-link:focus-visible { outline: none; }
 	.style-icon { display: grid; width: 3.25rem; height: 3.25rem; flex-shrink: 0; place-items: center; border-radius: 999px; background: var(--style-light); color: var(--style-ink); }
 	.style-card.active .style-icon { background: white; }
-	.showing { display: inline-flex; align-items: center; gap: 0.25rem; border-radius: 999px; background: white; padding: 0.2rem 0.55rem; color: var(--style-text); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+	.showing { display: inline-flex; align-items: center; gap: 0.25rem; border-radius: var(--radius-control); background: white; padding: 0.2rem 0.55rem; color: var(--style-text); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 	.style-cta { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 1rem; color: var(--navy); font-size: 13px; font-weight: 700; }
 	.style-cta :global(svg) { transition: translate 180ms ease-out; }
 	.style-card:hover .style-cta :global(svg) { translate: 3px 0; }

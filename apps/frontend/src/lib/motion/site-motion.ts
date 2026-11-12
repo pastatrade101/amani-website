@@ -118,7 +118,7 @@ export function setupSiteMotion(root: HTMLElement = document.body) {
 			function lift() {
 				if (preference.matches || !complete || element.matches(':disabled,[aria-disabled="true"]')) return;
 				stop(interaction);
-				interaction = track(animate(element, { transform: `translateY(${element.dataset.motionHover === 'button' ? -2 : -5}px)` }, { duration: 0.25, ease: motionTokens.ease }));
+				interaction = track(animate(element, { transform: `translateY(${element.dataset.motionHover === 'button' ? -2 : -3}px)` }, { duration: 0.25, ease: motionTokens.ease }));
 			}
 			function settle() {
 				if (preference.matches || !complete) return;

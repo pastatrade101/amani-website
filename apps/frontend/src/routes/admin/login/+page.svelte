@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { PHOTO } from '$lib/media-photos';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
@@ -46,7 +47,7 @@
 
 <main class="login-page">
   <aside class="login-story" aria-label="Key2africa Safaris">
-    <img src="/images/safari-hero.jpg" alt="The golden landscapes of a Tanzania safari" />
+    <img src={PHOTO.vehiclesAcacia} alt="The golden landscapes of a Tanzania safari" />
     <div class="story-shade"></div>
     <!-- The logo's wordmark is dark, so it sits on a light plate over the photo. -->
     <a class="story-brand" class:story-brand-logo={logo} href="/" aria-label="Key2africa Safaris home">{#if logo}<img src={logo} alt="Key2africa Tours and Safaris" width="305" height="176" />{:else}<span><Compass size={25} strokeWidth={1.5} /></span><div><strong>Key2africa</strong><small>SAFARIS</small></div>{/if}</a>

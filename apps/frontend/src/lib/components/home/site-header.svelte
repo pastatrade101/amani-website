@@ -1,7 +1,8 @@
 <script lang="ts">
+	import { PHOTO } from '$lib/media-photos';
  import DestinationIcon from './destination-icon.svelte';
 	import { onDestroy } from 'svelte';
-	import { Menu, ArrowRight, ArrowUpRight, Search, Compass, Map, Binoculars, BedDouble } from '@lucide/svelte';
+	import { Menu, ArrowRight, ArrowUpRight, Search, Compass, Map, Binoculars, BedDouble, BookOpen } from '@lucide/svelte';
 	import { destinationHref } from '$lib/destination-content';
 	import { siteInfo } from '$lib/site-info';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -9,7 +10,7 @@
 	import * as NavigationMenu from '$lib/components/ui/navigation-menu/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import { STYLE_ICONS } from '$lib/components/stays/stay-icons';
-	import { safeUrl, circuitFor, destinationPhoto, tourDuration, tourFromPrice, tourPhotos } from '$lib/home-content';
+	import { GUIDE_PAGE_KEYS, GUIDE_PATH, safeUrl, circuitFor, destinationPhoto, tourDuration, tourFromPrice, tourPhotos } from '$lib/home-content';
 	import { SAFARI_STYLE_THEME } from '$lib/safari-pricing';
 	import { ownStayPhoto, STAY_STYLES, stayLocation, stayTypeLabel } from '$lib/stay-content';
 	import { PLANNER_PATH, planHref } from '$lib/planner/plan-href';
@@ -26,19 +27,21 @@
 	const anchor = (id: string) => (!onPage || onPage.includes(id) ? `#${id}` : `/#${id}`);
 	const navItems = [{ id: 'tours', label: 'Tours', icon: Binoculars }, { id: 'stays', label: 'Stays', icon: BedDouble }, { id: 'experiences', label: 'Experiences', icon: Compass }, { id: 'destinations', label: 'Destinations', icon: Map }];
 	const experienceGroups = [
-		{ title: 'Wildlife & safari', description: 'Big cats, open plains and extraordinary encounters.', image: '/images/safari-hero.jpg' },
-		{ title: 'A little adventure', description: 'Balloon flights and journeys beyond the everyday.', image: '/images/activity-balloon.jpg' },
-		{ title: 'Beach & island escapes', description: 'Slow days beside the turquoise Indian Ocean.', image: '/images/zanzibar-menu.jpg' },
-		{ title: 'Culture & connection', description: 'Local stories, traditions and warm welcomes.', image: '/images/activity-maasai.jpg' }
+		{ title: 'Wildlife & safari', description: 'Big cats, open plains and extraordinary encounters.', image: PHOTO.vehiclesAcacia },
+		{ title: 'A little adventure', description: 'Balloon flights and journeys beyond the everyday.', image: PHOTO.balloonsDawn },
+		{ title: 'Beach & island escapes', description: 'Slow days beside the turquoise Indian Ocean.', image: PHOTO.zanzibarSunset },
+		{ title: 'Culture & connection', description: 'Local stories, traditions and warm welcomes.', image: PHOTO.hadzabe }
 	];
 	const destinationGroups = [
-		{ title: 'Northern circuit', circuit: 'northern', image: '/images/serengeti.jpg', description: 'The classic Tanzania safari' },
-		{ title: 'Southern circuit', circuit: 'southern', image: '/images/itinerary-lions.jpg', description: 'Wild, remote and unhurried' },
-		{ title: 'Western circuit', circuit: 'western', image: '/images/itinerary-crater.jpg', description: 'Forests, lakes and wild horizons' },
-		{ title: 'Zanzibar & coast', circuit: 'coast', image: '/images/zanzibar-menu.jpg', description: 'Your Indian Ocean escape' }
+		{ title: 'Northern circuit', circuit: 'northern', image: PHOTO.wildebeest, description: 'The classic Tanzania safari' },
+		{ title: 'Southern circuit', circuit: 'southern', image: PHOTO.lionPride, description: 'Wild, remote and unhurried' },
+		{ title: 'Western circuit', circuit: 'western', image: PHOTO.hillsPlains, description: 'Forests, lakes and wild horizons' },
+		{ title: 'Zanzibar & coast', circuit: 'coast', image: PHOTO.zanzibarSunset, description: 'Your Indian Ocean escape' }
 	];
 	// /tours and /stays always exist, so their menus show even before anything is published.
 	let navigation = $derived(navItems.filter((item) => item.id === 'tours' || item.id === 'stays' || item.id === 'destinations' || visible.includes(item.id)));
+	// The safari guide page shows while any of its sections is switched on.
+	let hasGuide = $derived(GUIDE_PAGE_KEYS.some((key) => visible.includes(key)));
 	let enquiryHref = $derived(anchor(visible.includes('enquiry') ? 'request-quote' : visible.includes('experiences') ? 'experiences' : 'destinations'));
 	// On the home page the search panel exists only while safari packages are shown.
 	// "Plan my safari" opens the trip planner from every page but the planner itself.
@@ -95,7 +98,7 @@
 				<img src={logo} alt={siteInfo.brand} class="site-logo" width="305" height="176" />
 			{:else}
 				<span class="grid size-10 place-items-center rounded-full border-2 border-sun"><Compass class="size-5" strokeWidth={1.5} /></span>
-				<span class="leading-none"><span class="block text-[17px] font-bold">Key2africa</span><span class="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-primary/65">Safaris</span></span>
+				<span class="leading-none"><span class="block text-[17px] font-bold">Key2africa</span><span class="mt-1 block text-[12px] font-semibold uppercase tracking-wider text-primary/65">Safaris</span></span>
 			{/if}
 		</a>
 		<NavigationMenu.Root value={menu} onValueChange={(value) => menu = value} viewport={false} onpointerenter={keepMenuOpen} onpointerleave={leaveNavigation} class="desktop-navigation" aria-label="Main navigation">
@@ -110,7 +113,7 @@
 							{#if item.id === 'tours'}
 								<div class="experience-menu">
 									<NavigationMenu.Link href="/tours" onclick={closeMenu} class="menu-feature">
-										<img src="/images/tanzania-safari-hero.jpg" alt="Elephants on the savannah beside a safari vehicle" />
+										<img src={PHOTO.balloonPlains} alt="Elephants on the savannah beside a safari vehicle" />
 										<div class="feature-copy"><span class="menu-eyebrow">SAFARI TOURS</span><h2>Ready-made journeys.<br />Shaped around you.</h2><span class="feature-cta">Browse all tours <ArrowUpRight class="size-4" /></span></div>
 									</NavigationMenu.Link>
 									<div class="experience-options">
@@ -132,7 +135,7 @@
 							{:else if item.id === 'stays'}
 								<div class="experience-menu">
 									<NavigationMenu.Link href="/stays" onclick={closeMenu} class="menu-feature">
-										<img src="/images/activity-bush-lunch.jpg" alt="A table laid for lunch in the shade of an acacia, with elephants grazing beyond" />
+										<img src={PHOTO.guidePicnic} alt="A table laid for lunch in the shade of an acacia, with elephants grazing beyond" />
 										<div class="feature-copy"><span class="menu-eyebrow">WHERE YOU’LL STAY</span><h2>Wake up somewhere wild.</h2><span class="feature-cta">Browse all stays <ArrowUpRight class="size-4" /></span></div>
 									</NavigationMenu.Link>
 									<div class="experience-options">
@@ -161,7 +164,7 @@
 							{:else if item.id === 'experiences'}
 								<div class="experience-menu">
 									<NavigationMenu.Link href={enquiryHref} onclick={() => choose('A Tanzania safari')} class="menu-feature">
-										<img src="/images/tanzania-hero-2.jpg" alt="Lions resting on a rocky Serengeti kopje" />
+										<img src={PHOTO.acaciaHaze} alt="Lions resting on a rocky Serengeti kopje" />
 										<div class="feature-copy"><span class="menu-eyebrow">YOUR KIND OF ADVENTURE</span><h2>Extraordinary days.<br />Unforgettable stories.</h2><span class="feature-cta">Create your safari <ArrowUpRight class="size-4" /></span></div>
 									</NavigationMenu.Link>
 									<div class="experience-options">
@@ -193,14 +196,15 @@
 						</NavigationMenu.Content>
 					</NavigationMenu.Item>
 				{/each}
+				{#if hasGuide}<NavigationMenu.Item value="guide" class="mega-menu-item"><div class="main-menu-control"><NavigationMenu.Link href={GUIDE_PATH} onclick={closeMenu} active={page.url.pathname === GUIDE_PATH} class="main-menu-link plain-menu-link">Safari guide</NavigationMenu.Link></div></NavigationMenu.Item>{/if}
 			</NavigationMenu.List>
 		</NavigationMenu.Root>
-		<div class="header-actions"><Button href={searchHref} variant="ghost" size="icon" aria-label="Search safaris" class="rounded-full"><Search class="size-5" /></Button>{#if !onPlanner}<Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" class="h-11 px-5 text-[13px]">Plan my safari <ArrowRight class="size-4" /></Button>{/if}</div>
+		<div class="header-actions"><Button href={searchHref} variant="ghost" size="icon" aria-label="Search safaris" class=""><Search class="size-5" /></Button>{#if !onPlanner}<Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" class="h-11 px-5 text-[13px]">Plan my safari <ArrowRight class="size-4" /></Button>{/if}</div>
 		<Sheet.Root bind:open>
 			<Sheet.Trigger class="mobile-navigation rounded-md p-2" aria-label="Open navigation"><Menu class="size-6" /></Sheet.Trigger>
             <Sheet.Content side="right" class="mobile-menu-panel">
                 <Sheet.Header class="mobile-menu-header">
-                    <div class="mobile-brand"><span>{#if emblem}<img src={emblem} alt="" class="size-7 object-contain" />{:else}<Compass class="size-5" strokeWidth={1.5} />{/if}</span><div><Sheet.Title class="text-base font-semibold">{siteInfo.brand}</Sheet.Title><Sheet.Description class="mt-1 text-[11px]">Your Tanzania. Your way.</Sheet.Description></div></div>
+                    <div class="mobile-brand"><span>{#if emblem}<img src={emblem} alt="" class="size-7 object-contain" />{:else}<Compass class="size-5" strokeWidth={1.5} />{/if}</span><div><Sheet.Title class="text-base font-semibold">{siteInfo.brand}</Sheet.Title><Sheet.Description class="mt-1 text-[12px]">Your Tanzania. Your way.</Sheet.Description></div></div>
                 </Sheet.Header>
                 <div class="mobile-menu-scroll">
                     <p class="mobile-menu-eyebrow">LET THE EXPLORING BEGIN</p>
@@ -218,7 +222,7 @@
                                             {#each menuStays as stay (stay.id)}{@const photo = ownStayPhoto(stay)}<a data-motion="reveal" class="mobile-menu-link" href={`/stays/${encodeURIComponent(stay.slug)}`} onclick={closeMenu}>{#if photo}<img src={photo} alt="" />{:else}<span class="mobile-stay-mark"><BedDouble class="size-[18px]" strokeWidth={1.5} /></span>{/if}<span>{stay.name}{#if stayMeta(stay)}<small class="mobile-tour-meta">{stayMeta(stay)}</small>{/if}</span><ArrowUpRight class="size-3.5" /></a>{/each}
                                             <a class="mobile-menu-link mobile-view-all" href="/stays" onclick={closeMenu}>View all stays <ArrowRight class="size-4" /></a>
                                         {:else if item.id === 'experiences'}
-                                            {#each activities as activity}<a data-motion="reveal" class="mobile-menu-link" href={enquiryHref} onclick={() => choose(activity.name)}><img src={safeUrl(activity.image_url_thumbnail || activity.image_url || activity.hero_image_url, '/images/safari-hero.jpg')} alt="" /><span>{activity.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
+                                            {#each activities as activity}<a data-motion="reveal" class="mobile-menu-link" href={enquiryHref} onclick={() => choose(activity.name)}><img src={safeUrl(activity.image_url_thumbnail || activity.image_url || activity.hero_image_url, PHOTO.vehiclesAcacia)} alt="" /><span>{activity.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
                                             <a class="mobile-menu-link mobile-view-all" href={anchor('experiences')} onclick={closeMenu}>View all experiences <ArrowRight class="size-4" /></a>
                                         {:else if item.id === 'destinations'}
                                             {#each destinations.slice(0, 8) as destination, i}<a data-motion="reveal" class="mobile-menu-link" href={destinationHref(destination)} onclick={closeMenu}><img src={destinationPhoto(destination, i)} alt="" /><span>{destination.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
@@ -229,6 +233,7 @@
                             </Accordion.Item>
                         {/each}
                     </Accordion.Root>
+                    {#if hasGuide}<a class="mobile-guide-link" href={GUIDE_PATH} onclick={closeMenu}><span class="mobile-section-label"><BookOpen class="size-[18px]" strokeWidth={1.6} />Safari guide</span><ArrowRight class="size-4" /></a>{/if}
                 </div>
                 {#if !onPlanner}<div class="mobile-menu-footer"><p>A journey, designed around you.</p><Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" onclick={closeMenu} class="h-12 w-full">Plan my safari <ArrowRight class="size-4" /></Button></div>{/if}
             </Sheet.Content>
@@ -242,73 +247,75 @@
 	   (tour pages); keyboard focus inside the header still brings it back. */
 	:global(html[data-header-hidden]) .site-header:not(:focus-within) { transform: translateY(-100%); box-shadow: none; }
 	@media (prefers-reduced-motion: reduce) { .site-header { transition: none; } }
-	.header-shell { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px; max-width: var(--page-max); height: var(--site-header-height); margin-inline: auto; padding-inline: 32px; }
+	.header-shell { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px; width: min(84%, var(--page-max)); height: var(--site-header-height); margin-inline: auto; }
+	@media (max-width: 767px) { .header-shell { width: 100%; padding-inline: 24px; } }
 	:global(.desktop-navigation) { position: static; display: flex; flex: none; }
 	:global(.mega-menu-item) { position: static; }
-	.main-menu-control { display: flex; align-items: center; border-radius: 9px; }
+	.main-menu-control { display: flex; align-items: center; border-radius: var(--radius-control); }
 	.main-menu-control:hover, .main-menu-control.menu-open { background: var(--secondary); }
-	:global(.main-menu-link) { height: 44px; padding: 0 3px 0 12px; border-radius: 9px 0 0 9px; color: var(--navy); font-size: 13px; font-weight: 500; text-decoration: none; background: transparent; }
+	:global(.main-menu-link) { height: 44px; padding: 0 3px 0 12px; border-radius: var(--radius-control) 0 0 var(--radius-control); color: var(--navy); font-size: 13px; font-weight: 500; text-decoration: none; background: transparent; }
 	:global(.main-menu-link:hover), :global(.main-menu-link:focus), :global(.main-menu-link[data-active]) { background: transparent; }
 	:global(.main-menu-link:focus-visible), :global(.main-menu-trigger:focus-visible) { outline: 2px solid var(--sun); outline-offset: 2px; }
-	:global(.main-menu-trigger) { height: 44px; width: 30px; padding: 0; border: 0; border-radius: 0 9px 9px 0; background: transparent; color: var(--navy); }
+	:global(.main-menu-link.plain-menu-link) { padding-right: 12px; border-radius: var(--radius-control); }
+	:global(.main-menu-trigger) { height: 44px; width: 30px; padding: 0; border: 0; border-radius: 0 var(--radius-control) var(--radius-control) 0; background: transparent; color: var(--navy); }
 	:global(.main-menu-trigger > svg) { margin-left: 0; top: 0; }
 	:global(.main-menu-trigger:hover), :global(.main-menu-trigger[data-state="open"]), :global(.main-menu-trigger[data-open]), :global(.main-menu-trigger[data-popup-open]) { background: transparent; }
-	:global(.mega-panel) { position: absolute; top: 100%; left: 32px; right: 32px; width: auto; margin: 0; max-height: calc(100dvh - 150px); overflow-y: auto; border: 1px solid var(--border); border-radius: 0 0 20px 20px; padding: 0; background: var(--background); box-shadow: 0 24px 50px -20px oklch(.3 0.015 75 / .28); transform: none; animation: menu-enter 180ms ease-out; }
+	:global(.mega-panel) { position: absolute; top: 100%; left: 0; right: 0; width: auto; margin: 0; max-height: calc(100dvh - 150px); overflow-y: auto; border: 1px solid var(--border); border-radius: 0 0 20px 20px; padding: 0; background: var(--background); box-shadow: 0 24px 50px -20px oklch(.3 0.015 75 / .28); transform: none; animation: menu-enter 180ms ease-out; }
 	@keyframes menu-enter { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-	.menu-eyebrow { display: block; font-size: 9px; font-weight: 600; line-height: 1.5; letter-spacing: .14em; }
+	.menu-eyebrow { display: block; font-size: 12px; font-weight: 600; line-height: 1.5; letter-spacing: .14em; }
 	.menu-heading { margin-bottom: 18px; }
 	.menu-heading .menu-eyebrow { color: var(--muted-foreground); }
 	.menu-heading h2 { margin-top: 5px; font-size: 20px; font-weight: 600; letter-spacing: -.04em; line-height: 1.4; }
 	.experience-menu { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 28px; padding: 26px; }
-	:global(.menu-feature) { position: relative; display: block; min-height: 285px; overflow: hidden; border-radius: 12px; padding: 0; color: white; isolation: isolate; }
+	:global(.menu-feature) { position: relative; display: block; min-height: 285px; overflow: hidden; border-radius: var(--radius-surface); padding: 0; color: white; isolation: isolate; }
 	:global(.menu-feature)::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(18 17 15 / .03) 10%, rgb(18 17 15 / .85) 100%); }
 	:global(.menu-feature > img) { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform 240ms ease-out; }
 	:global(.menu-feature:hover > img) { transform: scale(1.035); }
 	.feature-copy { position: absolute; inset-inline: 22px; bottom: 24px; }
 	.feature-copy .menu-eyebrow { color: var(--sun); font-size: 8px; }
 	.feature-copy h2 { margin-top: 9px; font-size: 21px; font-weight: 600; line-height: 1.35; letter-spacing: -.035em; }
-	.feature-cta { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 13px; border-top: 1px solid rgb(255 255 255 / .3); font-size: 11px; font-weight: 600; }
+	.feature-cta { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 13px; border-top: 1px solid rgb(255 255 255 / .3); font-size: 12px; font-weight: 600; }
 	.experience-options { min-width: 0; padding-top: 3px; }
 	.experience-links { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
-	:global(.experience-link) { display: flex; align-items: center; gap: 13px; min-width: 0; padding: 10px; border: 1px solid transparent; border-radius: 12px; }
+	:global(.experience-link) { display: flex; align-items: center; gap: 13px; min-width: 0; padding: 10px; border: 1px solid transparent; border-radius: var(--radius-control); }
 	:global(.experience-link:hover) { border-color: var(--border); background: var(--secondary); }
-	:global(.experience-link > img) { width: 68px; height: 76px; flex-shrink: 0; border-radius: 9px; object-fit: cover; }
+	:global(.experience-link > img) { width: 68px; height: 76px; flex-shrink: 0; border-radius: var(--radius-surface); object-fit: cover; }
 	:global(.experience-link strong) { display: block; font-size: 12px; font-weight: 600; line-height: 1.45; }
-	:global(.experience-link small) { display: block; margin-top: 5px; color: var(--muted-foreground); font-size: 10px; line-height: 1.6; }
+	:global(.experience-link small) { display: block; margin-top: 5px; color: var(--muted-foreground); font-size: 12px; line-height: 1.6; }
 	:global(.menu-arrow) { margin-left: auto; flex-shrink: 0; color: var(--muted-foreground); }
-	.popular-experiences { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 15px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 10px; }
+	.popular-experiences { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 15px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; }
 	.popular-experiences > span { margin-right: 3px; color: var(--muted-foreground); }
-	:global(.popular-link) { padding: 5px 9px; border-radius: 20px; background: var(--secondary); font-size: 10px; }
+	:global(.popular-link) { padding: 5px 9px; border-radius: var(--radius-control); background: var(--secondary); font-size: 12px; }
 	:global(.tour-menu-link strong) { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
 	.menu-empty { max-width: 420px; font-size: 12px; line-height: 1.8; color: var(--muted-foreground); }
 	/* Stays: the three styles in their own colours, then a few featured properties. */
 	.stay-style-links { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
-	:global(.stay-style-link) { gap: 12px; min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; }
+	:global(.stay-style-link) { gap: 12px; min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-control); }
 	:global(.stay-style-link:hover) { background: var(--style-light); }
 	:global(.stay-style-link strong) { display: block; font-size: 12px; font-weight: 600; line-height: 1.45; }
-	:global(.stay-style-link small) { display: block; margin-top: 3px; color: var(--muted-foreground); font-size: 10px; line-height: 1.5; }
+	:global(.stay-style-link small) { display: block; margin-top: 3px; color: var(--muted-foreground); font-size: 12px; line-height: 1.5; }
 	.stay-style-icon { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--style-light); color: var(--style-ink); }
-	.stay-menu-subheading { margin: 18px 0 8px; font-size: 9px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted-foreground); }
-	.stay-menu-mark { display: grid; place-items: center; flex-shrink: 0; width: 68px; height: 76px; border-radius: 9px; background: var(--navy); color: var(--sun); }
+	.stay-menu-subheading { margin: 18px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted-foreground); }
+	.stay-menu-mark { display: grid; place-items: center; flex-shrink: 0; width: 68px; height: 76px; border-radius: var(--radius-control); background: var(--navy); color: var(--sun); }
 	:global(.stay-menu-link) { padding-block: 6px; }
 	:global(.stay-menu-link > img) { height: 60px; }
 	:global(.stay-menu-link) .stay-menu-mark { height: 60px; }
 	.destination-menu { padding: 25px 26px 20px; }
 	.destination-columns { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 22px; }
 	.destination-column { min-width: 0; }
-	:global(.destination-cover) { display: block; padding: 0; border-radius: 10px; background: transparent; }
-	:global(.destination-cover > img) { display: block; width: 100%; height: 110px; object-fit: cover; border-radius: 10px; }
+	:global(.destination-cover) { display: block; padding: 0; border-radius: var(--radius-surface); background: transparent; }
+	:global(.destination-cover > img) { display: block; width: 100%; height: 110px; object-fit: cover; border-radius: var(--radius-control); }
 	:global(.destination-cover > span) { display: block; margin-top: 12px; }
 	:global(.destination-cover strong) { display: block; font-size: 13px; font-weight: 600; }
-	:global(.destination-cover small) { display: block; margin-top: 4px; font-size: 10px; color: var(--muted-foreground); }
+	:global(.destination-cover small) { display: block; margin-top: 4px; font-size: 12px; color: var(--muted-foreground); }
 	:global(.destination-cover > svg) { display: none; }
 	.destination-links { display: grid; gap: 1px; margin-top: 13px; }
-	:global(.destination-link) { display: flex; justify-content: space-between; gap: 6px; padding: 7px 6px; margin-left: -6px; font-size: 11px; border-radius: 6px; line-height: 1.5; }
+	:global(.destination-link) { display: flex; justify-content: space-between; gap: 6px; padding: 7px 6px; margin-left: -6px; font-size: 12px; border-radius: 6px; line-height: 1.5; }
 	:global(.destination-link > svg) { flex-shrink: 0; opacity: 0; transition: opacity 150ms ease-out; }
 	:global(.destination-link:hover > svg), :global(.destination-link:focus-visible > svg) { opacity: 1; }
 	.menu-footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 13px 26px; border-top: 1px solid var(--border); background: oklch(.985 0.003 75); }
-	.menu-footer > span { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--muted-foreground); }
-	:global(.menu-footer-link) { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 11px; font-weight: 600; background: transparent; }
+	.menu-footer > span { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted-foreground); }
+	:global(.menu-footer-link) { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 12px; font-weight: 600; background: transparent; }
 	.header-actions { display: flex; align-items: center; gap: 9px; }
 	:global(.mobile-navigation) { display: none; }
     :global(.mobile-menu-panel) { display: flex; width: min(92vw,400px); flex-direction: column; gap: 0; padding: 0; overflow: hidden; background: white; }
@@ -318,26 +325,28 @@
     @media (max-width: 1099px) { .site-logo { height: 54px; } }
     .mobile-brand > span { display: grid; place-items: center; width: 42px; height: 42px; border: 1.5px solid var(--sun); border-radius: 50%; }
     .mobile-menu-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 24px 16px; }
-    .mobile-menu-eyebrow { margin: 0 9px 16px; font-size: 9px; font-weight: 500; letter-spacing: .14em; color: var(--muted-foreground); }
+    .mobile-menu-eyebrow { margin: 0 9px 16px; font-size: 12px; font-weight: 500; letter-spacing: .14em; color: var(--muted-foreground); }
     :global(.mobile-menu-accordion) { display: grid; gap: 8px; }
-    :global(.mobile-menu-section) { overflow: hidden; border: 0; border-radius: 12px; background: var(--secondary); }
+    :global(.mobile-menu-section) { overflow: hidden; border: 0; border-radius: var(--radius-surface); background: var(--secondary); }
     :global(.mobile-section-trigger) { min-height: 54px; padding: 16px; border: 0; font-size: 13px; font-weight: 500; text-decoration: none; }
     :global(.mobile-section-trigger:hover) { text-decoration: none; }
     .mobile-section-label { display: flex; align-items: center; gap: 11px; }
+    .mobile-guide-link { display: flex; align-items: center; justify-content: space-between; min-height: 54px; margin-top: 8px; padding: 16px; border-radius: var(--radius-control); background: var(--secondary); color: var(--navy); font-size: 13px; font-weight: 500; text-decoration: none; }
+    .mobile-guide-link:hover, .mobile-guide-link:focus-visible { background: color-mix(in oklch, var(--secondary) 80%, var(--navy) 8%); }
     :global(.mobile-section-content) { padding: 0 7px 8px; }
     .mobile-menu-links { display: grid; gap: 3px; }
-    .mobile-menu-link { display: flex; min-height: 46px; align-items: center; gap: 10px; padding: 8px; border-radius: 9px; color: var(--navy); text-decoration: none; font-size: 12px; line-height: 1.5; transition: background 160ms ease-out; }
+    .mobile-menu-link { display: flex; min-height: 46px; align-items: center; gap: 10px; padding: 8px; border-radius: var(--radius-control); color: var(--navy); text-decoration: none; font-size: 12px; line-height: 1.5; transition: background 160ms ease-out; }
     .mobile-menu-link:hover, .mobile-menu-link:focus-visible { background: white; text-decoration: none; }
     .mobile-menu-link img { width: 40px; height: 40px; flex-shrink: 0; object-fit: cover; border-radius: 7px; }
     .mobile-menu-link :global(svg) { flex-shrink: 0; margin-left: auto; color: var(--muted-foreground); }
-    .mobile-view-all { margin-top: 5px; padding: 12px 10px 8px; min-height: 42px; font-size: 11px; font-weight: 600; }
-    .mobile-tour-meta { display: block; margin-top: 4px; font-size: 10px; color: var(--muted-foreground); }
+    .mobile-view-all { margin-top: 5px; padding: 12px 10px 8px; min-height: 42px; font-size: 12px; font-weight: 600; }
+    .mobile-tour-meta { display: block; margin-top: 4px; font-size: 12px; color: var(--muted-foreground); }
     .mobile-menu-link .mobile-stay-mark { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; margin-left: 0; border-radius: 7px; background: var(--navy); color: var(--sun); }
     .mobile-menu-link .mobile-style-mark { border-radius: 50%; background: var(--style-light); color: var(--style-ink); }
     .mobile-stay-mark :global(svg) { margin-left: 0; color: inherit; }
     .mobile-menu-footer { flex-shrink: 0; padding: 18px 22px max(22px,env(safe-area-inset-bottom)); border-top: 1px solid var(--border); }
-    .mobile-menu-footer > p { margin-bottom: 12px; color: var(--muted-foreground); font-size: 10px; text-align: center; }
+    .mobile-menu-footer > p { margin-bottom: 12px; color: var(--muted-foreground); font-size: 12px; text-align: center; }
 
-	@media (max-width: 1099px) { :global(.desktop-navigation), .header-actions { display: none; } :global(.mobile-navigation) { display: inline-flex; } .header-shell { padding-inline: 24px; } }
+	@media (max-width: 1099px) { :global(.desktop-navigation), .header-actions { display: none; } :global(.mobile-navigation) { display: inline-flex; } }
 	@media (prefers-reduced-motion: reduce) { :global(.mega-panel) { animation: none; } }
 </style>

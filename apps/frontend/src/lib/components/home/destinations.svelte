@@ -19,10 +19,16 @@
 				<div class="destination-grid">
 					{#each items.filter((item) => circuitFor(item) === circuit.id).slice(0, 6) as item, index}
 						{@const href = !reference ? destinationHref(item) : canEnquire ? '#request-quote' : '#destinations'}
-						<a data-motion="card" data-motion-hover="card" {href} onclick={() => { if (reference) onInterest(item.name); }} class={`destination-cell cell-${index} group relative block min-h-60 overflow-hidden rounded-2xl bg-navy`}>
-							<img src={destinationPhoto(item, index)} alt={item.name} loading="lazy" class="absolute inset-0 size-full object-cover transition-transform duration-[350ms] ease-out group-hover:scale-[1.04] motion-reduce:transition-none" />
-							<div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/10 to-transparent"></div>
-							<div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 text-white"><div><div class="gold-line w-8"></div><h3 class="mt-3 text-lg font-bold">{item.name}</h3><p class="mt-1.5 line-clamp-2 text-xs leading-5 text-white/85">{textContent(item.short_description || item.description)}</p></div><span class="grid size-8 shrink-0 place-items-center rounded-full bg-sun text-navy"><ArrowUpRight class="size-4" /></span></div>
+						{@const blurb = textContent(item.short_description || item.description)}
+						<a data-motion="card" {href} onclick={() => { if (reference) onInterest(item.name); }} class={`destination-cell cell-${index}`}>
+							<img src={destinationPhoto(item, index)} alt="" loading="lazy" class="dest-photo" />
+							<span class="dest-veil" aria-hidden="true"></span>
+							<span class="dest-go" aria-hidden="true"><ArrowUpRight /></span>
+							<div class="dest-copy">
+								<span class="dest-rule" aria-hidden="true"></span>
+								<h3>{item.name}</h3>
+								{#if blurb}<div class="dest-reveal"><p>{blurb}</p></div>{/if}
+							</div>
 						</a>
 					{:else}<p class="col-span-full rounded-xl bg-secondary p-10 text-center text-sm">There are no published destinations in this circuit yet. Our team can help you explore the possibilities.</p>{/each}
 				</div>
@@ -36,8 +42,8 @@
 	   44px tap targets, instead of a pill that scrolls its last tabs off-screen.
 	   An odd last tab ("More Places") spans the full row. */
 	.circuit-tabs-scroll { padding: 4px 0 8px; }
-	:global(.circuit-tabs) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 440px; height: auto; margin-inline: auto; gap: 4px; border: 1px solid var(--border); border-radius: 24px; background: var(--secondary); padding: 5px; }
-	:global(.circuit-tab) { height: 44px; min-width: 0; gap: 8px; border: 0; border-radius: 999px; padding: 0 12px; background: transparent; color: var(--muted-foreground); font-size: 13px; font-weight: 500; line-height: 1.4; white-space: nowrap; box-shadow: none; transition: color 160ms ease-out, background 160ms ease-out, box-shadow 160ms ease-out; }
+	:global(.circuit-tabs) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 440px; height: auto; margin-inline: auto; gap: 4px; border: 1px solid var(--border); border-radius: var(--radius-surface); background: var(--secondary); padding: 5px; }
+	:global(.circuit-tab) { height: 44px; min-width: 0; gap: 8px; border: 0; border-radius: var(--radius-control); padding: 0 12px; background: transparent; color: var(--muted-foreground); font-size: 13px; font-weight: 500; line-height: 1.4; white-space: nowrap; box-shadow: none; transition: color 160ms ease-out, background 160ms ease-out, box-shadow 160ms ease-out; }
 	:global(.circuit-tab:last-child:nth-child(odd)) { grid-column: 1 / -1; }
 	:global(.circuit-tab::after) { display: none; }
 	:global(.circuit-tab[data-state="active"]), :global(.circuit-tab[data-active]) { background: var(--navy); color: white; box-shadow: 0 3px 8px rgb(39 36 31 / .13); }
@@ -47,11 +53,41 @@
 	/* From 640px: the single-row pill. */
 	@media (min-width: 640px) {
 		.circuit-tabs-scroll { overflow-x: auto; padding-inline: 2px; scrollbar-width: thin; }
-		:global(.circuit-tabs) { display: flex; width: max-content; max-width: none; border-radius: 999px; }
+		:global(.circuit-tabs) { display: flex; width: max-content; max-width: none; border-radius: var(--radius-control); }
 		:global(.circuit-tab) { flex: none; padding-inline: 23px; }
 		:global(.circuit-tab:last-child:nth-child(odd)) { grid-column: auto; }
 	}
 
+	/* Destination tiles: the photo, an eased veil that only darkens where the
+	   words sit, the region on a gold rule, the name, and a short read that
+	   slides in on hover where there is a pointer (always shown on touch). */
+	.destination-cell { position: relative; isolation: isolate; display: flex; align-items: flex-end; min-height: 300px; overflow: hidden; border-radius: var(--radius-surface); background: #2b2722; color: #fff; text-decoration: none; }
+	.dest-photo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.5s ease; }
+	.dest-veil {
+		position: absolute; inset: 0; z-index: -1;
+		background:
+			linear-gradient(0deg, rgb(20 18 15 / 0.86) 0%, rgb(20 18 15 / 0.7) 16%, rgb(20 18 15 / 0.48) 32%, rgb(20 18 15 / 0.26) 48%, rgb(20 18 15 / 0.1) 64%, rgb(20 18 15 / 0) 80%),
+			linear-gradient(180deg, rgb(20 18 15 / 0.22) 0%, rgb(20 18 15 / 0) 26%);
+		transition: opacity 0.4s ease;
+	}
+	.dest-copy { width: 100%; min-width: 0; padding: 24px 26px; }
+	/* The region field holds the circuit, which the tab already names, so a gold rule leads instead. */
+	.dest-rule { display: block; width: 32px; height: 2px; border-radius: 2px; background: var(--sun); transition: width 0.4s cubic-bezier(0.2, 0.7, 0.2, 1); }
+	.destination-cell:hover .dest-rule { width: 48px; }
+	.destination-cell h3 { margin: 12px 0 0; font-size: clamp(20px, 1.7vw, 25px); font-weight: 600; line-height: 1.15; letter-spacing: -0.025em; color: #fff; text-wrap: balance; }
+	.dest-reveal { display: grid; grid-template-rows: 1fr; margin-top: 10px; }
+	.dest-reveal p { min-height: 0; margin: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; max-width: 46ch; font-size: 13.5px; line-height: 1.6; color: rgb(255 255 255 / 0.84); }
+	.dest-go { position: absolute; top: 18px; right: 18px; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: rgb(255 255 255 / 0.94); color: var(--navy); box-shadow: 0 6px 16px -8px rgb(20 18 15 / 0.5); transition: background-color 0.3s ease, transform 0.3s ease; }
+	.dest-go :global(svg) { width: 18px; height: 18px; transition: transform 0.3s ease; }
+	.destination-cell:hover .dest-photo { transform: scale(1.05); }
+	.destination-cell:hover .dest-go, .destination-cell:focus-visible .dest-go { background: var(--sun); }
+	.destination-cell:hover .dest-go :global(svg), .destination-cell:focus-visible .dest-go :global(svg) { transform: rotate(45deg); }
+	.destination-cell:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+	@media (hover: hover) and (min-width: 1024px) {
+		.dest-reveal { grid-template-rows: 0fr; margin-top: 0; opacity: 0; transition: grid-template-rows 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), margin-top 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.3s ease; }
+		.destination-cell:hover .dest-reveal, .destination-cell:focus-visible .dest-reveal { grid-template-rows: 1fr; margin-top: 10px; opacity: 1; }
+	}
+	@media (prefers-reduced-motion: reduce) { .dest-rule, .dest-photo, .dest-veil, .dest-go, .dest-go :global(svg), .dest-reveal { transition: none; } .destination-cell:hover .dest-photo { transform: none; } }
 	.destination-grid { display: grid; gap: 16px; }
 	@media (min-width: 640px) { .destination-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 	@media (min-width: 1024px) {

@@ -9,6 +9,7 @@
 	import ActivityShowcase from '$lib/components/tours/activity-showcase.svelte';
 	import SafariHero from '$lib/components/safari/safari-hero.svelte';
 	import SafariGallery from '$lib/components/safari/safari-gallery.svelte';
+	import StayLightbox from '$lib/components/stays/detail/stay-lightbox.svelte';
 	import SafariSectionNav from '$lib/components/safari/safari-section-nav.svelte';
 	import SafariOverview from '$lib/components/safari/safari-overview.svelte';
 	import SafariPractical from '$lib/components/safari/safari-practical.svelte';
@@ -24,7 +25,7 @@
 	import { SAFARI_STYLES, type SafariStyle } from '$lib/safari-pricing';
 	import { siteInfo } from '$lib/site-info';
 	import { initialStyle, lowestPrice, offeredStyles, sortedDays, tourRoute } from '$lib/tour-itinerary';
-	import { numberWord, whatsappLink } from '$lib/safari-page';
+	import { numberWord, tourGallery, whatsappLink } from '$lib/safari-page';
 	import { tourSeo } from '$lib/tour-seo';
 	import type { PageProps } from './$types';
 
@@ -64,6 +65,12 @@
 	let activitiesDialog = $state<HTMLDivElement | null>(null);
 
 	let heroImage = $derived(safeUrl(tour.banner_image_url || tour.main_image_url, destinationPhoto({ id: tour.id, name: route.join(' '), slug: tour.slug })));
+	// The hero shows the first five photos, picked by the strip beneath it; every photo opens full screen.
+	let photos = $derived(tourGallery(tour, heroImage));
+	let slides = $derived(photos.slice(0, 5));
+	let slide = $state(0);
+	let photosOpen = $state(false), photoIndex = $state(0);
+	$effect(() => { void tour.slug; slide = 0; });
 	let seo = $derived(tourSeo(tour, data.siteOrigin, destinationPhoto({ id: tour.id, name: route.join(' '), slug: tour.slug })));
 
 	let sections = $derived([
@@ -100,20 +107,21 @@
 <SiteHeader visible={chrome.visible} activities={chrome.activities} destinations={chrome.destinations} onInterest={chooseInterest} tours={chrome.navTours} categories={chrome.categories} stays={chrome.navStays} {onPage} />
 <main id="main" class="safari-page">
 	<div class="sp-wrap">
-		<SafariHero {tour} image={heroImage} {from} />
-		<SafariGallery {tour} image={heroImage} />
+		<SafariHero {tour} image={heroImage} {from} {slides} {slide} photoCount={photos.length} onPhotos={(at) => { photoIndex = at; photosOpen = true; }} />
+		<SafariGallery photos={slides} bind:slide />
 		<SafariSectionNav items={sections} {quoteHref} {whatsapp} onEnquire={enquireAboutTour} />
 		<SafariOverview {tour} {country} />
 		<SafariPractical {tour} {styles} />
 		{#if days.length}<SafariItinerary {tour} {days} {styles} {route} />{/if}
 		<SafariPricing seasons={tour.tour_pricing_seasons ?? []} selected={style} onSelect={(next) => (picked = next)} {quoteHref} onEnquire={enquireAboutTour} {from} />
 		{#if hasInclusions}<SafariInclusions {tour} activityCount={activities.length} {optionalCount} onActivities={() => (activitiesOpen = true)} />{/if}
-		<SafariReviewsFaq {tour} reviews={data.reviews.slice(0, 3)} faqs={data.faqs} title={`Plan your ${numberWord(Math.round(Number(tour.duration_days) || days.length))}-day safari`} {quoteHref} {whatsapp} onEnquire={enquireAboutTour} />
+		<SafariReviewsFaq {tour} reviews={data.reviews.slice(0, 3)} faqs={data.faqs} title={`Plan your ${numberWord(Math.round(Number(tour.duration_days) || days.length))}-day safari`} {quoteHref} {whatsapp} onEnquire={enquireAboutTour} image={photos[1]?.src ?? heroImage} {from} />
 		{#if related.length}<SafariSimilar tours={related} />{/if}
 		<SafariGuide {tour} {days} {styles} {style} {quoteHref} onEnquire={enquireAboutTour} />
 	</div>
 	{#if enquirySection}<Enquiry section={enquirySection} {form} interest={enquiryInterest} optionalActivities={activities.filter((item) => item.is_optional)} bind:selectedIds={selectedOptionalIds} />{/if}
 </main>
+{#if photos.length > 1}<StayLightbox {photos} bind:open={photosOpen} bind:index={photoIndex} title={tour.title} />{/if}
 <SiteFooter visible={chrome.visible} destinations={chrome.destinations} onInterest={chooseInterest} {onPage} />
 <Dialog.Root bind:open={activitiesOpen}>
 	<Dialog.Content bind:ref={activitiesDialog} onOpenAutoFocus={(event) => { event.preventDefault(); activitiesDialog?.focus(); }} class="flex max-h-[90dvh] w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-3xl">

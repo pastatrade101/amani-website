@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { defaultSections, circuitFor, mergeSections, routeSentence, routeStops, safeUrl, textContent, tourDuration, tourDurationTitle, tourFilters, tourFromPrice, tourPhotos } from './home-content.js';
+import { defaultSections, circuitFor, homeSections, linkedSections, mergeSections, routeSentence, routeStops, safeUrl, textContent, tourDuration, tourDurationTitle, tourFilters, tourFromPrice, tourPhotos } from './home-content.js';
+import { LANDSCAPES, PHOTO } from './media-photos.js';
 
 test('a disabled CMS section does not leak fallback copy', () => {
 	const section = mergeSections([{ section_key: 'hero', is_active: false }]).find((item) => item.section_key === 'hero');
@@ -75,11 +76,11 @@ test('a tour advertises its lowest style price, then its own price, else on requ
 test('image-less tours in one list get different photos, and a tour image always wins', () => {
 	const serengeti = { tour_destinations: [place('Serengeti National Park', 'serengeti', 0)] };
 	const photos = tourPhotos([serengeti, serengeti, { ...serengeti, main_image_url: 'https://cdn.example.com/tour.jpg' }, { destinations: null }]);
-	assert.equal(photos[0], '/images/serengeti.jpg');
+	assert.equal(photos[0], PHOTO.wildebeest);
 	assert.notEqual(photos[1], photos[0]);
 	assert.equal(photos[2], 'https://cdn.example.com/tour.jpg');
 	assert.equal(new Set([photos[0], photos[1], photos[3]]).size, 3);
-	assert.equal(tourPhotos([{ main_image_url: 'javascript:alert(1)' }])[0].startsWith('/images/'), true);
+	assert.equal(LANDSCAPES.includes(tourPhotos([{ main_image_url: 'javascript:alert(1)' }])[0]), true);
 });
 
 test('tour cards read "6 Days / 5 Nights" and "Tarangire, Serengeti & Ngorongoro"', () => {
@@ -91,4 +92,27 @@ test('tour cards read "6 Days / 5 Nights" and "Tarangire, Serengeti & Ngorongoro
 	assert.equal(routeSentence({ tour_destinations: [link('Zanzibar', 0)] }), 'Zanzibar');
 	assert.equal(routeSentence({ tour_destinations: ['A', 'B', 'C', 'D', 'E'].map((name, i) => link(name, i)) }, 3), 'A, B, C +2 more');
 	assert.equal(routeSentence({}), '');
+});
+test('a section that is off by default stays off until a CMS record switches it on', () => {
+	const off = mergeSections([]).find((item) => item.section_key === 'gallery_preview');
+	assert.equal(off?.is_active, false);
+	assert.equal(off?.title, undefined);
+	const on = mergeSections([{ section_key: 'gallery_preview', is_active: true }]).find((item) => item.section_key === 'gallery_preview');
+	assert.equal(on?.is_active, true);
+	assert.equal(on?.title, 'A thousand moments. Your next story.');
+});
+
+test('the home page draws its sections in the set order and leaves the others off', () => {
+	const keys = homeSections(mergeSections([])).map((section) => section.section_key);
+	assert.deepEqual(keys, ['hero', 'company_intro', 'safari_packages', 'experiences', 'planning_cta', 'safari_offers', 'trust_features', 'reviews_section', 'faq']);
+	// A CMS switch still takes a listed section off.
+	const without = homeSections(mergeSections([{ section_key: 'planning_cta', is_active: false }])).map((section) => section.section_key);
+	assert.equal(without.includes('planning_cta'), false);
+});
+
+test('the menus only link to sections that are drawn somewhere', () => {
+	const linked = linkedSections(mergeSections([]));
+	for (const key of ['enquiry', 'destinations', 'experiences', 'safari_packages', 'faq']) assert.ok(linked.includes(key), key);
+	for (const key of ['when_to_go', 'how_it_works', 'gallery_preview']) assert.equal(linked.includes(key), false, key);
+	assert.equal(linkedSections(mergeSections([]), true).includes('faq'), false);
 });

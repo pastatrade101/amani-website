@@ -415,9 +415,9 @@
 											<div class="flex items-center justify-between gap-3">
 												<span class="text-sm font-medium text-navy">{counter.label}</span>
 												<div class="flex items-center gap-3">
-													<button type="button" class="grid size-11 place-items-center rounded-full border border-border bg-white disabled:opacity-40" aria-label={`Fewer ${counter.label.toLowerCase()}`} disabled={counter.value <= counter.min} onclick={() => counter.set(counter.value - 1)}><Minus class="size-4" /></button>
+													<button type="button" class="grid size-11 place-items-center rounded-md border border-border bg-white disabled:opacity-40" aria-label={`Fewer ${counter.label.toLowerCase()}`} disabled={counter.value <= counter.min} onclick={() => counter.set(counter.value - 1)}><Minus class="size-4" /></button>
 													<span class="w-6 text-center font-semibold text-navy" aria-live="polite">{counter.value}</span>
-													<button type="button" class="grid size-11 place-items-center rounded-full border border-border bg-white disabled:opacity-40" aria-label={`More ${counter.label.toLowerCase()}`} disabled={counter.value >= 20} onclick={() => counter.set(counter.value + 1)}><Plus class="size-4" /></button>
+													<button type="button" class="grid size-11 place-items-center rounded-md border border-border bg-white disabled:opacity-40" aria-label={`More ${counter.label.toLowerCase()}`} disabled={counter.value >= 20} onclick={() => counter.set(counter.value + 1)}><Plus class="size-4" /></button>
 												</div>
 											</div>
 										{/each}
@@ -456,7 +456,7 @@
 												{@const covering = seasonFor(data.seasons, i)}
 												<button type="button" disabled={past} aria-pressed={on} aria-label={`${MONTH_NAMES[i]} ${a.year}${covering ? `, ${covering.name}` : ''}`} style={`--i: ${i * 0.45}`} class={`pm-rise min-h-14 rounded-xl border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${on ? 'border-sun bg-sun/15' : 'border-border bg-white hover:border-sun'}`} onclick={() => pickMonth(i)}>
 													<span class="block text-sm font-semibold text-navy">{label}</span>
-													{#if covering}<span class="mt-1 block truncate text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">{covering.name}</span>{/if}
+													{#if covering}<span class="mt-1 block truncate text-[12px] font-semibold tracking-wide text-muted-foreground uppercase">{covering.name}</span>{/if}
 												</button>
 											{/each}
 										</div>
@@ -491,7 +491,7 @@
 									{#each [...LENGTHS.map((band) => ({ id: band.id as string, label: band.label })), { id: NOT_SURE, label: NOT_SURE_LABEL }] as band, i (band.id)}
 										<button type="button" class={pill(a.length === band.id)} style={`--i: ${i}`} aria-pressed={a.length === band.id} onclick={() => pick('length', band.id as PlanAnswers['length'])}>
 											{band.label}
-											{#if popular === band.id}<span class="rounded bg-navy px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-white uppercase">Popular</span>{/if}
+											{#if popular === band.id}<span class="rounded bg-navy px-1.5 py-0.5 text-[12px] font-bold tracking-wide text-white uppercase">Popular</span>{/if}
 										</button>
 									{/each}
 								</div>
@@ -561,7 +561,7 @@
 									{#each review as row, i (row.at)}
 										<div class="pm-rise flex items-start justify-between gap-3 px-4 py-3" style={`--i: ${i * 0.7}`}>
 											<div class="min-w-0">
-												<dt class="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{row.label}</dt>
+												<dt class="text-[12px] font-semibold tracking-wide text-muted-foreground uppercase">{row.label}</dt>
 												<dd class="mt-0.5 text-sm break-words text-navy">{row.value || NOT_SURE_LABEL}</dd>
 											</div>
 											<button type="button" class="inline-flex min-h-11 shrink-0 items-center gap-1 px-1 text-xs font-semibold text-navy hover:underline" aria-label={`Edit ${row.label.toLowerCase()}`} onclick={() => edit(row.at)}><Pencil class="size-3" />Edit</button>

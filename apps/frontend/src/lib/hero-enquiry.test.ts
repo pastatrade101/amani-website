@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { RequestEvent } from '@sveltejs/kit';
 import { createHeroEnquiry } from './server/hero-enquiry';
-import { validateHeroEnquiry } from './hero-enquiry';
+import { validateHeroEnquiry, validateTripBasics } from './hero-enquiry';
 
 function event(fields:Record<string,string>) {
  const body=new FormData();
@@ -41,4 +41,21 @@ test('API failures retain visitor details and distinguish rate limits',async()=>
 test('optional details have a server-side length limit',()=>{
  assert.equal(validateHeroEnquiry({full_name:'Traveller',email:'guest@example.com',details:''}).details,undefined);
  assert.ok(validateHeroEnquiry({full_name:'Traveller',email:'guest@example.com',details:'x'.repeat(2001)}).details);
+});
+test('trip basics from step one reach the bookings API as the visitor gave them',async()=>{
+ let captured:Record<string,unknown>={};
+ const result=await createHeroEnquiry(async payload=>{captured=payload;})(event({...valid,travel_date:'2099-07-14',adults:'2',children:'1',accommodation_style:'midrange'}));
+ assert.ok('success' in result && result.success);
+ assert.equal(captured.travel_date,'2099-07-14');assert.equal(captured.number_of_adults,2);assert.equal(captured.number_of_children,1);
+ assert.match(String(captured.message),/Midrange safari, starting 2099-07-14, 2 adults and 1 child/);
+ const answers=(captured.lead_context as any).answers;
+ assert.equal(answers.accommodation_style,'midrange');assert.equal(answers.party_size_unconfirmed,false);
+});
+test('step one is required in the browser and checked on the server',()=>{
+ const empty={full_name:'Traveller',email:'guest@example.com',details:''};
+ assert.deepEqual(Object.keys(validateTripBasics(empty,true,'2026-01-01')).sort(),['accommodation_style','adults','travel_date']);
+ assert.ok(validateTripBasics({...empty,travel_date:'2025-12-31',adults:'2',accommodation_style:'luxury'},true,'2026-01-01').travel_date);
+ assert.ok(validateHeroEnquiry({...empty,adults:'0'}).adults);
+ assert.ok(validateHeroEnquiry({...empty,accommodation_style:'camping'}).accommodation_style);
+ assert.deepEqual(validateHeroEnquiry({...empty,travel_date:'2099-01-01',adults:'3',children:'0',accommodation_style:'budget'}),{});
 });

@@ -154,24 +154,24 @@
 	.timeline-marker { display: block; }
 	.day-head :global(.day-pill) { display: none; }
 	.timeline-day:not(:last-child)::before { content: ""; position: absolute; top: calc(var(--marker) + 6px); bottom: calc(6px - var(--row-gap)); left: calc(var(--marker) / 2 - 1px); border-left: 2px dashed var(--border); }
-	.timeline-marker > span { display: grid; place-items: center; width: var(--marker); height: var(--marker); border-radius: 999px; background: var(--sun); color: var(--navy); font-size: 11px; font-weight: 700; line-height: 1; letter-spacing: -0.01em; box-shadow: 0 10px 22px -14px oklch(0.55 0.14 90 / 0.8); }
-	.day-card { min-width: 0; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--card); box-shadow: 0 14px 34px -28px rgb(39 36 31 / 0.4); }
-	.day-head { display: flex; width: 100%; align-items: flex-start; gap: 0.75rem; padding: 1rem; border-radius: 0.75rem; text-align: left; }
+	.timeline-marker > span { display: grid; place-items: center; width: var(--marker); height: var(--marker); border-radius: 999px; background: var(--sun); color: var(--navy); font-size: 12px; font-weight: 700; line-height: 1; letter-spacing: -0.01em; box-shadow: 0 10px 22px -14px oklch(0.55 0.14 90 / 0.8); }
+	.day-card { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius-surface); background: var(--card); box-shadow: 0 14px 34px -28px rgb(39 36 31 / 0.4); }
+	.day-head { display: flex; width: 100%; align-items: flex-start; gap: 0.75rem; padding: 1rem; border-radius: var(--radius-surface); text-align: left; }
 	.day-chevron { display: grid; flex-shrink: 0; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 999px; background: color-mix(in oklch, var(--sun) 18%, white); color: var(--navy); transition: background 160ms ease-out; }
 	button.day-head:hover .day-chevron { background: color-mix(in oklch, var(--sun) 32%, white); }
 	.day-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 320ms cubic-bezier(0.22, 1, 0.36, 1); }
 	.day-panel[data-open='true'] { grid-template-rows: 1fr; }
 	.day-body { padding: 0 1rem 1.1rem; }
-	.meta-label { font-size: 11px; font-weight: 600; color: var(--muted-foreground); }
+	.meta-label { font-size: 12px; font-weight: 600; color: var(--muted-foreground); }
 	.meta-value { margin-top: 0.2rem; font-size: 15px; font-weight: 700; color: var(--navy); overflow-wrap: anywhere; }
 	/* Long unbroken words wrap inside the chip instead of widening the card. */
-	.activity-chip { border-radius: 999px; border: 1px solid var(--border); padding: 0.2rem 0.65rem; font-size: 12px; color: var(--navy); overflow-wrap: anywhere; }
+	.activity-chip { border-radius: var(--radius-control); border: 1px solid var(--border); padding: 0.2rem 0.65rem; font-size: 12px; color: var(--navy); overflow-wrap: anywhere; }
 	/* Phones: a swipeable row that snaps photo by photo; from sm: one row of up to three. */
 	.day-photos { display: flex; gap: 0.75rem; margin-top: 1.25rem; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
 	.day-photos::-webkit-scrollbar { display: none; }
 	.day-photos > li { flex: 0 0 82%; scroll-snap-align: start; }
 	.day-photos > li:only-child { flex-basis: 100%; }
-	.day-photos img { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 0.75rem; background: var(--secondary); object-fit: cover; }
+	.day-photos img { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: var(--radius-surface); background: var(--secondary); object-fit: cover; }
 	@media (min-width: 640px) {
 		.timeline { --marker: 4rem; --col-gap: 1.5rem; --row-gap: 1.5rem; }
 		.timeline-day { grid-template-columns: var(--marker) minmax(0, 1fr); gap: var(--col-gap); }

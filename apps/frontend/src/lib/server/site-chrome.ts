@@ -1,5 +1,5 @@
 import { apiGet } from '$lib/server/api';
-import { mergeSections } from '$lib/home-content';
+import { linkedSections, mergeSections } from '$lib/home-content';
 import { referenceActivities, referenceDestinations } from '$lib/data/reference';
 import type { Activity, Category, Destination, HomepageSection, Paginated, Stay, Tour } from '$lib/types/api';
 
@@ -25,9 +25,7 @@ export async function loadSiteChrome(fetch: typeof globalThis.fetch) {
 	const noHomeFaqs = homeFaqs.status === 'fulfilled' && homeFaqs.value.pagination.total === 0;
 	return {
 		sections,
-		visible: sections
-			.filter((section) => section.is_active !== false && !(section.section_key === 'faq' && noHomeFaqs))
-			.map((section) => section.section_key),
+		visible: linkedSections(sections, noHomeFaqs),
 		destinations: destinations.status === 'fulfilled' ? destinations.value.items.filter((item) => !item.country || item.country.toLowerCase() === 'tanzania') : referenceDestinations,
 		destinationsAreReference: destinations.status === 'rejected',
 		activities: activities.status === 'fulfilled' ? activities.value.items : referenceActivities,

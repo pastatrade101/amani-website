@@ -22,9 +22,9 @@
 	.planning-heading { display: grid; grid-template-columns: 1.2fr 1fr; align-items: end; gap: 80px; }
 	.planning-heading .section-description { max-width: 420px; justify-self: end; }
 	.steps { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 25px; margin-top: 42px; }
-	.steps article { padding: 28px; background: white; border: 1px solid var(--border); border-radius: 16px; }
+	.steps article { padding: 28px; background: white; border: 1px solid var(--border); border-radius: var(--radius-surface); }
 	.step-top { display: flex; align-items: center; justify-content: space-between; }
-	.step-icon { display: grid; place-items: center; width: 50px; height: 50px; border-radius: 14px; background: var(--secondary); }
+	.step-icon { display: grid; place-items: center; width: 50px; height: 50px; border-radius: var(--radius-control); background: var(--secondary); }
 	.step-number { font-size: 35px; font-weight: 500; letter-spacing: -.06em; color: oklch(.87 0.015 75); }
 	.steps h3 { margin-top: 27px; font-size: 17px; font-weight: 600; letter-spacing: -.025em; }
 	.steps p { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--muted-foreground); }

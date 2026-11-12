@@ -22,12 +22,12 @@
 	</form>
 </section>
 <style>
-	.safari-search-card { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)) auto; align-items: end; gap: 20px; border: 1px solid var(--border); border-radius: 20px; background: white; padding: 24px; box-shadow: 0 12px 32px -20px rgb(39 36 31 / .22); }
+	.safari-search-card { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)) auto; align-items: end; gap: 20px; border: 1px solid var(--border); border-radius: var(--radius-surface); background: white; padding: 24px; box-shadow: 0 12px 32px -20px rgb(39 36 31 / .22); }
 	.search-group { display: grid; min-width: 0; gap: 9px; }
 	:global(.search-label) { font-size: 12px; font-weight: 600; line-height: 1.3; color: #3c3730; }
-	:global(.search-field) { width: 100%; height: 48px; min-height: 48px; border: 1px solid var(--border); border-radius: 10px; padding: 0 13px; background: white; font-size: 13px; line-height: 1.4; box-shadow: none; }
+	:global(.search-field) { width: 100%; height: 48px; min-height: 48px; border: 1px solid var(--border); border-radius: var(--radius-control); padding: 0 13px; background: white; font-size: 13px; line-height: 1.4; box-shadow: none; }
 	:global(.search-field:focus-visible) { outline: 2px solid var(--sun); outline-offset: 2px; }
-	:global(.search-submit) { height: 48px; min-height: 48px; align-self: end; border-radius: 10px; padding: 0 22px; font-size: 13px; line-height: 1.4; gap: 10px; }
+	:global(.search-submit) { height: 48px; min-height: 48px; align-self: end; border-radius: var(--radius-control); padding: 0 22px; font-size: 13px; line-height: 1.4; gap: 10px; }
 	@media (max-width: 1023px) { .safari-search-card { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px 14px; padding: 20px; } :global(.search-submit) { width: 100%; padding-inline: 12px; } }
 	@media (max-width: 479px) { .safari-search-card { grid-template-columns: minmax(0,1fr); } :global(.search-field) { font-size: 14px; } }
 </style>

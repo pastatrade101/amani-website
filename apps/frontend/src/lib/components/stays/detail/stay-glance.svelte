@@ -26,8 +26,8 @@
 <dl class={`grid grid-cols-2 gap-x-6 gap-y-7 border-y border-navy/10 py-8 sm:grid-cols-3 lg:gap-x-10 ${columns}`}>
 	{#each facts as fact (fact.label)}
 		<div class="min-w-0 border-l border-navy/10 pl-4 lg:pl-6">
-			<dt class="text-[11px] font-medium uppercase tracking-[.16em] text-muted-foreground">{fact.label}</dt>
-			<dd class="mt-2 flex items-center gap-2 font-display text-[22px] leading-tight text-navy">
+			<dt class="text-[12px] font-medium uppercase tracking-[.16em] text-muted-foreground">{fact.label}</dt>
+			<dd class="mt-2 flex items-center gap-2 font-display text-[18px] leading-tight font-semibold text-navy">
 				{#if fact.dot}<span class="size-2 shrink-0 rounded-full" style={`background:${dot}`} aria-hidden="true"></span>{/if}<span class="min-w-0">{fact.value}</span>
 			</dd>
 		</div>

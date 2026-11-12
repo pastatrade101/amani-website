@@ -1,6 +1,6 @@
 <script lang="ts">
   import { refreshSections, refreshLabels } from '$lib/homepage-refresh';
-  import { defaultSections } from '$lib/home-content';
+  import { DEFAULT_OFF_KEYS, GUIDE_PAGE_KEYS, defaultSections } from '$lib/home-content';
   import HomeGuideFields from '$lib/admin/components/admin/HomeGuideFields.svelte';
   import { guideSections, guideKeys, guideRows, sectionDefault, type GuideRow } from '$lib/homepage-guides';
   import * as CmsDialog from '$lib/components/ui/dialog';
@@ -478,6 +478,13 @@
       sort_order: String(section.sort_order),
       extra_data: { eyebrow: section.subtitle, ...(key === 'hero' ? { secondary_cta_text: 'View Our Safaris', secondary_cta_url: '/tours', hero_image_fit: 'cover', form_title: 'Plan Your Safari', form_intro: 'Tell us about your trip and we’ll help create a personalized safari proposal.' } : {}) }
     };
+  }
+
+  // Say where each section is drawn: the planning guides moved to /safari-guide,
+  // and a few repeat sections stay off until a record switches them on.
+  for (const item of sectionRegistry) {
+    if (GUIDE_PAGE_KEYS.includes(item.key)) item.description += ' Shown on the Safari guide page (/safari-guide), not the homepage.';
+    if (DEFAULT_OFF_KEYS.includes(item.key)) item.description += ' Off by default: create a record to show it on the homepage.';
   }
 
   const sectionSuggestions = sectionRegistry.filter((item) => item.surface !== 'orphan');
@@ -1561,7 +1568,7 @@
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p class="text-sm font-extrabold text-heading">Sections with no record yet</p>
-              <p class="mt-1 text-xs leading-5 text-ink/55">These are on the homepage right now, drawn from the component's own copy. <span class="font-bold text-heading">Create</span> makes that copy editable; <span class="font-bold text-heading">Hide</span> takes the section off the homepage. Either way it joins the list above, where it can be switched on and off.</p>
+              <p class="mt-1 text-xs leading-5 text-ink/55">Unless marked off by default, these are on the site right now, drawn from the component's own copy. <span class="font-bold text-heading">Create</span> makes that copy editable; <span class="font-bold text-heading">Hide</span> takes the section off the homepage. Either way it joins the list above, where it can be switched on and off.</p>
             </div>
           </div>
           <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -1570,6 +1577,7 @@
                 <div class="flex items-center justify-between gap-3">
                   <span class="font-mono text-xs font-extrabold text-forest">{item.key}</span>
                   <span class="flex shrink-0 items-center gap-1.5">
+                    {#if DEFAULT_OFF_KEYS.includes(item.key)}<span class="text-[10px] font-extrabold uppercase tracking-[0.08em] text-ink/45">Off by default</span>{:else}
                     <CmsButton variant="ghost"
                       class="rounded-[6px] border border-ink/15 px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.08em] text-ink/55 transition hover:border-clay/40 hover:text-clay"
                       type="button"
@@ -1577,7 +1585,7 @@
                       onclick={() => hideMissingSection(item.key)}
                     >
                       Hide
-                    </CmsButton>
+                    </CmsButton>{/if}
                     <CmsButton variant="ghost"
                       class="rounded-[6px] bg-deep-green px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.08em] text-white transition hover:bg-forest"
                       type="button"

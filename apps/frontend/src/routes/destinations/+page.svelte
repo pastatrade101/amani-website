@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { PHOTO } from '$lib/media-photos';
   import '$lib/components/destinations/destination.css';
-  import { ArrowDown, ArrowUpRight, ArrowRight, ChevronRight, Search } from '@lucide/svelte';
+  import { ArrowDown, ArrowUpRight, ArrowRight, Search } from '@lucide/svelte';
+  import PageHero from '$lib/components/page-hero.svelte';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
   import { Label } from '$lib/components/ui/label';
@@ -39,14 +41,11 @@
 <a href="#main" class="sr-only focus:not-sr-only">Skip to content</a>
 <SiteHeader visible={chrome.visible} activities={chrome.activities} destinations={chrome.destinations} tours={chrome.navTours} stays={chrome.navStays} categories={chrome.categories} onInterest={chooseInterest} {onPage}/>
 <main id="main">
-  <section id="top" class="destination-hero">
-    <DestinationImage urls={[hero,data.featured?.main_image_url,data.featured?.image_url]} alt={data.featured?.name||'Discover our destinations'} fallback="/images/tanzania-hero-2.jpg" hero/>
-    <div class="page-container destination-hero-inner">
-      <nav aria-label="Breadcrumb" class="destination-breadcrumb"><a href="/">Home</a><ChevronRight size={12}/><span aria-current="page">Destinations</span></nav>
-      <div class="destination-hero-main"><div class="destination-hero-copy"><p class="eyebrow">{content?.subtitle||'THE PLACES THAT STAY WITH YOU'}</p><h1>{title}</h1><p class="destination-hero-description">{description}</p><div class="destination-hero-actions"><Button href="#destination-results" variant="safari">Explore destinations <ArrowDown size={16}/></Button>{#if enquiry}<Button href={planHref({from:'destinations'})} data-cta="plan_my_trip" data-cta-location="destinations" variant="outline" class="border-white/60 bg-transparent text-white hover:bg-white/10 hover:text-white">Help me choose <ArrowUpRight size={16}/></Button>{/if}</div></div>
-      {#if data.featured}<a class="destination-featured" href={destinationHref(data.featured)}><p>Your next discovery</p><strong>{data.featured.name}</strong><span>{data.featured.region||data.featured.country}<ArrowUpRight size={19}/></span></a>{/if}</div>
-    </div>
-  </section>
+  <PageHero titleId="destinations-title" crumbs={[{label:'Home',href:'/'},{label:'Destinations'}]} eyebrow={content?.subtitle||'The places that stay with you'} {title} intro={description}>
+    {#snippet media()}<DestinationImage urls={[hero,data.featured?.main_image_url,data.featured?.image_url]} alt={data.featured?.name||'Discover our destinations'} fallback={PHOTO.acaciaHaze} hero/>{/snippet}
+    {#snippet actions()}<Button href="#destination-results" variant="safari">Explore destinations <ArrowDown size={16}/></Button>{#if enquiry}<Button href={planHref({from:'destinations'})} data-cta="plan_my_trip" data-cta-location="destinations" variant="outline">Help me choose</Button>{/if}{/snippet}
+    {#snippet aside()}{#if data.featured}<a class="destination-featured" href={destinationHref(data.featured)}><p>Your next discovery</p><strong>{data.featured.name}</strong><span>{data.featured.region||data.featured.country}<ArrowUpRight size={19}/></span></a>{/if}{/snippet}
+  </PageHero>
   <div class="destination-index-bar"><div class="page-container"><span><strong>{data.catalogueTotal} destinations</strong> · Your journey starts with a place</span><span>Safari landscapes. Island time. Local stories.</span></div></div>
   <section id="destination-results" class="destination-section page-container">
     <div class="destination-section-head"><div><p class="eyebrow">CHOOSE YOUR NEXT CHAPTER</p><h2 class="section-heading">Somewhere extraordinary.</h2><p>Search for a place you already love, or discover somewhere you haven’t imagined yet.</p></div></div>
@@ -65,5 +64,5 @@
 </main>
 <SiteFooter visible={chrome.visible} destinations={chrome.destinations} onInterest={chooseInterest} {onPage}/>
 <style>
-.destination-search{display:grid;grid-template-columns:1.5fr 1fr 1fr auto;gap:18px;align-items:end;padding:24px;background:#f5f6f3;border:1px solid #e4e7e5;border-radius:16px}.destination-search>div{min-width:0}.results-count{display:flex;justify-content:space-between;gap:20px;font-size:12px;color:#837a67;margin:26px 0}.results-count a{color:#36312b;text-decoration:underline;text-underline-offset:4px}@media(max-width:1023px){.destination-search{grid-template-columns:1fr 1fr}}@media(max-width:639px){.destination-search{grid-template-columns:minmax(0,1fr);padding:20px}}
+.destination-search{display:grid;grid-template-columns:1.5fr 1fr 1fr auto;gap:18px;align-items:end;padding:24px;background:#f5f6f3;border:1px solid #e4e7e5;border-radius:var(--radius-surface)}.destination-search>div{min-width:0}.results-count{display:flex;justify-content:space-between;gap:20px;font-size:12px;color:#837a67;margin:26px 0}.results-count a{color:#36312b;text-decoration:underline;text-underline-offset:4px}@media(max-width:1023px){.destination-search{grid-template-columns:1fr 1fr}}@media(max-width:639px){.destination-search{grid-template-columns:minmax(0,1fr);padding:20px}}
 </style>

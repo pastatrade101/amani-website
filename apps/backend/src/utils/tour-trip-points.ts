@@ -1,6 +1,8 @@
 /** Tour endpoints are CMS links; legacy labels are read-only compatibility fields. */
 export const tripPointColumns = 'id,name,slug,role,gateway_type,airport_code,destination_id,transfer_info,status,deleted_at';
-export const tripPointEmbeds = `start_point:trip_points!tours_start_trip_point_id_fkey(${tripPointColumns}),end_point:trip_points!tours_end_trip_point_id_fkey(${tripPointColumns})`;
+// The endpoint's destination (with its coordinates) puts the start and finish on the tour page's route map.
+const tripPointEmbedColumns = `${tripPointColumns},destination:destinations!trip_points_destination_id_fkey(id,name,latitude,longitude)`;
+export const tripPointEmbeds = `start_point:trip_points!tours_start_trip_point_id_fkey(${tripPointEmbedColumns}),end_point:trip_points!tours_end_trip_point_id_fkey(${tripPointEmbedColumns})`;
 type Row = Record<string, any>;
 
 export function tripPointProblem(tour: Row, points: Row[]): string | null {

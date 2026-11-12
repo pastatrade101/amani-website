@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { ArrowDown, ArrowRight, ChevronRight, X } from '@lucide/svelte';
+	import { PHOTO } from '$lib/media-photos';
+	import { ArrowDown, ArrowRight, X } from '@lucide/svelte';
+	import PageHero from '$lib/components/page-hero.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import SiteHeader from '$lib/components/home/site-header.svelte';
 	import SiteFooter from '$lib/components/home/site-footer.svelte';
@@ -72,29 +74,12 @@
 <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-sun focus:p-4">Skip to content</a>
 <SiteHeader visible={data.visible} activities={data.activities} destinations={data.destinations} onInterest={chooseInterest} tours={data.navTours} categories={data.categories} stays={data.navStays} {onPage} />
 <main id="main">
-	<section id="top" class="relative isolate overflow-hidden bg-navy text-white" aria-labelledby="stays-title">
-		<img src="/images/activity-bush-lunch.jpg" alt="A table laid for lunch in the shade of an acacia, with elephants grazing beyond" width="1280" height="720" fetchpriority="high" class="absolute inset-0 -z-20 size-full object-cover object-[center_65%]" />
-		<div class="absolute inset-0 -z-10 bg-linear-to-t from-black/85 via-black/40 to-black/30 md:bg-linear-to-r md:from-black/80 md:via-black/45 md:to-black/5" aria-hidden="true"></div>
-		<div class="page-container flex min-h-[540px] flex-col py-6 md:min-h-[620px] md:py-8 lg:min-h-[680px]">
-			<nav aria-label="Breadcrumb">
-				<ol class="flex items-center gap-1.5 text-[11px] text-white/75">
-					<li><a href="/" class="transition-colors hover:text-sun">Home</a></li>
-					<li aria-hidden="true"><ChevronRight class="size-3" /></li>
-					<li aria-current="page" class="font-medium text-white">Stays</li>
-				</ol>
-			</nav>
-			<div class="mt-auto max-w-2xl pt-20">
-				<p data-motion="hero" class="text-xs font-semibold tracking-[.25em] text-sun">LODGES &amp; CAMPS</p>
-				<div data-motion="line" data-motion-delay="0.15" class="mt-3 h-0.5 w-16 bg-sun"></div>
-				<h1 id="stays-title" data-motion="hero" data-motion-delay="0.08" class="mt-5 text-[38px] leading-[1.08] font-semibold tracking-[-.045em] text-balance sm:text-5xl md:text-[60px]">Where you’ll stay in Tanzania</h1>
-				<p data-motion="hero" data-motion-delay="0.16" class="mt-5 max-w-xl text-sm leading-[1.9] text-white/85 md:text-base">Lodges and tented camps for every style of safari, from simple bush camps to the most exclusive hideaways. Find yours, then see the safaris that stay there.</p>
-				<div data-motion="hero" data-motion-delay="0.24" class="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-					<Button variant="safari" href="#stay-styles" class="h-12 rounded-lg px-6 text-sm">Choose your style <ArrowDown class="size-4" /></Button>
-					{#if enquiry}<Button href={planHref({ from: 'stays' })} data-cta="plan_my_trip" data-cta-location="stays" variant="outline" class="h-12 rounded-lg border-white bg-transparent px-6 text-sm font-semibold text-white hover:bg-white/10 hover:text-white">Ask us where to stay</Button>{/if}
-				</div>
-			</div>
-		</div>
-	</section>
+	<PageHero titleId="stays-title" image={PHOTO.tentPlains} imageAlt="A safari tent looking out over the Serengeti plains" crumbs={[{ label: 'Home', href: '/' }, { label: 'Stays' }]} eyebrow="Lodges & camps" title="Where you’ll stay in Tanzania" intro="Lodges and tented camps for every style of safari, from simple bush camps to the most exclusive hideaways. Find yours, then see the safaris that stay there.">
+		{#snippet actions()}
+			<Button variant="safari" href="#stay-styles">Choose your style <ArrowDown class="size-4" /></Button>
+			{#if enquiry}<Button href={planHref({ from: 'stays' })} data-cta="plan_my_trip" data-cta-location="stays" variant="outline">Ask us where to stay</Button>{/if}
+		{/snippet}
+	</PageHero>
 
 	<StayStyles filters={data.filters} />
 	<StaySearch destinations={places} filters={data.filters} />
@@ -108,7 +93,7 @@
 					{#if chips.length}
 						<ul class="mt-4 flex flex-wrap gap-2" aria-label="Active filters">
 							{#each chips as chip (chip.key)}
-								<li><a href={staysHref(data.filters, { [chip.key]: '', page: '1' })} aria-label={`Remove ${chip.kind.toLowerCase()} filter: ${chip.label}`} class="inline-flex h-9 max-w-full items-center gap-1.5 rounded-full border border-border bg-white px-3.5 text-xs text-navy transition-colors hover:border-navy/30"><span class="text-muted-foreground">{chip.kind}:</span><span class="truncate font-semibold">{chip.label}</span><X class="size-3.5 shrink-0 text-muted-foreground" /></a></li>
+								<li><a href={staysHref(data.filters, { [chip.key]: '', page: '1' })} aria-label={`Remove ${chip.kind.toLowerCase()} filter: ${chip.label}`} class="inline-flex h-9 max-w-full items-center gap-1.5 rounded-md border border-border bg-white px-3.5 text-xs text-navy transition-colors hover:border-navy/30"><span class="text-muted-foreground">{chip.kind}:</span><span class="truncate font-semibold">{chip.label}</span><X class="size-3.5 shrink-0 text-muted-foreground" /></a></li>
 							{/each}
 						</ul>
 					{/if}
@@ -121,7 +106,7 @@
 					<StayCard {stay} destination={placeFor(stay.destination_id)} />
 				{:else}
 					<div data-motion="image" class="col-span-full grid overflow-hidden rounded-2xl border border-border bg-white md:grid-cols-2">
-						<img src="/images/itinerary-baobab-sunset.jpg" alt="A baobab silhouetted against a Tanzania sunset" loading="lazy" class="h-60 w-full object-cover md:h-full md:min-h-80" />
+						<img src={PHOTO.acaciaAlone} alt="A baobab silhouetted against a Tanzania sunset" loading="lazy" class="h-60 w-full object-cover md:h-full md:min-h-80" />
 						<div class="flex flex-col items-start justify-center p-7 md:p-10">
 							<span class="eyebrow text-muted-foreground">MADE AROUND YOU</span>
 							<h3 class="mt-4 max-w-md text-2xl font-semibold tracking-tight md:text-3xl">{data.staysUnavailable ? 'We’ll help you choose where to stay' : pastTheEnd ? 'There are no more stays on this page' : filtered ? 'No stays match your search yet' : 'Our lodges and camps are on their way'}</h3>
@@ -171,7 +156,7 @@
 <SiteFooter visible={data.visible} destinations={data.destinations} onInterest={chooseInterest} {onPage} />
 
 <style>
-	.place-link { display: inline-flex; min-height: 2.5rem; align-items: center; gap: 0.35rem; border: 1px solid var(--border); border-radius: 0.6rem; padding: 0 0.85rem; color: var(--navy); font-size: 12px; font-weight: 600; transition: background 160ms ease-out, border-color 160ms ease-out; }
+	.place-link { display: inline-flex; min-height: 2.5rem; align-items: center; gap: 0.35rem; border: 1px solid var(--border); border-radius: var(--radius-surface); padding: 0 0.85rem; color: var(--navy); font-size: 12px; font-weight: 600; transition: background 160ms ease-out, border-color 160ms ease-out; }
 	.place-link:hover { border-color: color-mix(in oklch, var(--navy) 30%, transparent); background: var(--secondary); }
 	.place-link-primary { border-color: var(--sun); background: var(--sun); }
 	.place-link-primary:hover { border-color: var(--sun); background: color-mix(in oklch, var(--sun) 88%, white); }

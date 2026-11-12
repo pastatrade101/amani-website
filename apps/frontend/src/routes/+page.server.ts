@@ -1,5 +1,5 @@
 import { publishedGallery, type GalleryPhoto } from '$lib/homepage-gallery';
-import { approvedReviews, type GuestReview } from '$lib/homepage-guides';
+import { approvedReviews, averageRating, type GuestReview } from '$lib/homepage-guides';
 import { createHeroEnquiry } from '$lib/server/hero-enquiry';
 import { apiGet, apiRequest } from '$lib/server/api';
 import { enquire } from '$lib/server/enquiry';
@@ -25,7 +25,8 @@ export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
 		apiGet<Paginated<Category>>('categories?status=published&limit=100', fetch),
 		apiGet<Paginated<Tour>>(`tours?${query}`, fetch),
 		apiGet<Paginated<Season>>('seasons?status=published&limit=24', fetch),
-		apiGet<Paginated<GuestReview>>('reviews?status=approved&limit=3', fetch),
+		// Enough approved reviews to average for the hero rating and fill the reviews slider.
+		apiGet<Paginated<GuestReview>>('reviews?status=approved&limit=100', fetch),
 		apiGet<Paginated<{id:string;question:string;answer:string}>>('faqs?placement=home&limit=12', fetch),
 		apiGet<Paginated<GalleryPhoto>>('gallery?status=published&media_type=image&limit=24', fetch),
         apiGet<import('$lib/types/api').TourActivityItem[]>('activities/optional',fetch)
@@ -34,8 +35,10 @@ export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
 		siteOrigin: url.origin,
         optionalActivities: optionalActivities.status === 'fulfilled' ? optionalActivities.value : [],
 		gallery: gallery.status === 'fulfilled' ? publishedGallery(gallery.value.items) : [],
-		reviews: reviews.status === 'fulfilled' ? approvedReviews(reviews.value.items) : [],
+		// The home reviews slider shows every approved review it was sent.
+		reviews: reviews.status === 'fulfilled' ? approvedReviews(reviews.value.items, 24) : [],
 		reviewTotal: reviews.status === 'fulfilled' ? reviews.value.pagination.total : 0,
+		reviewAverage: reviews.status === 'fulfilled' ? averageRating(reviews.value.items) : null,
 		faqs: faqs.status === 'fulfilled' ? faqs.value.items : null,
 		sections: mergeSections(homepage.status === 'fulfilled' && Array.isArray(homepage.value) ? homepage.value : []),
 		destinations: destinations.status === 'fulfilled' ? destinations.value.items.filter((item) => !item.country || item.country.toLowerCase() === 'tanzania') : referenceDestinations,

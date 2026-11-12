@@ -1,5 +1,6 @@
 import { safeUrl, textContent, circuitFor } from './home-content';
 import type { Destination } from './types/api';
+import { PHOTO } from './media-photos';
 
 export type DestinationDetail = Destination & {
   status?: string; is_featured?: boolean; location?: string | null;
@@ -40,9 +41,9 @@ export function filterDestinations(items: Destination[], params: URLSearchParams
 /** Local destination imagery used only when a matching place's CMS media is unavailable. */
 export function destinationFallbackPhoto(d: Destination): string {
   const name=`${d.name} ${d.slug}`.toLowerCase();
-  if(/serengeti|ndutu/.test(name)) return '/images/serengeti.jpg';
-  if(/ngorongoro/.test(name)) return '/images/ngorongoro.jpg';
-  if(/tarangire/.test(name)) return '/images/tarangire.jpg';
-  if(/zanzibar|stone-town|paje|jambiani|nungwi|kendwa/.test(name)) return '/images/zanzibar-menu.jpg';
+  if(/serengeti|ndutu/.test(name)) return PHOTO.wildebeest;
+  if(/ngorongoro/.test(name)) return PHOTO.ngorongoroGate;
+  if(/tarangire/.test(name)) return PHOTO.baobabVehicles;
+  if(/zanzibar|stone-town|paje|jambiani|nungwi|kendwa/.test(name)) return PHOTO.zanzibarSunset;
   return '';
 }

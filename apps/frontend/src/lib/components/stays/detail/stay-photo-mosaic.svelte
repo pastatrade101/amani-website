@@ -23,7 +23,7 @@
 		if (i === 5) return 'aspect-square md:col-span-2 md:col-start-3 md:row-span-2 md:aspect-auto';
 		return i === shown - 1 && (shown - 1) % 2 === 1 ? 'col-span-2 aspect-[2/1] md:col-span-1 md:aspect-auto' : 'aspect-square md:aspect-auto';
 	}
-	const pill = 'inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-medium transition-colors';
+	const pill = 'inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md px-4 text-sm font-medium transition-colors';
 </script>
 
 <section id="photos" class="scroll-mt-14 border-t border-navy/10 bg-white py-16 md:py-24" aria-labelledby="photos-title">
@@ -61,7 +61,7 @@
 
 		{#if n > shown}
 			<div class="mt-8 flex justify-center">
-				<Button variant="outline" onclick={(event: MouseEvent) => onOpen(filtered, 0, event.currentTarget as HTMLElement)} class="h-12 rounded-full px-6 text-sm"><Images class="size-4" />View all {n} photos</Button>
+				<Button variant="outline" onclick={(event: MouseEvent) => onOpen(filtered, 0, event.currentTarget as HTMLElement)} class="h-12 px-6 text-sm"><Images class="size-4" />View all {n} photos</Button>
 			</div>
 		{/if}
 	</div>

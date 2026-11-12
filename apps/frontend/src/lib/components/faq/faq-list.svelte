@@ -3,6 +3,7 @@
 </script>
 
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { Accordion as AccordionPrimitive } from 'bits-ui';
 	import { Minus, Plus } from '@lucide/svelte';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
@@ -15,8 +16,9 @@
 		title = 'Frequently Asked Questions',
 		intro = '',
 		eyebrow = '',
-		id
-	}: { faqs: FaqItem[]; title?: string; intro?: string; eyebrow?: string; id?: string } = $props();
+		id,
+		head
+	}: { faqs: FaqItem[]; title?: string; intro?: string; eyebrow?: string; id?: string; head?: Snippet } = $props();
 
 	let items = $derived(
 		faqs
@@ -35,11 +37,12 @@
 
 {#if items.length}
 	<div {id} class="faq-block">
-		<header class="mx-auto max-w-2xl text-center">
+		<!-- `head` replaces the default heading, for a page with its own heading style. -->
+		{#if head}{@render head()}{:else}<header class="mx-auto max-w-2xl text-center">
 			{#if eyebrow}<p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{eyebrow}</p>{/if}
 			<h2 class={`faq-title ${eyebrow ? 'mt-3' : ''}`}>{title}</h2>
 			{#if intro}<p class="mt-3 text-sm leading-6 text-muted-foreground md:text-[15px]">{intro}</p>{/if}
-		</header>
+		</header>{/if}
 		<Accordion.Root type="single" value={open} onValueChange={(value) => (open = value)} class={`faq-grid ${columns.length > 1 ? 'two' : ''}`}>
 			{#each columns as column, c (c)}
 				<div class="grid content-start gap-4">
@@ -66,7 +69,7 @@
 <style>
 	.faq-title { font-size: 26px; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; color: var(--navy); }
 	.faq-block :global(.faq-grid) { display: grid; gap: 16px; margin-top: 32px; }
-	.faq-block :global(.faq-card) { border: 1px solid var(--border); border-radius: 12px; background: white; padding-inline: 20px; transition: box-shadow 0.2s ease; }
+	.faq-block :global(.faq-card) { border: 1px solid var(--border); border-radius: var(--radius-surface); background: white; padding-inline: 20px; transition: box-shadow 0.2s ease; }
 	.faq-block :global(.faq-card[data-state='open']) { box-shadow: 0 10px 30px -22px color-mix(in oklch, var(--navy) 55%, transparent); }
 	.faq-block :global(.faq-trigger) { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; text-align: left; font-size: 15px; font-weight: 600; line-height: 1.45; color: var(--navy); }
 	.faq-block :global(.faq-trigger:focus-visible) { outline: 2px solid var(--sun); outline-offset: 4px; border-radius: 6px; }

@@ -48,7 +48,7 @@
 	.excluded :global(svg) { color: #9a927f; }
 	.excluded { padding-left: 56px; border-left: 1px solid var(--sp-line-soft); }
 	.inclusion-grid.single .excluded { padding-left: 0; border-left: 0; }
-	.activities { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; margin-top: 40px; padding: 22px 26px; border-radius: 16px; background: var(--sp-cream); }
+	.activities { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; margin-top: 40px; padding: 22px 26px; border-radius: var(--radius-surface); background: var(--sp-cream); }
 	.activities h3 { margin: 0 0 4px; font-size: 17px; }
 	.activities p { margin: 0; font-size: 14px; line-height: 1.7; color: var(--sp-muted); }
 	.outline { border: 1px solid #cfc8b6; background: #fff; color: var(--sp-ink); }

@@ -22,6 +22,7 @@ import {
 	tourCategories
 } from './stay-content.js';
 import type { Stay } from './types/api.js';
+import { PHOTO } from './media-photos.js';
 
 const stay = (overrides: Partial<Stay> = {}): Stay => ({ id: 's1', name: 'Kuro Camp', slug: 'kuro-camp', ...overrides });
 const id = '0de809b1-15ac-4111-b805-5bc25910c0ae';
@@ -71,8 +72,8 @@ test('a stay without its own photo never borrows one that pretends to be it', ()
 	assert.deepEqual(stayPhoto(stay({ hero_image_url: 'https://cdn.example/hero.jpg', cover_image_url: 'https://cdn.example/cover.jpg' })), { kind: 'own', src: 'https://cdn.example/cover.jpg' });
 	assert.deepEqual(stayPhoto(stay({ image_url_thumbnail: 'https://cdn.example/card.webp', image_url: 'https://cdn.example/card.jpg' })), { kind: 'own', src: 'https://cdn.example/card.webp' });
 	// The park's landscape, named on the photo.
-	assert.deepEqual(stayPhoto(stay({ destinations: { name: 'Tarangire National Park', slug: 'tarangire-national-park' } })), { kind: 'place', src: '/images/tarangire.jpg', place: 'Tarangire National Park' });
-	assert.deepEqual(stayPhoto(stay({ park_area: 'Central Serengeti' })), { kind: 'place', src: '/images/serengeti.jpg', place: 'Central Serengeti' });
+	assert.deepEqual(stayPhoto(stay({ destinations: { name: 'Tarangire National Park', slug: 'tarangire-national-park' } })), { kind: 'place', src: PHOTO.baobabVehicles, place: 'Tarangire National Park' });
+	assert.deepEqual(stayPhoto(stay({ park_area: 'Central Serengeti' })), { kind: 'place', src: PHOTO.wildebeest, place: 'Central Serengeti' });
 	// The destination's own CMS photo is a photo of that place too.
 	assert.deepEqual(stayPhoto(stay(), { id, name: 'Katavi', slug: 'katavi', main_image_url: 'https://cdn.example/katavi.jpg' }), { kind: 'place', src: 'https://cdn.example/katavi.jpg', place: 'Katavi' });
 	// Unknown place: no rotating spare wildlife shot, just the branded placeholder.
