@@ -40,7 +40,6 @@
 <section id="reviews" class="sp-section sp-cream reviews-faq" aria-label="Reviews and questions">
 	{#if reviews.length}
 		<div class="sp-head">
-			<p class="sp-eyebrow">Memories from the wild</p>
 			<h2 class="sp-h2">Stories worth bringing home.</h2>
 			<p class="sp-sub">What travellers say about their safari with {siteInfo.brand}.</p>
 		</div>
@@ -61,7 +60,6 @@
 
 	<div id="safari-booking" class="booking" class:first={!reviews.length} class:no-photo={!image}>
 		<div class="booking-copy">
-			<p class="eyebrow">Let’s plan your journey</p>
 			<!-- Hyphenated words ("five-day") never break across lines. -->
 			<h2>{#each title.split(/(\S+-\S+)/) as part, i (i)}{#if i % 2}<span class="nowrap">{part}</span>{:else}{part}{/if}{/each}</h2>
 			{#if expert}
@@ -91,7 +89,6 @@
 
 	{#if questions.length}
 		<div class="sp-head">
-			<p class="sp-eyebrow">Before you go</p>
 			<h2 class="sp-h2">A few things you might be wondering.</h2>
 		</div>
 		<div class="faq-layout">
@@ -150,8 +147,8 @@
 				rgb(43 39 34 / 0) 92%),
 			linear-gradient(0deg, rgb(43 39 34 / 0.35) 0%, rgb(43 39 34 / 0) 40%);
 	}
-	.eyebrow { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sp-sun); }
-	.eyebrow::before { content: ''; flex: none; width: 32px; height: 1px; background: currentColor; }
+	
+	
 	.booking h2 { margin: 0 0 14px; max-width: 16ch; font-size: clamp(32px, 3.4vw, 48px); font-weight: 600; line-height: 1.08; letter-spacing: -0.03em; color: #fff; text-wrap: balance; }
 	.nowrap { white-space: nowrap; }
 	.booking-intro { margin: 0; max-width: 46ch; font-size: 16px; line-height: 1.7; color: rgb(255 255 255 / 0.78); }
@@ -165,7 +162,7 @@
 	.facts li { display: flex; align-items: flex-start; gap: 10px; }
 	.facts li :global(svg) { flex: none; width: 18px; height: 18px; margin-top: 2px; color: var(--sp-sun); }
 	.facts span { font-size: 15px; font-weight: 600; line-height: 1.35; color: #fff; }
-	.facts small { display: block; margin-bottom: 2px; font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgb(255 255 255 / 0.55); }
+	.facts small { display: block; margin-bottom: 2px; font-size: 13px; font-weight: 600; color: rgb(255 255 255 / 0.55); }
 	.booking-action { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 30px; }
 	.booking-chat { border: 1px solid rgb(255 255 255 / 0.4); background: transparent; color: #fff; }
 	.booking-chat:hover { border-color: #fff; background: rgb(255 255 255 / 0.08); }

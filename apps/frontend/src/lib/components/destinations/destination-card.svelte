@@ -1,19 +1,49 @@
 <script lang="ts">
-  import { ArrowUpRight } from '@lucide/svelte';
   import DestinationImage from './destination-image.svelte';
   import { destinationHref, destinationFallbackPhoto } from '$lib/destination-content';
   import { textContent } from '$lib/home-content';
   import type { Destination } from '$lib/types/api';
+
+  // A place, told by its photo: a tall tile with the country on it and the
+  // name and region along the foot. Larger screens add two lines about the
+  // place when there are any; nothing is invented when there are not.
   let {destination}: {destination:Destination}=$props();
+  let summary=$derived(textContent(destination.short_description || destination.description));
 </script>
 <a href={destinationHref(destination)} class="destination-card" data-motion="card">
   <div class="destination-card-photo">
     <DestinationImage urls={[destination.main_image_url_thumbnail,destination.image_url_thumbnail,destination.main_image_url,destination.image_url,destination.banner_image_url]} alt={destination.name} fallback={destinationFallbackPhoto(destination)}/>
-    <span class="destination-place">{destination.country || 'Explore Africa'}</span>
-    <span class="destination-arrow"><ArrowUpRight size={20} aria-hidden="true" /></span>
   </div>
-  <div class="destination-card-copy"><p>{destination.region || 'A place to discover'}</p><h3>{destination.name}</h3><p class="destination-summary">{textContent(destination.short_description || destination.description) || 'Explore this destination and plan your journey with our team.'}</p><span class="destination-card-link">Explore destination <ArrowUpRight size={15} /></span></div>
+  {#if destination.country}<span class="destination-place">{destination.country}</span>{/if}
+  <div class="destination-card-copy">
+    <h3>{destination.name}</h3>
+    {#if destination.region}<p class="destination-region">{destination.region}</p>{/if}
+    {#if summary}<p class="destination-summary">{summary}</p>{/if}
+  </div>
 </a>
 <style>
-.destination-card{display:block;min-width:0;border:1px solid #e9e7e3;border-radius:var(--radius-surface);overflow:hidden;background:white;color:#36312b;text-decoration:none}.destination-card:focus-visible{outline:3px solid #d9b526;outline-offset:5px}.destination-card-photo{position:relative;aspect-ratio:1.4;background:#e9ece6;display:grid;place-items:center;overflow:hidden}.destination-place{position:absolute;left:20px;top:20px;padding:7px 12px;background:#fffef1ed;border-radius:var(--radius-surface);font-size:12px;letter-spacing:.06em;font-weight:600}.destination-arrow{position:absolute;right:18px;bottom:18px;width:38px;height:38px;display:grid;place-items:center;border-radius:50%;background:#f6d21b}.destination-card-copy{padding:24px}.destination-card-copy>p:first-child{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#867d6a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.destination-card h3{font-size:22px;line-height:1.3;letter-spacing:-.6px;font-weight:600;margin:9px 0 12px}.destination-summary{font-size:13px;line-height:1.85;color:#7e7563;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden;min-height:5.55em}.destination-card-link{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #ebe9e6;padding-top:17px;margin-top:20px;font-size:12px;font-weight:600}.destination-card:hover .destination-card-link{color:#8b6b0d}
+  .destination-card { position: relative; isolation: isolate; display: block; min-width: 0; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 14px; background: #2b2722; color: white; text-decoration: none; box-shadow: 0 22px 44px -34px rgb(31 27 22 / .7); transition: scale .18s ease; }
+  .destination-card:focus-visible { outline: 3px solid var(--sun); outline-offset: 4px; }
+  .destination-card:active { scale: .985; }
+  .destination-card-photo { position: absolute; inset: 0; z-index: -2; }
+  .destination-card-photo :global(img) { transition: scale .7s cubic-bezier(.22,1,.36,1); }
+  /* Dark only along the foot, where the words sit. */
+  .destination-card::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgb(20 18 15 / .86) 0%, rgb(20 18 15 / .5) 30%, rgb(20 18 15 / 0) 58%); }
+  .destination-place { position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; height: 26px; padding: 0 9px; border-radius: 6px; background: rgb(255 255 255 / .94); color: var(--navy); font-size: 12px; font-weight: 600; }
+  .destination-card-copy { position: absolute; inset: auto 0 0; padding: 18px 18px 18px; }
+  .destination-card h3 { margin: 0; font-size: 21px; font-weight: 600; line-height: 1.15; letter-spacing: -.02em; text-wrap: balance; }
+  .destination-region { margin: 5px 0 0; overflow: hidden; color: rgb(255 255 255 / .78); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+  .destination-summary { display: none; }
+  @media (hover: hover) { .destination-card:hover .destination-card-photo :global(img) { scale: 1.05; } }
+  @media (min-width: 1024px) {
+    .destination-summary { display: -webkit-box; margin: 10px 0 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; color: rgb(255 255 255 / .8); font-size: 13.5px; line-height: 1.55; }
+    .destination-card::after { background: linear-gradient(0deg, rgb(20 18 15 / .9) 0%, rgb(20 18 15 / .55) 36%, rgb(20 18 15 / 0) 64%); }
+  }
+  @media (max-width: 639px) {
+    .destination-card-copy { padding: 14px 13px 13px; }
+    .destination-card h3 { font-size: 17px; }
+    .destination-region { font-size: 12px; }
+    .destination-place { top: 9px; left: 9px; height: 24px; padding: 0 7px; font-size: 11.5px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .destination-card, .destination-card-photo :global(img) { transition: none; } .destination-card:active, .destination-card:hover .destination-card-photo :global(img) { scale: none; } }
 </style>

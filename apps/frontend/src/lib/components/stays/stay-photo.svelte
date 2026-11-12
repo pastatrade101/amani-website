@@ -41,5 +41,5 @@
 	/* Faint contour rings, like a map of the plains. */
 	.stay-placeholder::before { content: ''; position: absolute; inset: -40%; background: repeating-radial-gradient(circle at 70% 120%, transparent 0 22px, rgb(255 255 255 / 0.045) 22px 23px); }
 	.placeholder-mark { position: relative; display: grid; width: 3.5rem; height: 3.5rem; place-items: center; border: 1.5px solid var(--sun); border-radius: 999px; color: var(--sun); }
-	.placeholder-text { position: relative; font-size: 12px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: rgb(255 255 255 / 0.75); }
+	.placeholder-text { position: relative; font-size: 13px; font-weight: 600; color: rgb(255 255 255 / 0.8); }
 </style>

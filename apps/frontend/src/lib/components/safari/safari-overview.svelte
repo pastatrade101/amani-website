@@ -37,7 +37,6 @@
 <section id="overview" class="sp-section overview" aria-labelledby="overview-title">
 	<div class="overview-grid" class:single={!route}>
 		<div class="copy">
-			<p class="sp-eyebrow">The journey at a glance</p>
 			<h2 id="overview-title" class="sp-h2">Why choose this safari?</h2>
 			{#if showLead}<p class="intro">{lead}</p>{/if}
 			{#if full}
@@ -56,7 +55,6 @@
 			{/if}
 			{#if route}
 				<div class="route-line">
-					<p class="sp-eyebrow">Your route, stop by stop</p>
 					<ol>
 						{#each route.visits as visit, k (k)}
 							{@const stop = route.stops[visit.stop]}
@@ -113,7 +111,7 @@
 	.route-line button.end:hover b, .route-line button.end.on b { color: #2b2722; }
 	.route-line b :global(svg) { width: 15px; height: 15px; }
 	.place { font-size: 16px; font-weight: 600; line-height: 1.35; }
-	.route-line small { font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sp-kicker); white-space: nowrap; }
+	.route-line small { font-size: 13px; font-weight: 600; color: var(--sp-kicker); white-space: nowrap; }
 	/* The thread between stops, with how you travel on when it is known. */
 	.hop { position: relative; display: flex; align-items: center; min-height: 30px; margin-left: 27px; padding-left: 31px; border-left: 1.5px dashed #c9c1ad; }
 	.hop span { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sp-muted); }
@@ -121,7 +119,7 @@
 	.map-col { min-width: 0; }
 	@media (min-width: 961px) { .map-col { position: sticky; top: 92px; } }
 	.day-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 20px; margin: 48px 0 0; padding: 28px 0 0; border-top: 1px solid var(--sp-line); list-style: none; }
-	.day-strip small { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sp-kicker); }
+	.day-strip small { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--sp-kicker); }
 	.day-strip span { font-size: 15px; font-weight: 500; color: var(--sp-ink); }
 	@media (max-width: 960px) { .overview-grid { grid-template-columns: minmax(0, 1fr); gap: 40px; } }
 	@media (max-width: 560px) { .day-strip { grid-template-columns: 1fr 1fr; gap: 16px; } }

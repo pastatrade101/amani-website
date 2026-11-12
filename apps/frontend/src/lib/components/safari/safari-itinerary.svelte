@@ -60,11 +60,12 @@
 	let total = $derived(Math.round(Number(tour.duration_days) || days.length));
 	let end = $derived(displayName(tour.end_point?.name));
 	let anyStays = $derived(days.some((day) => staysOf(day).length));
+	// Phones: a long day opens at its first lines; the rest is one tap away.
+	let opened = $state<Record<string, boolean>>({});
 </script>
 
 <section id="itinerary" class="sp-section sp-cream itinerary" aria-labelledby="itinerary-title">
 	<div class="sp-head itinerary-heading">
-		<p class="sp-eyebrow">Every day, a new discovery</p>
 		<h2 id="itinerary-title" class="sp-h2">Your {numberWord(total)}-day itinerary</h2>
 		{#if route.length > 1}<p class="sp-sub">{route.join(' → ')}</p>{/if}
 	</div>
@@ -75,11 +76,13 @@
 			{@const ModeIcon = day.travel_mode ? MODE_ICONS[day.travel_mode] : null}
 			{@const activities = activityList(day.activities)}
 			{@const meals = mealsLabel(day.meals)}
+			{@const long = textContent(day.description).length > 360}
 			<article aria-labelledby={`day-${day.day_number}-title`}>
-				<p class="day-label">{[`Day ${String(day.day_number).padStart(2, '0')}`, day.destination?.name].filter(Boolean).join(' · ')}</p>
+				<p class="day-label">{[`Day ${day.day_number}`, day.destination?.name].filter(Boolean).join(' · ')}</p>
 				<h3 id={`day-${day.day_number}-title`}>{day.title}</h3>
 				{#if textContent(day.summary)}<p class="summary">{textContent(day.summary)}</p>{/if}
-				<div class="description"><RichText value={day.description} class="sp-rich" /></div>
+				<div class="description" class:long class:open={opened[day.id]} id={`day-${day.day_number}-story`}><RichText value={day.description} class="sp-rich" /></div>
+				{#if long}<button type="button" class="read-day" aria-expanded={Boolean(opened[day.id])} aria-controls={`day-${day.day_number}-story`} onclick={() => (opened[day.id] = !opened[day.id])}>{opened[day.id] ? 'Show less' : 'Read the full day'}</button>{/if}
 				{#if mode || activities.length || meals}
 					<ul class="day-meta">
 						{#if mode && ModeIcon}<li><ModeIcon aria-hidden="true" />{mode}</li>{/if}
@@ -157,10 +160,11 @@
 	article { position: relative; padding-bottom: 48px; }
 	article:last-child { padding-bottom: 0; }
 	article::before { content: ''; position: absolute; top: 4px; left: -44px; width: 15px; height: 15px; border: 3px solid var(--sp-cream); border-radius: 50%; background: var(--sp-sun); box-shadow: 0 0 0 1px #b5a98a; }
-	.day-label { margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #98723c; }
+	.day-label { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: #98723c; }
 	h3 { max-width: 860px; margin: 0 0 14px; font-size: clamp(20px, 1.8vw, 24px); font-weight: 650; line-height: 1.3; letter-spacing: -0.015em; color: var(--sp-ink); }
 	.summary { max-width: 860px; margin: 0 0 12px; font-size: 16px; font-weight: 500; line-height: 1.75; color: var(--sp-ink); }
 	.description { max-width: 860px; margin: 0 0 18px; }
+	.read-day { display: none; }
 	.day-meta { display: flex; flex-wrap: wrap; gap: 10px 24px; margin: 0 0 24px; padding: 0; list-style: none; }
 	.day-meta li { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--sp-muted); }
 	.day-meta :global(svg) { flex-shrink: 0; width: 17px; height: 17px; color: #98723c; }
@@ -171,7 +175,7 @@
 	.no-photo { display: grid; place-items: center; background: #ece8dd; color: #a89f8a; }
 	.no-photo :global(svg) { width: 30px; height: 30px; }
 	.stay > div { padding: 16px 18px 18px; }
-	.stay small { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sp-kicker); }
+	.stay small { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--sp-kicker); }
 	.stay strong { display: block; overflow-wrap: anywhere; font-size: 16px; font-weight: 600; line-height: 1.4; color: var(--sp-ink); }
 	.stay strong a { color: inherit; text-decoration: none; }
 	.stay strong a:hover { color: #7b6500; }
@@ -193,7 +197,7 @@
 	.no-shots .stay-text { flex: 1; }
 	.no-shots .stay-side { flex: 0 0 300px; }
 	.no-shots .stay-facts { margin-top: 0; }
-	.style-tag { padding: 5px 10px; border-radius: 6px; background: #faf3d6; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #7a5a12; }
+	.style-tag { padding: 5px 10px; border-radius: 6px; background: #faf3d6; font-size: 13px; font-weight: 700; color: #7a5a12; }
 	.stay-name { display: block; margin-top: 14px; overflow-wrap: anywhere; font-size: 23px; font-weight: 650; line-height: 1.25; letter-spacing: -0.02em; color: var(--sp-ink); text-wrap: balance; }
 	.stay-name a { color: inherit; text-decoration: none; }
 	.stay-name a:hover { color: #7b6500; }
@@ -203,7 +207,7 @@
 	.stay-facts { align-self: stretch; margin: 20px 0 0; }
 	.stay-facts div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid var(--sp-line-soft); }
 	.stay-facts div:last-child { border-bottom: 1px solid var(--sp-line-soft); }
-	.stay-facts dt { display: flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sp-muted); }
+	.stay-facts dt { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 500; color: var(--sp-muted); }
 	.stay-facts dt :global(svg) { width: 17px; height: 17px; color: #98723c; }
 	.stay-facts dd { margin: 0; text-align: right; font-size: 14px; font-weight: 600; color: var(--sp-ink); }
 	.stay-facts dd span { font-weight: 500; color: var(--sp-muted); }
@@ -229,5 +233,18 @@
 	@media (max-width: 767px) { .no-shots .stay-info { flex-direction: column; align-items: stretch; gap: 0; } .no-shots .stay-side { flex-basis: auto; } .no-shots .stay-facts { margin-top: 20px; } }
 	@media (max-width: 600px) { .stays, .stays.pair { grid-template-columns: 1fr; } .mosaic { min-height: 200px; } .stay-info { padding: 22px 20px; } .stay-name { font-size: 20px; } }
 	@media (prefers-reduced-motion: reduce) { .mosaic img { transition: none; } }
-	@media (max-width: 767px) { .timeline { margin-left: 6px; padding-left: 24px; } article { padding-bottom: 40px; } article::before { left: -32px; } .summary { font-size: 15px; } .stay-note { padding-left: 0; } }
+	@media (max-width: 767px) {
+		.timeline { margin-left: 6px; padding-left: 24px; } article { padding-bottom: 40px; } article::before { left: -32px; } .summary { font-size: 15px; } .stay-note { padding-left: 0; }
+		/* A long day shows its first lines, fading out, until it is opened. */
+		.description.long:not(.open) { max-height: 9.2em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent); }
+		.description.long { margin-bottom: 4px; }
+		.read-day { display: inline-flex; align-items: center; min-height: 44px; margin: 0 0 10px; padding: 0; border: 0; background: none; color: var(--sp-ink); font: 600 14px var(--sp-sans); cursor: pointer; }
+		.read-day::after { content: ''; width: 7px; height: 7px; margin: -3px 0 0 9px; border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor; rotate: 45deg; transition: rotate 0.2s ease, margin 0.2s ease; }
+		.read-day[aria-expanded='true']::after { rotate: -135deg; margin-top: 4px; }
+		/* The lodge's photos as one short strip above its card. */
+		.mosaic { height: 190px; min-height: 0; grid-auto-rows: minmax(0, 1fr); }
+		.stay-feature .blurb { display: none; }
+		.stay-facts { margin-top: 16px; }
+		.mosaic[data-count='3'] { grid-template-rows: repeat(2, minmax(0, 1fr)); }
+	}
 </style>

@@ -15,7 +15,7 @@
 		faqs,
 		title = 'Frequently Asked Questions',
 		intro = '',
-		eyebrow = '',
+		eyebrow: _eyebrow = '',
 		id,
 		head,
 		list = false
@@ -42,8 +42,7 @@
 	<div {id} class="faq-block" class:list>
 		<!-- `head` replaces the default heading, for a page with its own heading style. -->
 		{#if head}{@render head()}{:else if !list}<header class="mx-auto max-w-2xl text-center">
-			{#if eyebrow}<p class="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{eyebrow}</p>{/if}
-			<h2 class={`faq-title ${eyebrow ? 'mt-3' : ''}`}>{title}</h2>
+			<h2 class="faq-title">{title}</h2>
 			{#if intro}<p class="mt-3 text-sm leading-6 text-muted-foreground md:text-[15px]">{intro}</p>{/if}
 		</header>{/if}
 		<Accordion.Root type="single" value={open} onValueChange={(value) => (open = value)} class={`faq-grid ${columns.length > 1 ? 'two' : ''}`}>

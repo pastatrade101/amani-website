@@ -11,7 +11,6 @@
 
 <section id="included" class="sp-section inclusions" aria-labelledby="inclusions-title">
 	<div class="sp-head heading">
-		<p class="sp-eyebrow">The details, taken care of</p>
 		<h2 id="inclusions-title" class="sp-h2">What’s included in your journey</h2>
 	</div>
 	<div class="inclusion-grid" class:single={!inclusions.length || !exclusions.length}>

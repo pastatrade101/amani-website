@@ -1,9 +1,11 @@
 <script lang="ts" generics="T">
 	import type { Snippet } from 'svelte';
+	import { rail, steer } from '$lib/motion/rail';
 
 	// A row of cards that is the section's own grid from 768px up (pass its grid
-	// classes) and, on phones, one card at a time with the next peeking in,
-	// swiped sideways, with dots underneath.
+	// classes) and, on phones, an app rail: the card in view rests in the middle,
+	// its neighbours peek in either side and sit back a little in step with the
+	// finger (use:rail), with dots underneath.
 	let {
 		items,
 		card,
@@ -15,22 +17,11 @@
 	let track = $state<HTMLUListElement>();
 	let active = $state(0);
 
-	function syncDots() {
-		if (!track) return;
-		const first = track.children[0] as HTMLElement | undefined;
-		const step = first ? first.getBoundingClientRect().width + 16 : 1;
-		active = Math.min(items.length - 1, Math.max(0, Math.round(track.scrollLeft / step)));
-	}
-	function show(index: number) {
-		const item = track?.children[index] as HTMLElement | undefined;
-		if (!track || !item) return;
-		const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		track.scrollTo({ left: item.offsetLeft - track.offsetLeft, behavior: reduce ? 'auto' : 'smooth' });
-	}
+	const show = (index: number) => steer(track, index);
 </script>
 
 <div class="card-slider">
-	<ul bind:this={track} onscroll={syncDots} class={`slider-track ${gridClass}`} aria-label={label}>
+	<ul bind:this={track} class={`slider-track ${gridClass}`} aria-label={label} use:rail={{ onIndex: (i) => (active = i) }}>
 		{#each items as item, i (key ? key(item, i) : i)}
 			<li class="slider-item">{@render card(item, i)}</li>
 		{/each}
@@ -48,13 +39,17 @@
 	.slider-track { margin: 0; padding: 0; list-style: none; }
 	.slider-item { display: flex; flex-direction: column; min-width: 0; }
 	.slider-dots { display: none; justify-content: center; gap: 8px; margin-top: 18px; }
-	.slider-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: #e0ddd7; cursor: pointer; transition: background-color 0.2s ease; }
-	.slider-dots button.on { background: var(--sun); }
+	.slider-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: #dcd7cc; cursor: pointer; transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.3s ease; }
+	.slider-dots button.on { width: 22px; background: var(--navy); }
 	@media (max-width: 767px) {
-		/* Runs edge to edge of the screen; --slider-bleed is the page's side padding. */
-		.card-slider .slider-track { --bleed: var(--slider-bleed, 16px); display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--bleed); margin-inline: calc(var(--bleed) * -1); padding: 4px var(--bleed) 8px; scrollbar-width: none; }
+		/* Runs edge to edge of the screen, whatever the page's side padding. */
+		.card-slider .slider-track { --card: min(80vw, 380px); display: flex; gap: 10px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; margin-inline: calc(50% - 50vw); padding: 6px calc((100vw - var(--card)) / 2) 10px; scrollbar-width: none; }
 		.card-slider .slider-track::-webkit-scrollbar { display: none; }
-		.card-slider .slider-item { flex: 0 0 84%; scroll-snap-align: start; }
+		.card-slider .slider-item { flex: 0 0 var(--card); scroll-snap-align: center; scroll-snap-stop: always; scale: calc(1 - var(--rail-abs, 0) * 0.05); }
 		.slider-dots { display: flex; }
+	}
+	@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+		.card-slider .slider-item { scale: none; }
+		.slider-dots button { transition: none; }
 	}
 </style>

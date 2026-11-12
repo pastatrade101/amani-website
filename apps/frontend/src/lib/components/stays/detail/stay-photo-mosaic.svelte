@@ -1,12 +1,18 @@
 <script lang="ts">
 	import { Images } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { glide } from '$lib/motion/glide';
+	import { rail } from '$lib/motion/rail';
 	import { PHOTO_GROUPS, photoGroups, type StayGalleryPhoto } from '$lib/stay-content';
 
-	// An editorial mosaic of 3, 5 or 10 tiles (the big tiles alternate sides),
-	// filterable by the CMS photo categories once there are enough photos.
+	// Phones: every photo on a swipeable rail, the centred one full size, with a
+	// count under it. Larger screens: an editorial mosaic of 3, 5 or 10 tiles
+	// (the big tiles alternate sides). Both filter by the CMS photo categories
+	// once there are enough photos.
 	let { photos, onOpen }: { photos: StayGalleryPhoto[]; onOpen: (list: StayGalleryPhoto[], index: number, opener: HTMLElement) => void } = $props();
 	let group = $state('all');
+	let at = $state(0);
+	let list = $state<HTMLUListElement>();
 	let groups = $derived(photos.length >= 6 ? photoGroups(photos) : []);
 	let filtered = $derived.by(() => {
 		const categories = PHOTO_GROUPS.find((item) => item.id === group)?.categories;
@@ -14,53 +20,46 @@
 	});
 	let n = $derived(filtered.length);
 	let shown = $derived(n >= 10 ? 10 : n >= 5 ? 5 : n >= 3 ? 3 : n);
-	let columns = $derived(shown >= 5 ? 'md:grid-cols-4' : shown === 3 ? 'md:grid-cols-3' : shown === 2 ? 'md:grid-cols-2' : 'md:grid-cols-1');
+	let columns = $derived(shown >= 5 ? 4 : shown);
 
-	// Phones: a wide lead, squares in pairs, and a wide last tile when one is left over.
-	function tileClass(i: number): string {
-		if (shown <= 2) return i === 0 ? (shown === 1 ? 'col-span-2 aspect-[4/3] md:aspect-video' : 'col-span-2 aspect-[4/3] md:col-span-1') : 'col-span-2 aspect-[2/1] md:col-span-1 md:aspect-[4/3]';
-		if (i === 0) return 'col-span-2 aspect-[4/3] md:row-span-2 md:aspect-auto';
-		if (i === 5) return 'aspect-square md:col-span-2 md:col-start-3 md:row-span-2 md:aspect-auto';
-		return i === shown - 1 && (shown - 1) % 2 === 1 ? 'col-span-2 aspect-[2/1] md:col-span-1 md:aspect-auto' : 'aspect-square md:aspect-auto';
+	function pick(id: string) {
+		group = id;
+		at = 0;
+		list?.scrollTo({ left: 0 });
 	}
-	const pill = 'inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md px-4 text-sm font-medium transition-colors';
 </script>
 
 <section id="photos" class="scroll-mt-14 border-t border-navy/10 bg-white py-16 md:py-24" aria-labelledby="photos-title">
 	<div class="page-container">
 		<div data-motion="reveal" class="flex flex-wrap items-end justify-between gap-4">
-			<div class="max-w-2xl">
-				<p class="eyebrow text-[var(--gold-ink)]">Gallery</p>
-				<h2 id="photos-title" class="lux-heading mt-4">A closer look</h2>
-			</div>
+			<h2 id="photos-title" class="lux-heading">A closer look</h2>
 			<p class="flex items-center gap-2 text-sm text-muted-foreground"><Images class="size-4" aria-hidden="true" />{photos.length} photos</p>
 		</div>
 
 		{#if groups.length >= 2}
-			<div class="filters -mx-4 mt-8 overflow-x-auto px-4 md:mx-0 md:px-0">
-				<div role="group" aria-label="Photo categories" class="flex w-max gap-2 py-1">
-					<button type="button" aria-pressed={group === 'all'} onclick={() => (group = 'all')} class={`${pill} ${group === 'all' ? 'bg-navy text-white' : 'text-navy ring-1 ring-border hover:bg-[oklch(.985_.006_85)]'}`}>All <span class="opacity-60">{photos.length}</span></button>
-					{#each groups as item (item.id)}
-						<button type="button" aria-pressed={group === item.id} onclick={() => (group = item.id)} class={`${pill} ${group === item.id ? 'bg-navy text-white' : 'text-navy ring-1 ring-border hover:bg-[oklch(.985_.006_85)]'}`}>{item.label} <span class="opacity-60">{item.count}</span></button>
-					{/each}
-				</div>
+			<div role="group" aria-label="Photo categories" class="chips" use:glide={{ center: true }}>
+				<button type="button" aria-pressed={group === 'all'} onclick={() => pick('all')}>All <span class="n">{photos.length}</span></button>
+				{#each groups as item (item.id)}
+					<button type="button" aria-pressed={group === item.id} onclick={() => pick(item.id)}>{item.label} <span class="n">{item.count}</span></button>
+				{/each}
 			</div>
 		{/if}
 
-		<ul class={`mt-8 grid grid-cols-2 gap-2 md:grid-flow-dense md:gap-3 ${columns} ${shown >= 3 ? 'md:auto-rows-[200px] lg:auto-rows-[250px]' : ''}`}>
-			{#each filtered.slice(0, shown) as photo, i (photo.id)}
+		<ul bind:this={list} class="mosaic" class:rows={shown >= 3} style={`--cols:${columns}`} data-shown={shown} use:rail={{ onIndex: (i) => (at = i) }}>
+			{#each filtered as photo, i (photo.id)}
 				{@const more = i === shown - 1 ? n - shown : 0}
-				<li class={`min-w-0 ${tileClass(i)}`}>
-					<button type="button" onclick={(event) => onOpen(filtered, i, event.currentTarget)} aria-label={`Open photo ${i + 1} of ${n}: ${photo.alt}${more ? ` (${more} more)` : ''}`} class="group relative block size-full overflow-hidden rounded-xl bg-[oklch(.965_.014_85)]">
-						<img src={photo.src} alt="" loading="lazy" decoding="async" class="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transform-none" />
-						{#if more}<span class="absolute inset-0 grid place-items-center bg-navy/60 font-display text-[28px] text-white" aria-hidden="true">+{more} more</span>{/if}
+				<li class:extra={i >= shown}>
+					<button type="button" onclick={(event) => onOpen(filtered, i, event.currentTarget)} aria-label={`Open photo ${i + 1} of ${n}: ${photo.alt}`}>
+						<img src={photo.src} alt="" loading="lazy" decoding="async" />
+						{#if more}<span class="more" aria-hidden="true">+{more} more</span>{/if}
 					</button>
 				</li>
 			{/each}
 		</ul>
+		{#if n > 1}<p class="count" aria-hidden="true"><span>{Math.min(at + 1, n)}</span> / {n}</p>{/if}
 
 		{#if n > shown}
-			<div class="mt-8 flex justify-center">
+			<div class="all">
 				<Button variant="outline" onclick={(event: MouseEvent) => onOpen(filtered, 0, event.currentTarget as HTMLElement)} class="h-12 px-6 text-sm"><Images class="size-4" />View all {n} photos</Button>
 			</div>
 		{/if}
@@ -68,6 +67,46 @@
 </section>
 
 <style>
-	.filters { scrollbar-width: none; }
-	.filters::-webkit-scrollbar { display: none; }
+	/* Category chips: one navy marker glides to the chosen one. */
+	.chips { display: flex; gap: 8px; margin: 26px -1rem 0; padding: 2px 1rem; overflow-x: auto; scrollbar-width: none; }
+	.chips::-webkit-scrollbar { display: none; }
+	.chips :global(.glide-mark) { border-radius: 9px; background: var(--navy); }
+	.chips button { position: relative; display: inline-flex; flex: none; align-items: center; gap: 6px; min-height: 42px; padding: 0 16px; border-radius: 9px; color: #5f584e; font-size: 14px; font-weight: 600; white-space: nowrap; -webkit-tap-highlight-color: transparent; transition: color 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+	.chips button::before { content: ''; position: absolute; inset: 0; z-index: -2; border-radius: inherit; background: #f1ede4; }
+	.chips button:hover { color: var(--navy); }
+	.chips button[aria-pressed='true'] { color: white; }
+	.chips button:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+	.n { opacity: 0.6; font-weight: 500; }
+
+	/* Phones: a centred, full-bleed rail. */
+	.mosaic { --card: min(84vw, 440px); display: flex; gap: 10px; margin: 22px calc(50% - 50vw) 0; padding: 4px calc((100vw - var(--card)) / 2) 6px; list-style: none; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; }
+	.mosaic::-webkit-scrollbar { display: none; }
+	.mosaic li { flex: none; width: var(--card); aspect-ratio: 5 / 4; scroll-snap-align: center; scroll-snap-stop: always; scale: calc(1 - var(--rail-abs, 0) * 0.05); opacity: calc(1 - var(--rail-abs, 0) * 0.3); }
+	.mosaic button { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; border-radius: 12px; background: oklch(0.965 0.014 85); }
+	.mosaic img { width: 100%; height: 100%; object-fit: cover; transition: scale 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+	.mosaic button:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+	.more { display: none; }
+	.count { margin: 14px 0 0; color: var(--muted-foreground); font-size: 13px; font-variant-numeric: tabular-nums; text-align: center; }
+	.count span { color: var(--navy); font-weight: 600; }
+	.all { display: none; }
+
+	@media (min-width: 768px) {
+		.chips { margin: 30px 0 0; padding: 2px 0; }
+		.mosaic { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-flow: dense; gap: 12px; margin: 30px 0 0; padding: 0; overflow: visible; scroll-snap-type: none; }
+		.mosaic li { width: auto; scale: none; opacity: 1; }
+		.mosaic li.extra { display: none; }
+		.mosaic[data-shown='1'] li { aspect-ratio: 16 / 9; }
+		.mosaic[data-shown='2'] li { aspect-ratio: 4 / 3; }
+		.mosaic.rows { grid-auto-rows: 200px; }
+		.mosaic.rows li { aspect-ratio: auto; }
+		.mosaic.rows li:first-child { grid-column: span 2; grid-row: span 2; }
+		.mosaic.rows li:nth-child(6) { grid-column: 3 / span 2; grid-row: span 2; }
+		.mosaic button { border-radius: 10px; }
+		.more { position: absolute; inset: 0; display: grid; place-items: center; background: rgb(34 30 25 / 0.6); color: white; font-family: var(--font-display); font-size: 26px; }
+		.count { display: none; }
+		.all { display: flex; justify-content: center; margin-top: 32px; }
+	}
+	@media (min-width: 1024px) { .mosaic.rows { grid-auto-rows: 250px; } }
+	@media (hover: hover) { .mosaic button:hover img { scale: 1.03; } }
+	@media (prefers-reduced-motion: reduce) { .mosaic img, .chips button { transition: none; } .mosaic button:hover img { scale: none; } }
 </style>

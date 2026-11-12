@@ -24,12 +24,12 @@
 <aside class="grid min-w-0 content-start gap-4 lg:sticky lg:top-[calc(var(--site-header-height,88px)+24px)] lg:self-start" aria-label="Your trip so far">
 	<div class="overflow-hidden rounded-2xl bg-navy text-white shadow-[0_18px_40px_-24px_rgba(45,41,36,.6)]">
 		<button type="button" class="flex min-h-12 w-full items-center justify-between px-5 lg:hidden" aria-expanded={openSummary} onclick={() => (openSummary = !openSummary)}>
-			<span class="flex items-center gap-2 text-[12px] font-bold tracking-[.16em] text-sun uppercase"><Sparkles class="size-3.5" />Your trip so far</span>
+			<span class="flex items-center gap-2 text-[13px] font-semibold text-sun"><Sparkles class="size-3.5" />Your trip so far</span>
 			<span class="flex items-center gap-2 text-[12px] font-semibold text-white/60">{step + 1}/{total}<ChevronDown class={`size-4 transition ${openSummary ? 'rotate-180' : ''}`} /></span>
 		</button>
 		<div class={`${openSummary ? 'block' : 'hidden'} lg:block`}>
 			<div class="hidden items-center justify-between px-5 pt-5 lg:flex">
-				<p class="flex items-center gap-2 text-[12px] font-bold tracking-[.16em] text-sun uppercase"><Sparkles class="size-3.5" />Your trip so far</p>
+				<p class="flex items-center gap-2 text-[13px] font-semibold text-sun"><Sparkles class="size-3.5" />Your trip so far</p>
 				<span class="text-[12px] font-semibold text-white/55 tabular-nums">{step + 1}/{total}</span>
 			</div>
 			{#if rows.length}
@@ -38,7 +38,7 @@
 						<li class="flex items-start gap-3 rounded-xl px-3 py-2.5" animate:flip={{ duration: ms(320), easing: cubicOut }} in:fly|global={{ x: 14, duration: ms(380), easing: cubicOut }}>
 							<span class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-white/10 text-sun"><row.icon class="size-4" /></span>
 							<span class="min-w-0 flex-1">
-								<span class="block text-[12px] font-semibold tracking-[.14em] text-white/55 uppercase">{row.label}</span>
+								<span class="block text-[13px] font-semibold text-white/55">{row.label}</span>
 								{#if row.chips.length > 1}
 									<span class="mt-1.5 flex flex-wrap gap-1.5">{#each row.chips as chip (chip)}<span class="rounded-md border border-white/15 bg-white/5 px-2.5 py-0.5 text-xs leading-5 font-medium">{chip}</span>{/each}</span>
 								{:else}
@@ -56,7 +56,7 @@
 
 	{#if tips.length}
 		<div class="rounded-2xl border border-sun/40 bg-white p-5" in:fly={{ y: 18, duration: ms(480), easing: quintOut }}>
-			<p class="flex items-center gap-2 text-[12px] font-bold tracking-[.16em] text-navy uppercase"><Lightbulb class="size-3.5 text-[#D9A900]" />Good to know</p>
+			<p class="flex items-center gap-2 text-[13px] font-semibold text-navy"><Lightbulb class="size-3.5 text-[#D9A900]" />Good to know</p>
 			<ul class="mt-3 grid gap-2.5">
 				{#each tips as tip (tip)}<li class="text-sm leading-snug text-navy" animate:flip={{ duration: ms(320), easing: cubicOut }}>{tip}</li>{/each}
 			</ul>
@@ -66,11 +66,11 @@
 	{#if recs.length}
 		<div class="rounded-2xl border border-border bg-white" in:fly={{ y: 24, duration: ms(560), easing: quintOut }}>
 			<button type="button" class="flex min-h-12 w-full items-center justify-between px-5 lg:hidden" aria-expanded={openMatches} onclick={() => (openMatches = !openMatches)}>
-				<span class="text-[12px] font-bold tracking-[.16em] text-navy uppercase">Trips that match ({recs.length})</span>
+				<span class="text-[13px] font-semibold text-navy">Trips that match ({recs.length})</span>
 				<ChevronDown class={`size-4 transition ${openMatches ? 'rotate-180' : ''}`} />
 			</button>
 			<div class={`${openMatches ? 'block' : 'hidden'} px-5 pb-5 lg:block lg:pt-5`}>
-				<p class="hidden text-[12px] font-bold tracking-[.16em] text-navy uppercase lg:block">Trips that match</p>
+				<p class="hidden text-[13px] font-semibold text-navy lg:block">Trips that match</p>
 				<ul class="grid gap-3 lg:mt-3">
 					{#each recs as rec (rec.tour.id)}
 						{@const photo = safeUrl(rec.tour.thumbnail, '')}
@@ -91,7 +91,7 @@
 		</div>
 	{:else if chosen}
 		<div class="rounded-2xl border border-border bg-white p-5">
-			<p class="text-[12px] font-bold tracking-[.16em] text-navy uppercase">Made for you</p>
+			<p class="text-[13px] font-semibold text-navy">Made for you</p>
 			<p class="mt-2 text-sm text-navy">None of our published trips fits these answers exactly yet. We’ll plan yours from scratch.</p>
 		</div>
 	{/if}

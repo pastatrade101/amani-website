@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { PHOTO } from '$lib/media-photos';
-	import { ArrowDown, ArrowRight, X } from '@lucide/svelte';
+	import { ArrowDown, ArrowRight, SlidersHorizontal, X } from '@lucide/svelte';
 	import PageHero from '$lib/components/page-hero.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import SiteHeader from '$lib/components/home/site-header.svelte';
@@ -8,14 +8,17 @@
 	import Enquiry from '$lib/components/home/enquiry.svelte';
 	import StayCard from '$lib/components/stays/stay-card.svelte';
 	import StaySearch from '$lib/components/stays/stay-search.svelte';
-	import StayStyles from '$lib/components/stays/stay-styles.svelte';
+	import { glide } from '$lib/motion/glide';
 	import { siteInfo } from '$lib/site-info';
 	import { planHref } from '$lib/planner/plan-href';
 	import { destinationPhoto } from '$lib/home-content';
 	import { hasStayFilters, STAY_STYLES, staysHref, stayTypeLabel, type StayFilters } from '$lib/stay-content';
+	import { SAFARI_STYLE_THEME } from '$lib/safari-pricing';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
+	// Phones keep the search behind one button; larger screens always show it.
+	let showFilters = $state(false);
 	let interest = $state('');
 	const chooseInterest = (name: string) => { interest = name; };
 	let enquiry = $derived(data.sections.find((section) => section.section_key === 'enquiry' && section.is_active !== false));
@@ -31,7 +34,10 @@
 		...(data.filters.country ? [{ key: 'country' as const, kind: 'Country', label: data.filters.country }] : []),
 		...(data.filters.search ? [{ key: 'search' as const, kind: 'Keyword', label: `“${data.filters.search}”` }] : [])
 	]);
-	let heading = $derived(data.staysUnavailable ? 'Lodges & camps' : `${data.stayTotal} ${data.stayTotal === 1 ? 'stay' : 'stays'}`);
+	let heading = $derived(data.staysUnavailable ? 'Lodges and camps' : `${data.stayTotal} ${data.stayTotal === 1 ? 'place to stay' : 'places to stay'}`);
+	let styleHint = $derived(STAY_STYLES.find((style) => style.id === data.filters.style)?.hint ?? 'Every safari can be planned in Budget, Midrange or Luxury comfort.');
+	// Filters other than the style, which has its own switcher.
+	let searchCount = $derived(chips.filter((chip) => chip.key !== 'style').length);
 	// A page past the last one (an old link) is not the same as "nothing here".
 	let pastTheEnd = $derived(!data.stays.length && data.stayTotal > 0);
 	const placeFor = (id?: string | null) => (id ? (data.destinations.find((item) => item.id === id) ?? null) : null);
@@ -76,39 +82,51 @@
 <main id="main">
 	<PageHero titleId="stays-title" image={PHOTO.tentPlains} imageAlt="A safari tent looking out over the Serengeti plains" crumbs={[{ label: 'Home', href: '/' }, { label: 'Stays' }]} eyebrow="Lodges & camps" title="Where you’ll stay in Tanzania" intro="Lodges and tented camps for every style of safari, from simple bush camps to the most exclusive hideaways. Find yours, then see the safaris that stay there.">
 		{#snippet actions()}
-			<Button variant="safari" href="#stay-styles">Choose your style <ArrowDown class="size-4" /></Button>
+			<Button variant="safari" href="#stay-results">Browse stays <ArrowDown class="size-4" /></Button>
 			{#if enquiry}<Button href={planHref({ from: 'stays' })} data-cta="plan_my_trip" data-cta-location="stays" variant="outline">Ask us where to stay</Button>{/if}
 		{/snippet}
 	</PageHero>
 
-	<StayStyles filters={data.filters} />
-	<StaySearch destinations={places} filters={data.filters} />
-
-	<section id="stay-results" class="pt-10 pb-14 md:pt-12 md:pb-20" aria-labelledby="stay-results-title">
+	<section id="stay-results" class="stays-results" aria-labelledby="stay-results-title">
 		<div class="page-container">
-			<div data-motion="reveal" class="flex flex-wrap items-end justify-between gap-5">
-				<div class="min-w-0 max-w-2xl">
-					<p class="eyebrow text-muted-foreground">{filtered ? 'YOUR SEARCH' : 'ALL STAYS'}</p>
-					<h2 id="stay-results-title" class="lux-heading mt-3">{heading}</h2>
-					{#if chips.length}
-						<ul class="mt-4 flex flex-wrap gap-2" aria-label="Active filters">
-							{#each chips as chip (chip.key)}
-								<li><a href={staysHref(data.filters, { [chip.key]: '', page: '1' })} aria-label={`Remove ${chip.kind.toLowerCase()} filter: ${chip.label}`} class="inline-flex h-9 max-w-full items-center gap-1.5 rounded-md border border-border bg-white px-3.5 text-xs text-navy transition-colors hover:border-navy/30"><span class="text-muted-foreground">{chip.kind}:</span><span class="truncate font-semibold">{chip.label}</span><X class="size-3.5 shrink-0 text-muted-foreground" /></a></li>
-							{/each}
-						</ul>
-					{/if}
+			<div class="results-head" data-motion="reveal">
+				<div class="min-w-0">
+					<h2 id="stay-results-title" class="home-heading">{heading}</h2>
+					<p class="results-copy">{styleHint}</p>
 				</div>
-				{#if filtered}<Button href="/stays#stay-results" variant="outline">Clear filters</Button>{/if}
+				<button type="button" class="filter-toggle" aria-expanded={showFilters} aria-controls="stay-search" onclick={() => (showFilters = !showFilters)}>
+					<SlidersHorizontal class="size-[18px]" strokeWidth={1.9} aria-hidden="true" />Search and filter{#if searchCount}<span class="filter-count">{searchCount}</span>{/if}
+				</button>
 			</div>
+
+			<!-- The three styles, one tap apart; a marker glides to the one showing. -->
+			<nav id="stay-styles" class="style-switch" aria-label="Stay style" use:glide={{ center: true }}>
+				<a href={staysHref(data.filters, { style: '', page: '1' })} data-sveltekit-noscroll aria-current={!data.filters.style ? 'true' : undefined}>All styles</a>
+				{#each STAY_STYLES as style (style.id)}
+					<a href={staysHref(data.filters, { style: style.id, page: '1' })} data-sveltekit-noscroll aria-current={data.filters.style === style.id ? 'true' : undefined}><span class="dot" style={`background:${SAFARI_STYLE_THEME[style.id].primary}`} aria-hidden="true"></span>{style.label}</a>
+				{/each}
+			</nav>
+
+			<div id="stay-search" class="filters" class:open={showFilters}><StaySearch destinations={places} filters={data.filters} /></div>
+
+			{#if searchCount}
+				<div class="active-filters">
+					<ul aria-label="Active filters">
+						{#each chips.filter((chip) => chip.key !== 'style') as chip (chip.key)}
+							<li><a href={staysHref(data.filters, { [chip.key]: '', page: '1' })} data-sveltekit-noscroll aria-label={`Remove ${chip.kind.toLowerCase()} filter: ${chip.label}`}><span class="kind">{chip.kind}:</span><span class="truncate font-semibold">{chip.label}</span><X class="size-3.5 shrink-0" aria-hidden="true" /></a></li>
+						{/each}
+					</ul>
+					<a class="clear" href={staysHref({ style: data.filters.style }, { page: '1' })} data-sveltekit-noscroll>Clear search</a>
+				</div>
+			{/if}
 			<!-- Three columns at most, so the tall cards keep their proportions. -->
-			<div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+			<div class="stay-grid">
 				{#each data.stays as stay (stay.id)}
-					<StayCard {stay} destination={placeFor(stay.destination_id)} />
+					<StayCard {stay} destination={placeFor(stay.destination_id)} compact />
 				{:else}
 					<div data-motion="image" class="col-span-full grid overflow-hidden rounded-2xl border border-border bg-white md:grid-cols-2">
 						<img src={PHOTO.acaciaAlone} alt="A baobab silhouetted against a Tanzania sunset" loading="lazy" class="h-60 w-full object-cover md:h-full md:min-h-80" />
 						<div class="flex flex-col items-start justify-center p-7 md:p-10">
-							<span class="eyebrow text-muted-foreground">MADE AROUND YOU</span>
 							<h3 class="mt-4 max-w-md text-2xl font-semibold tracking-tight md:text-3xl">{data.staysUnavailable ? 'We’ll help you choose where to stay' : pastTheEnd ? 'There are no more stays on this page' : filtered ? 'No stays match your search yet' : 'Our lodges and camps are on their way'}</h3>
 							<p class="mt-4 max-w-md text-sm leading-7 text-muted-foreground">{data.staysUnavailable ? 'We can’t show our lodges and camps right now. Tell us the comfort and places you have in mind, and we’ll suggest where to stay.' : pastTheEnd ? 'This page is past the end of the list. Start again from the first page.' : filtered ? 'Try another destination, style or type, or tell us what you have in mind and we’ll suggest where to stay.' : 'We’re adding the places our safaris stay. Tell us the comfort you’d like, and we’ll suggest the right lodges and camps for your trip.'}</p>
 							<div class="mt-6 flex flex-wrap gap-3">
@@ -127,10 +145,8 @@
 		<section id="stay-destinations" class="border-t border-border bg-secondary/45 py-14 md:py-20" aria-labelledby="stay-destinations-title">
 			<div class="page-container">
 				<div data-motion="reveal" class="max-w-2xl">
-					<p class="eyebrow text-muted-foreground">STAY BY DESTINATION</p>
-					<div class="gold-line mt-4"></div>
-					<h2 id="stay-destinations-title" class="section-heading mt-5">Where would you like to wake up?</h2>
-					<p class="section-description mt-4 max-w-xl">Pick a park or island to see its lodges and camps, and the safaris that go there.</p>
+					<h2 id="stay-destinations-title" class="home-heading">Stays by destination</h2>
+					<p class="home-copy mt-3 max-w-xl">Pick a park or island to see its lodges and camps, and the safaris that go there.</p>
 				</div>
 				<ul class="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(210px,1fr))] lg:gap-6">
 					{#each places as place, i (place.id)}
@@ -156,6 +172,45 @@
 <SiteFooter visible={data.visible} destinations={data.destinations} onInterest={chooseInterest} {onPage} />
 
 <style>
+	.stays-results { padding-block: 64px 80px; background: #f7f5ef; }
+	.results-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+	.results-copy { margin: 10px 0 0; max-width: 40rem; color: var(--muted-foreground); font-size: 15px; line-height: 1.6; }
+	.filter-toggle { display: none; }
+	/* The style switcher: chips under a gliding marker (use:glide). */
+	.style-switch { display: flex; gap: 8px; margin-top: 28px; overflow-x: auto; scrollbar-width: none; }
+	.style-switch::-webkit-scrollbar { display: none; }
+	.style-switch :global(.glide-mark) { border-radius: 9px; background: var(--navy); box-shadow: 0 10px 20px -12px rgb(31 27 22 / 0.8); }
+	.style-switch a { position: relative; display: inline-flex; flex: none; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 9px; color: #5f584e; font-size: 14px; font-weight: 600; text-decoration: none; white-space: nowrap; -webkit-tap-highlight-color: transparent; transition: color 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+	.style-switch a::before { content: ''; position: absolute; inset: 0; z-index: -2; border-radius: inherit; background: #ebe6da; transition: background-color 0.2s ease; }
+	.style-switch a:hover { color: var(--navy); }
+	.style-switch a:hover::before { background: #e3ddcf; }
+	.style-switch a[aria-current='true'] { color: white; }
+	.style-switch a:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+	.style-switch .dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 2px rgb(255 255 255 / 0.6); }
+	.filters { margin-top: 20px; }
+	.active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 18px; }
+	.active-filters ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+	.active-filters ul a { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-height: 36px; padding: 0 12px; border-radius: 8px; background: white; box-shadow: 0 0 0 1px rgb(43 39 34 / 0.1); color: var(--navy); font-size: 12.5px; text-decoration: none; }
+	.active-filters ul a:hover { box-shadow: 0 0 0 1px rgb(43 39 34 / 0.3); }
+	.active-filters .kind { color: var(--muted-foreground); }
+	.active-filters .clear { color: var(--navy); font-size: 13px; font-weight: 700; text-decoration: none; }
+	.stay-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; margin-top: 36px; }
+	@media (max-width: 1023px) { .stay-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; } }
+	/* Phones: the search opens from a button, the styles scroll edge to edge and
+	   the stays become a list of rows. */
+	@media (max-width: 639px) {
+		.stays-results { padding-block: 44px 56px; }
+		.results-head { flex-direction: column; align-items: stretch; gap: 16px; }
+		.filter-toggle { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; border: 0; border-radius: 10px; background: white; box-shadow: 0 0 0 1px rgb(43 39 34 / 0.12); color: var(--navy); font-size: 14px; font-weight: 600; cursor: pointer; }
+		.filter-toggle[aria-expanded='true'] { box-shadow: 0 0 0 1.5px var(--navy); }
+		.filter-count { display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 6px; background: var(--sun); font-size: 12px; font-weight: 700; }
+		.style-switch { margin: 20px -1rem 0; padding: 2px 1rem; }
+		.filters:not(.open) { display: none; }
+		.filters.open { animation: filters-in 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+		.stay-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 22px; }
+	}
+	@keyframes filters-in { from { opacity: 0; translate: 0 -6px; } }
+	@media (prefers-reduced-motion: reduce) { .filters.open { animation: none; } .style-switch a { transition: none; } }
 	.place-link { display: inline-flex; min-height: 2.5rem; align-items: center; gap: 0.35rem; border: 1px solid var(--border); border-radius: var(--radius-surface); padding: 0 0.85rem; color: var(--navy); font-size: 12px; font-weight: 600; transition: background 160ms ease-out, border-color 160ms ease-out; }
 	.place-link:hover { border-color: color-mix(in oklch, var(--navy) 30%, transparent); background: var(--secondary); }
 	.place-link-primary { border-color: var(--sun); background: var(--sun); }

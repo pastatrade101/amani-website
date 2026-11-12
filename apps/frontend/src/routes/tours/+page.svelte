@@ -86,8 +86,7 @@
 		<div class="page-container">
 			<div data-motion="reveal" class="flex flex-wrap items-end justify-between gap-5">
 				<div class="min-w-0 max-w-2xl">
-					<p class="eyebrow text-muted-foreground">{filtered ? 'YOUR SEARCH' : 'ALL ITINERARIES'}</p>
-					<h2 id="tour-results-title" class="section-heading mt-3">{heading}</h2>
+					<h2 id="tour-results-title" class="section-heading">{heading}</h2>
 					{#if chips.length}
 						<ul class="mt-4 flex flex-wrap gap-2" aria-label="Active filters">
 							{#each chips as chip (chip.key)}
@@ -103,10 +102,9 @@
 				{#each data.tours as tour, i (tour.id)}
 					<TourCard {tour} photo={photos[i]} />
 				{:else}
-					<div data-motion="image" class="col-span-full grid overflow-hidden rounded-2xl border border-border bg-white md:grid-cols-2">
+					<div data-motion="image" class="col-span-full grid overflow-hidden rounded-[12px] border border-border bg-white md:grid-cols-2">
 						<img src={PHOTO.balloonsDawn} alt="Hot air balloons drifting over the Serengeti at sunrise" loading="lazy" class="h-60 w-full object-cover md:h-full md:min-h-80" />
 						<div class="flex flex-col items-start justify-center p-7 md:p-10">
-							<span class="eyebrow text-muted-foreground">MADE AROUND YOU</span>
 							<h3 class="mt-4 max-w-md text-2xl font-semibold tracking-tight md:text-3xl">{data.toursUnavailable ? 'Your safari starts with a conversation' : filtered ? 'No safaris match your search yet' : 'New itineraries are on their way'}</h3>
 							<p class="mt-4 max-w-md text-sm leading-7 text-muted-foreground">{data.toursUnavailable ? 'We can’t display our published itineraries right now. Share the places and experiences on your wish list, and let’s plan a personal Tanzania journey.' : filtered ? 'Try a different destination or style, or let us create a trip around your interests.' : 'Tell us the places and experiences on your wish list, and we’ll plan a Tanzania journey around them.'}</p>
 							<div class="mt-6 flex flex-wrap gap-3">

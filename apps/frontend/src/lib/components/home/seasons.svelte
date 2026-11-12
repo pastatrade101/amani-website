@@ -11,7 +11,7 @@
 	let strip = $derived(monthStrip(seasons));
 </script>
 <section id="when-to-go" class="page-container py-14 md:py-20">
-	<div data-motion="reveal" class="mx-auto max-w-2xl text-center"><p class="eyebrow text-muted-foreground">{section.subtitle}</p><div class="gold-line mx-auto mt-4"></div><h2 class="section-heading mt-4">{section.title}</h2><p class="mt-4 text-sm leading-relaxed text-muted-foreground md:text-base">{textContent(section.content)}</p></div>
+	<div data-motion="reveal" class="mx-auto max-w-2xl text-center"><h2 class="section-heading">{section.title}</h2><p class="mt-4 text-sm leading-relaxed text-muted-foreground md:text-base">{textContent(section.content)}</p></div>
 	{#if seasons.length}
 		<ol aria-label="Seasons by month" class="mt-9 grid grid-cols-6 overflow-hidden rounded-xl md:grid-cols-12">
 			{#each strip as month}<li title={month.season?.name} class={`border-r border-white py-3 text-center text-[12px] font-semibold tracking-wider ${month.season ? seasonTone(month.season.tone).strip : UNASSIGNED_MONTH}`}>{month.label}</li>{/each}

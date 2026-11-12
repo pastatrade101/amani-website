@@ -325,7 +325,12 @@ a[data-slot="button"]:hover svg:last-child { translate: 2px 0; }
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root) { animation: 160ms cubic-bezier(0.4, 0, 1, 1) both vt-fade-out; }
   ::view-transition-new(root) { animation: 360ms cubic-bezier(0.22, 1, 0.36, 1) both vt-rise-in; }
-  ::view-transition-group(tab-mark) { animation-duration: 0.55s; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+  ::view-transition-group(tab-mark) { animation-duration: 0.5s; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+  /* The marker is one block of colour: move it, never cross-fade it. */
+  ::view-transition-old(tab-mark) { display: none; }
+  ::view-transition-new(tab-mark) { animation: none; }
+  /* The header and tab bar stay put while the page changes under them. */
+  ::view-transition-group(site-header), ::view-transition-group(app-tabs) { animation-duration: 0.3s; }
   @keyframes vt-fade-out { to { opacity: 0; } }
   @keyframes vt-rise-in { from { opacity: 0; transform: translateY(12px); } }
 }

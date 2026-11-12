@@ -56,4 +56,10 @@
 		.score-value { font-size: 44px; }
 		.reviews-aside .home-see-all { margin-top: 0; font-size: 13px; }
 	}
+	/* Phones: the score above the link, so neither squeezes the other. */
+	@media (max-width: 480px) {
+		.reviews-aside { grid-template-columns: minmax(0, 1fr); }
+		.score { margin-top: 18px; }
+		.reviews-aside .home-see-all { margin-top: 14px; }
+	}
 </style>

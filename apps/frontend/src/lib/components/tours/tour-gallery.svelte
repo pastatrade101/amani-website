@@ -26,8 +26,7 @@
 
 <div data-motion="reveal" class="flex flex-wrap items-end justify-between gap-4">
 	<div class="max-w-2xl">
-		<p class="eyebrow text-muted-foreground">Gallery</p>
-		<h2 class="section-heading mt-3">Moments from this safari</h2>
+		<h2 class="section-heading">Moments from this safari</h2>
 	</div>
 	<p class="flex items-center gap-2 text-xs text-muted-foreground"><Images class="size-4" aria-hidden="true" />{photos.length} {photos.length === 1 ? 'photo' : 'photos'}</p>
 </div>

@@ -8,6 +8,9 @@ export const load: PageServerLoad = async ({fetch,url,setHeaders}) => {
   const [chrome,catalogue]=await Promise.all([loadSiteChrome(fetch),destinationCatalogue(fetch).catch(()=>null)]);
   const all=catalogue??[];
   const filtered=filterDestinations(all,url.searchParams);
+  // Places with their own photo lead the list; those still waiting for one follow, in the CMS order.
+  const pictured=(d:(typeof all)[number])=>!!(d.main_image_url||d.image_url||d.banner_image_url);
+  filtered.items=[...filtered.items.filter(pictured),...filtered.items.filter(d=>!pictured(d))];
   const page=Math.min(10000,Math.max(1,Math.floor(Number(url.searchParams.get('page')))||1));
   return {chrome,siteOrigin:url.origin,unavailable:catalogue===null,filters:{search:filtered.search,country:filtered.country,circuit:filtered.circuit},
     countries:[...new Set(all.map(d=>d.country).filter((v):v is string=>!!v))].sort(),

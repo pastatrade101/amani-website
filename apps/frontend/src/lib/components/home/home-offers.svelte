@@ -1,11 +1,12 @@
 <script lang="ts">
-	import { ArrowRight } from '@lucide/svelte';
+	import { ArrowRight, MapPin } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { PHOTO } from '$lib/media-photos';
 	import { safeUrl, textContent } from '$lib/home-content';
 	import { offerHref, offerLabel, offerRowsFor, refreshSections } from '$lib/homepage-refresh';
 	import { scrollcraft } from '$lib/motion/scrollcraft';
 	import { glide } from '$lib/motion/glide';
+	import { rail, steer } from '$lib/motion/rail';
 	import type { Category, Destination, HomepageSection } from '$lib/types/api';
 
 	// "What we offer": the four journeys travellers ask about most, each told by
@@ -26,6 +27,7 @@
 	const extra = (key: string) => String(section.extra_data?.[key] ?? fallback?.extra_data?.[key] ?? '').trim();
 	// The opening paragraph tells the journey; the rest waits behind its link.
 	const lead = (text: string) => text.split(/\n\s*\n/).map((part) => textContent(part)).find(Boolean) ?? '';
+	const where = (row: { facts?: { label: string; value: string }[] }) => row.facts?.find((fact) => /where/i.test(fact.label))?.value ?? '';
 	let ctaHref = $derived.by(() => {
 		const target = safeUrl(section.button_url, '#plan-form');
 		return target === '#plan-form' && !canEnquire ? '/plan-my-trip' : target;
@@ -36,17 +38,6 @@
 	let fills = $state<number[]>([]);
 	let act = $state<HTMLElement>();
 	let list = $state<HTMLOListElement>();
-	let switcher = $state<HTMLDivElement>();
-
-	// Phones: when the switcher is wider than the screen, the chosen journey
-	// scrolls to its middle.
-	$effect(() => {
-		const i = active;
-		if (live || !switcher || switcher.scrollWidth <= switcher.clientWidth) return;
-		const button = switcher.querySelectorAll('button')[i];
-		if (!button) return;
-		switcher.scrollTo({ left: button.offsetLeft + button.offsetWidth / 2 - switcher.clientWidth / 2, behavior: reduced() ? 'instant' : 'smooth' });
-	});
 
 	// Cue windows in act progress: each journey owns an equal share, fading in
 	// over the first 16% of its share and out over the last 16%. The first is
@@ -95,23 +86,10 @@
 			scrollTo({ top: top + (travel * (i + 0.5)) / rows.length, behavior: instant || reduced() ? 'instant' : 'smooth' });
 			return;
 		}
-		const card = list?.children[i] as HTMLElement | undefined;
-		if (!list || !card) return;
+		// Phones: the chosen card glides to the middle; the tabs stay on it
+		// rather than flickering through the cards it passes.
 		active = i;
-		// The chosen card comes to the middle of the screen.
-		const box = card.getBoundingClientRect(), row = list.getBoundingClientRect();
-		const left = list.scrollLeft + box.left + box.width / 2 - (row.left + list.clientWidth / 2);
-		list.scrollTo({ left, behavior: reduced() ? 'instant' : 'smooth' });
-	}
-
-	// Phones: which card the row is resting on. The row's side padding centres
-	// card i exactly when it has scrolled i card-steps.
-	function settle() {
-		if (live || !list) return;
-		const first = list.children[0] as HTMLElement | undefined;
-		if (!first || list.scrollWidth <= list.clientWidth) return;
-		const step = first.offsetWidth + parseFloat(getComputedStyle(list).columnGap || '0');
-		active = Math.min(rows.length - 1, Math.max(0, Math.round(list.scrollLeft / step)));
+		steer(list, i);
 	}
 
 	// Keyboard: tabbing into a journey that is not on screen brings it there.
@@ -143,19 +121,20 @@
 					</div>
 
 					{#if rows.length > 1}
-						<div class="offers-switch" role="group" aria-label="Choose a safari" bind:this={switcher} use:glide>
+						<div class="offers-switch" role="group" aria-label="Choose a safari" use:glide={{ center: !live }}>
 							{#each rows as row, i (row.title)}
 								<button type="button" style={`--fill:${fills[i] ?? 0}`} aria-current={active === i ? 'true' : undefined} aria-controls={`journey-${i}`} onclick={() => go(i)}><span class="track" aria-hidden="true"><span class="fill"></span></span>{offerLabel(row)}</button>
 							{/each}
 						</div>
 					{/if}
 
-					<ol class="journeys" bind:this={list} onscroll={settle} onfocusin={reach}>
+					<ol class="journeys" bind:this={list} onfocusin={reach} use:rail={{ onIndex: (i) => { if (!live) active = i; } }}>
 						{#each rows as row, i (row.title)}
 							{@const href = offerHref(row, categories, destinations)}
-							<li id={`journey-${i}`} class="journey" class:current={!live && active === i} data-sc-cue={cue(i)}>
+							<li id={`journey-${i}`} class="journey" data-sc-cue={cue(i)}>
 								<a class="journey-photo" {href} tabindex="-1" aria-hidden="true"><img src={safeUrl(row.image, PHOTO.popUpRoofView)} alt="" loading="lazy" width="1200" height="900" /></a>
 								<div class="journey-copy">
+									{#if where(row)}<p class="journey-where"><MapPin aria-hidden="true" />{where(row)}</p>{/if}
 									<h3>{row.title}</h3>
 									{#if lead(row.text)}<p class="journey-text">{lead(row.text)}</p>{/if}
 									{#if row.facts?.length}
@@ -189,36 +168,45 @@
 	.offers-photos { display: none; }
 	.journeys { margin: 40px 0 0; padding: 0; list-style: none; }
 
-	/* ---- The photo card: the photo on top with nothing written over it, then
-	   the title, three lines of story and the way in, on a dark panel ---- */
-	.journey { position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: var(--radius-surface); background: #221e19; color: white; }
-	.journey-photo { position: relative; display: block; flex: none; aspect-ratio: 4 / 3; overflow: hidden; background: #2b2722; }
+	/* ---- The photo card: a dark card that frames its photo like a print, with
+	   nothing written over the picture. Under it: where it happens, the title,
+	   three lines of story and the way in. ---- */
+	.journey { position: relative; display: flex; flex-direction: column; padding: 8px; overflow: hidden; border-radius: 14px; background: #221e19; color: white; box-shadow: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 28px 50px -34px rgb(31 27 22 / 0.75); }
+	.journey-photo { position: relative; display: block; flex: none; aspect-ratio: 5 / 4; overflow: hidden; border-radius: 9px; background: #2b2722; }
 	.journey-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
-	.journey:hover .journey-photo img { transform: scale(1.04); }
-	.journey-copy { display: flex; flex: 1; flex-direction: column; padding: 24px 28px 26px; }
-	h3 { margin: 0; font-size: clamp(24px, 2.2vw, 30px); font-weight: 600; line-height: 1.15; letter-spacing: -0.025em; color: inherit; text-wrap: balance; }
-	.journey-text { display: -webkit-box; margin: 10px 0 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; font-size: 15px; line-height: 1.6; color: rgb(255 255 255 / 0.78); }
+	/* A hairline inside the frame keeps light photos from bleeding into the mat. */
+	.journey-photo::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08); pointer-events: none; }
+	@media (hover: hover) { .journey:hover .journey-photo img { transform: scale(1.04); } }
+	.journey-copy { display: flex; flex: 1; flex-direction: column; padding: 20px 14px 12px; }
+	.journey-where { display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0 0 10px; color: color-mix(in oklch, var(--sun) 78%, white); font-size: 12.5px; font-weight: 600; letter-spacing: 0.01em; }
+	.journey-where :global(svg) { flex: none; width: 14px; height: 14px; }
+	h3 { margin: 0; font-size: clamp(24px, 2.2vw, 30px); font-weight: 600; line-height: 1.12; letter-spacing: -0.025em; color: inherit; text-wrap: balance; }
+	.journey-text { display: -webkit-box; margin: 10px 0 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; font-size: 15px; line-height: 1.6; color: rgb(255 255 255 / 0.74); }
 	/* The button sits on the card's floor, so a row of cards lines up. */
 	.journey-foot { margin-top: auto; padding-top: 22px; }
-	.journey-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; margin: 20px 0 0; padding-top: 18px; border-top: 1px solid rgb(255 255 255 / 0.18); }
+	.journey-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; margin: 20px 0 0; padding-top: 18px; border-top: 1px solid rgb(255 255 255 / 0.16); }
 	.journey-facts div:nth-child(n + 3) { display: none; }
-	.journey-facts dt { font-size: 12px; font-weight: 500; color: rgb(255 255 255 / 0.62); }
+	.journey-facts dt { font-size: 12px; font-weight: 500; color: rgb(255 255 255 / 0.6); }
 	.journey-facts dd { margin: 3px 0 0; font-size: 14px; font-weight: 600; line-height: 1.4; color: white; }
-	.journey-link { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 20px; border-radius: var(--radius-control); background: var(--sun); color: #221e19; font-size: 14px; font-weight: 700; text-decoration: none; transition: background-color 0.2s ease; }
+	.journey-link { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 20px; border-radius: var(--radius-control); background: var(--sun); color: #221e19; font-size: 14px; font-weight: 700; text-decoration: none; transition: background-color 0.2s ease, transform 0.2s ease; }
 	.journey-link:hover { background: color-mix(in oklab, var(--sun) 90%, black); }
+	.journey-link:active { transform: scale(0.98); }
 	.journey-link :global(svg) { width: 16px; height: 16px; transition: transform 0.2s ease; }
 	.journey-link:hover :global(svg) { transform: translateX(3px); }
 	.journey-link:focus-visible { outline: 2px solid white; outline-offset: 3px; }
 
 	/* The switcher (phones and tablets): an edge-to-edge strip of tabs, each with
-	   room for its words. A dark marker glides to the chosen tab (use:glide) and
-	   the strip scrolls it to the middle. */
+	   room for its words. Each tab rests on a soft chip that sits beneath the
+	   dark marker, so as the marker glides over (use:glide) nothing switches on
+	   or off; only the words change colour. The strip scrolls its tab to the
+	   middle. */
 	.offers-switch { display: flex; gap: 8px; margin: 28px calc(50% - 50vw) 0; padding: 2px calc(50vw - 50%); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
 	.offers-switch::-webkit-scrollbar { display: none; }
-	.offers-switch :global(.glide-mark) { border-radius: 9px; background: var(--navy); box-shadow: 0 8px 18px -10px rgb(31 27 22 / 0.7); }
-	.offers-switch button { flex: none; min-height: 44px; padding: 0 20px; border: 1px solid #e3ddcf; border-radius: 9px; background: transparent; color: #5f584e; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; text-align: center; white-space: nowrap; cursor: pointer; transition: color 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s ease; }
-	.offers-switch button[aria-current='true'] { border-color: transparent; }
+	.offers-switch :global(.glide-mark) { border-radius: 9px; background: var(--navy); box-shadow: 0 10px 20px -12px rgb(31 27 22 / 0.8); }
+	.offers-switch button { position: relative; flex: none; min-height: 44px; padding: 0 20px; border: 0; border-radius: 9px; background: none; color: #5f584e; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; text-align: center; white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: color 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+	.offers-switch button::before { content: ''; position: absolute; inset: 0; z-index: -2; border-radius: inherit; background: #ebe6da; transition: background-color 0.2s ease; }
 	.offers-switch button:hover { color: var(--navy); }
+	.offers-switch button:hover::before { background: #e3ddcf; }
 	.offers-switch button[aria-current='true'] { color: white; }
 	.offers-switch button:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
 	.track { display: none; }
@@ -232,7 +220,9 @@
 		.offers:not(:global([data-sc-live])) .offers-switch { display: none; }
 		.offers:not(:global([data-sc-live])) .journeys { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 		.offers:not(:global([data-sc-live])) .journey-photo { aspect-ratio: 16 / 9; }
-		.offers:not(:global([data-sc-live])) .journey-copy { padding: 30px 36px 34px; }
+		.offers:not(:global([data-sc-live])) .journey { padding: 10px; }
+		.offers:not(:global([data-sc-live])) .journey-copy { padding: 26px 26px 18px; }
+		.offers:not(:global([data-sc-live])) .journey-where { display: none; }
 		.offers:not(:global([data-sc-live])) .journey-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 		.offers:not(:global([data-sc-live])) .journey-facts div:nth-child(n + 3) { display: block; }
 		.offers:not(:global([data-sc-live])) .journey-link { width: fit-content; }
@@ -250,7 +240,8 @@
 	/* Dark only where the words sit: the left side and the story bar. */
 	.offers:global([data-sc-live]) .offers-scrim { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(22 19 15 / 0.9) 0%, rgb(22 19 15 / 0.8) 22%, rgb(22 19 15 / 0.52) 40%, rgb(22 19 15 / 0.18) 56%, rgb(22 19 15 / 0) 68%), linear-gradient(0deg, rgb(22 19 15 / 0.72) 0%, rgb(22 19 15 / 0.3) 14%, rgb(22 19 15 / 0) 28%); }
 	.offers:global([data-sc-live]) .journeys { position: absolute; inset: 0 auto 120px 0; display: grid; align-items: center; width: min(50%, 640px); margin: 0; padding-left: clamp(40px, 5.5vw, 88px); }
-	.offers:global([data-sc-live]) .journey { grid-area: 1 / 1; display: block; min-height: 0; overflow: visible; border-radius: 0; background: none; }
+	.offers:global([data-sc-live]) .journey { grid-area: 1 / 1; display: block; min-height: 0; padding: 0; overflow: visible; border-radius: 0; background: none; box-shadow: none; }
+	.offers:global([data-sc-live]) .journey-where { display: none; }
 	.offers:global([data-sc-live]) .journey-photo { display: none; }
 	.offers:global([data-sc-live]) .journey-copy { display: block; padding: 0; }
 	.offers:global([data-sc-live]) h3 { font-size: clamp(36px, 5.2vh, 56px); line-height: 1.05; letter-spacing: -0.035em; }
@@ -260,26 +251,27 @@
 	.offers:global([data-sc-live]) .journey-foot { padding-top: 30px; }
 	/* The story bar: one track per journey, filling with the scroll. */
 	.offers:global([data-sc-live]) .offers-switch { position: absolute; inset: auto clamp(40px, 5.5vw, 88px) 34px; display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: 24px; margin: 0; padding: 0; overflow: visible; }
-	.offers:global([data-sc-live]) .offers-switch :global(.glide-mark) { display: none; }
+	.offers:global([data-sc-live]) .offers-switch :global(.glide-mark), .offers:global([data-sc-live]) .offers-switch button::before { display: none; }
 	.offers:global([data-sc-live]) .offers-switch button { display: grid; gap: 14px; justify-items: start; min-height: 52px; padding: 0; border: 0; border-radius: 0; background: none; color: rgb(255 255 255 / 0.6); font-size: 15px; text-align: left; transition: color 0.4s ease; }
 	.offers:global([data-sc-live]) .offers-switch button:hover, .offers:global([data-sc-live]) .offers-switch button[aria-current='true'] { color: white; }
 	.offers:global([data-sc-live]) .track { position: relative; display: block; width: 100%; height: 2px; overflow: hidden; border-radius: 2px; background: rgb(255 255 255 / 0.24); }
 	.offers:global([data-sc-live]) .fill { position: absolute; inset: 0; background: white; transform: scaleX(var(--fill, 0)); transform-origin: left; }
 	.offers:global([data-sc-live]) .offers-cta { width: 84%; max-width: var(--page-max); margin: 56px auto 0; }
 
-	/* ---- Phones and tablets: the switcher over a row of swipeable cards. The
-	   chosen card rests in the middle with its neighbours peeking either side;
-	   the neighbours sit back a little until they are chosen. ---- */
+	/* ---- Phones and tablets: the switcher over a rail of swipeable cards. The
+	   chosen card rests in the middle with its neighbours peeking either side.
+	   use:rail tells each card how far it is from the middle, every frame, so
+	   the neighbours sit back and dim, and each photo drifts inside its frame,
+	   exactly with the finger. ---- */
 	@media (max-width: 1023px) {
 		.offers { padding-block: 56px; }
 		.offers-frame { width: 90%; }
-		.journeys { --card: min(82vw, 400px); display: flex; gap: 12px; margin: 18px calc(50% - 50vw) 0; padding: 4px calc((100vw - var(--card)) / 2) 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; }
+		.journeys { --card: min(80vw, 400px); display: flex; gap: 10px; margin: 18px calc(50% - 50vw) 0; padding: 6px calc((100vw - var(--card)) / 2) 14px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; }
 		.journeys::-webkit-scrollbar { display: none; }
-		.journey { flex: 0 0 var(--card); scroll-snap-align: center; scroll-snap-stop: always; transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease; }
-		.journey:not(.current) { transform: scale(0.94); opacity: 0.72; }
-		.journey-copy { padding: 20px 20px 20px; }
+		.journey { flex: 0 0 var(--card); scroll-snap-align: center; scroll-snap-stop: always; scale: calc(1 - var(--rail-abs, 0) * 0.05); opacity: calc(1 - var(--rail-abs, 0) * 0.35); }
+		.journey-photo img { transform: translateX(calc(var(--rail, 0) * -10%)) scale(1.22); transition: none; }
 		h3 { font-size: 24px; }
-		/* On a phone the card says only what it needs: the facts live on the
+		/* On a phone the card says only what it needs: the rest lives on the
 		   safari's own page. */
 		.journey-facts { display: none; }
 		.journey-foot { padding-top: 20px; }
@@ -290,7 +282,8 @@
 	@media (min-width: 768px) and (max-width: 1023px) { .offers-frame { width: 84%; } .journeys { --card: min(56vw, 420px); } }
 	@media (max-width: 380px) { .offers-switch button { padding: 0 16px; } }
 	@media (prefers-reduced-motion: reduce) {
-		.journey-photo img, .journey-link :global(svg), .journey { transition: none; }
-		.journey:hover .journey-photo img, .journey-link:hover :global(svg), .journey:not(.current) { transform: none; }
+		.journey-photo img, .journey-link :global(svg), .offers-switch button { transition: none; }
+		.journey-photo img, .journey:hover .journey-photo img, .journey-link:hover :global(svg) { transform: none; }
+		.journey { scale: none; }
 	}
 </style>

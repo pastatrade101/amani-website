@@ -40,7 +40,7 @@
 	let type = $derived(stayTypeLabel(stay.lodge_type));
 	let location = $derived(stayLocation(stay));
 	let standIn = $derived(cover ? null : stayPhoto(stay, destination));
-	const pill = 'inline-flex h-7 items-center gap-2 rounded-md px-3 text-[12px] font-semibold uppercase tracking-[.12em] ring-1';
+	const tag = 'inline-flex h-7 items-center gap-2 rounded-[6px] px-2.5 text-[12.5px] font-semibold ring-1';
 </script>
 
 {#snippet crumbs(light: boolean)}
@@ -61,9 +61,9 @@
 
 {#snippet badges(light: boolean)}
 	<ul data-motion="hero" class={`flex flex-wrap items-center gap-2 ${light ? '' : 'justify-center'}`} aria-label="Style and type">
-		<li><span class={`${pill} ${light ? 'bg-white/15 text-white ring-white/20 backdrop-blur' : 'bg-white text-navy ring-navy/10'}`}><span class="size-2 rounded-full" style={`background:${dot}`} aria-hidden="true"></span>{stayStyleLabel(stay)}</span></li>
-		{#if type}<li><span class={`${pill} ${light ? 'bg-white/15 text-white ring-white/20 backdrop-blur' : 'bg-white text-navy ring-navy/10'}`}>{type}</span></li>{/if}
-		{#if stay.is_featured}<li><span class={`${pill} bg-sun text-navy ring-sun`}>Featured</span></li>{/if}
+		<li><span class={`${tag} ${light ? 'bg-white/15 text-white ring-white/20 backdrop-blur' : 'bg-white text-navy ring-navy/10'}`}><span class="size-2 rounded-full" style={`background:${dot}`} aria-hidden="true"></span>{stayStyleLabel(stay)}</span></li>
+		{#if type}<li><span class={`${tag} ${light ? 'bg-white/15 text-white ring-white/20 backdrop-blur' : 'bg-white text-navy ring-navy/10'}`}>{type}</span></li>{/if}
+		{#if stay.is_featured}<li><span class={`${tag} bg-sun text-navy ring-sun`}>Featured</span></li>{/if}
 	</ul>
 {/snippet}
 
@@ -80,14 +80,13 @@
 			<div class="mt-auto flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
 				<div class="min-w-0 max-w-4xl">
 					{@render badges(true)}
-					<div data-motion="line" data-motion-delay="0.1" class="mt-6 h-0.5 w-16 bg-sun"></div>
 					<h1 id="stay-title" data-motion="hero-title" class="mt-5 font-display text-[36px] leading-[1.06] font-semibold tracking-[-.03em] text-balance sm:text-[52px] lg:text-[68px]">{stay.name}</h1>
 					{#if location}<p data-motion="hero" data-motion-delay="0.15" class="mt-5 flex items-start gap-2 text-sm text-white/85 md:text-base"><MapPin class="mt-0.5 size-4 shrink-0 text-sun" aria-hidden="true" />{location}</p>{/if}
 				</div>
 				{#if photos.length > 1 || canEnquire}
-					<div data-motion="hero" data-motion-delay="0.2" class="flex shrink-0 flex-wrap items-center gap-3">
+					<div data-motion="hero" data-motion-delay="0.2" class="flex shrink-0 items-center gap-3">
 						{#if photos.length > 1}
-							<button type="button" onclick={(event) => onOpenPhotos(0, event.currentTarget)} class="inline-flex h-12 items-center gap-2 rounded-md bg-white/10 px-5 text-sm font-medium text-white ring-1 ring-white/30 backdrop-blur transition-colors hover:bg-white/20"><Images class="size-4" aria-hidden="true" />View all {photos.length} photos</button>
+							<button type="button" onclick={(event) => onOpenPhotos(0, event.currentTarget)} class="inline-flex h-12 shrink-0 items-center gap-2 whitespace-nowrap rounded-[var(--radius-control)] bg-white/10 px-4 text-sm font-medium text-white ring-1 ring-white/30 backdrop-blur transition-colors hover:bg-white/20 sm:px-5"><Images class="size-4" aria-hidden="true" /><span class="sm:hidden">{photos.length} photos</span><span class="hidden sm:inline">View all {photos.length} photos</span></button>
 						{/if}
 						{#if canEnquire}<Button variant="safari" href={planHref({ stay: stay.slug, from: 'stay_page' })} data-cta="plan_my_trip" data-cta-location="stay_page" onclick={onEnquire} class="h-12 px-6 text-sm">Enquire about this stay <ArrowRight class="size-4" /></Button>{/if}
 					</div>
@@ -103,12 +102,11 @@
 				{@render badges(false)}
 				<h1 id="stay-title" data-motion="hero-title" class="mt-6 font-display text-[36px] leading-[1.06] font-semibold tracking-[-.03em] text-balance text-navy sm:text-[52px] lg:text-[68px]">{stay.name}</h1>
 				{#if location}<p data-motion="hero" data-motion-delay="0.1" class="mt-5 inline-flex items-start gap-2 text-sm text-muted-foreground md:text-base"><MapPin class="mt-0.5 size-4 shrink-0 text-[#D9A900]" aria-hidden="true" />{location}</p>{/if}
-				<div data-motion="line" data-motion-delay="0.1" class="gold-line mx-auto mt-6" style="transform-origin: center"></div>
 				{#if lead}<p data-motion="hero" data-motion-delay="0.15" class="mx-auto mt-7 max-w-[46ch] font-display text-[18px] leading-[1.6] text-navy/85 sm:text-[20px]">{lead}</p>{/if}
 				{#if canEnquire}<div data-motion="hero" data-motion-delay="0.2" class="mt-8"><Button variant="safari" href={planHref({ stay: stay.slug, from: 'stay_page' })} data-cta="plan_my_trip" data-cta-location="stay_page" onclick={onEnquire} class="h-12 px-6 text-sm">Enquire about this stay <ArrowRight class="size-4" /></Button></div>{/if}
 			</div>
 			{#if standIn?.kind === 'place'}
-				<div data-motion="image" class="relative mt-10 aspect-[4/3] overflow-hidden rounded-2xl bg-navy sm:aspect-[16/9] lg:aspect-[21/9]">
+				<div data-motion="image" class="relative mt-10 aspect-[4/3] overflow-hidden rounded-[12px] bg-navy sm:aspect-[16/9] lg:aspect-[21/9]">
 					<StayPhoto {stay} {destination} loading="eager" note="photos of the stay coming soon" />
 				</div>
 			{/if}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowRight, Route } from '@lucide/svelte';
+	import { ArrowRight, ChevronRight, Route } from '@lucide/svelte';
 	import StayPhoto from './stay-photo.svelte';
 	import { SAFARI_STYLE_THEME } from '$lib/safari-pricing';
 	import { variantsOf, srcsetFor } from '$lib/admin/img';
@@ -7,13 +7,17 @@
 	import { bestForLabels, stayStyle, stayStyleLabel, stayTypeLabel } from '$lib/stay-content';
 	import type { Destination, Stay } from '$lib/types/api';
 
-	// An editorial card: a tall photo with the style on it, then a serif title,
-	// a short excerpt and who it suits. Rows without data are left out. The
-	// title link covers the card.
-	let { stay, destination = null, headingLevel = 3 }: { stay: Stay; destination?: Destination | null; headingLevel?: 2 | 3 } = $props();
+	// A stay, framed: the photo with its style on it, then what kind of place it
+	// is and where, the name, a short excerpt and who it suits. Rows without
+	// data are left out. The title link covers the card.
+	//
+	// `compact` (the stays list): on phones the card becomes an app list row, a
+	// square photo beside the name, so a long list scans quickly and a missing
+	// photo is a small tile rather than a big empty frame.
+	let { stay, destination = null, headingLevel = 3, compact = false }: { stay: Stay; destination?: Destination | null; headingLevel?: 2 | 3; compact?: boolean } = $props();
 	let href = $derived(`/stays/${encodeURIComponent(stay.slug)}`);
 	let theme = $derived(SAFARI_STYLE_THEME[stayStyle(stay)]);
-	let kicker = $derived([stayTypeLabel(stay.lodge_type), stay.park_area?.trim() || stay.region?.trim()].filter(Boolean).join(' · '));
+	let kind = $derived([stayTypeLabel(stay.lodge_type), stay.park_area?.trim() || stay.region?.trim()].filter(Boolean).join(' · '));
 	let excerpt = $derived(textContent(stay.short_description));
 	let suits = $derived(bestForLabels(stay.best_for));
 	let tours = $derived(Math.max(0, Math.floor(Number(stay.tour_count) || 0)));
@@ -22,42 +26,80 @@
 	let srcset = $derived(srcsetFor(variantsOf(stay, photoField), 'webp'));
 </script>
 
-<!-- A framed card (the site-wide hover shadow needs an edge to sit on): photo flush to the top, padded copy below. -->
-<article data-motion="card" data-motion-hover="card" class="stay-card relative flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_18px_40px_-34px_rgb(39_36_31/.45)] ring-1 ring-navy/10">
-	<div class="relative isolate aspect-[5/4] overflow-hidden bg-navy">
-		<div class="stay-media absolute inset-0">
-			<StayPhoto {stay} {destination} {srcset} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />
+<article data-motion="card" data-motion-hover="card" class="stay-card" class:compact style={`--style-color:${theme.primary}`}>
+	<div class="stay-photo">
+		<div class="stay-media">
+			<StayPhoto {stay} {destination} {srcset} sizes={compact ? '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 120px' : '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw'} />
 		</div>
-		<span class="absolute top-3 left-3 z-[1] inline-flex h-7 items-center gap-2 rounded-md bg-white/90 px-3 text-[12px] font-semibold tracking-[.12em] text-navy uppercase backdrop-blur"><span class="style-dot" style={`background:${theme.primary}`} aria-hidden="true"></span><span class="sr-only">{'Style: '}</span>{stayStyleLabel(stay)}</span>
-		{#if stay.is_featured}<span class="absolute top-3 right-3 z-[1] inline-flex h-7 items-center rounded-md bg-sun px-3 text-[12px] font-semibold tracking-[.12em] text-navy uppercase">Featured</span>{/if}
+		<span class="stay-style"><span class="dot" aria-hidden="true"></span><span class="sr-only">{'Style: '}</span>{stayStyleLabel(stay)}</span>
+		{#if stay.is_featured}<span class="stay-featured">Featured</span>{/if}
 	</div>
-	<div class="flex flex-1 flex-col px-5 pt-5 pb-5 sm:px-6 sm:pt-6">
-		{#if kicker}<p class="text-[12px] font-medium tracking-[.16em] text-muted-foreground uppercase">{kicker}</p>{/if}
-		<svelte:element this={`h${headingLevel}`} class="mt-2 font-display text-[21px] leading-[1.2] font-semibold tracking-[-.02em] text-balance text-navy sm:text-[22px]"><a {href} class="stay-link">{stay.name}</a></svelte:element>
-		{#if excerpt}<p class="mt-3 line-clamp-3 text-sm leading-7 text-navy/70">{excerpt}</p>{/if}
-		{#if suits.length}<p class="mt-3 text-xs leading-5 text-muted-foreground"><span class="sr-only">{'Perfect for: '}</span>{suits.slice(0, 3).join(' · ')}{#if suits.length > 3}{` +${suits.length - 3}`}<span class="sr-only">{' more'}</span>{/if}</p>{/if}
-		<div class="mt-auto pt-5">
-			<div class="flex min-h-11 items-center justify-between gap-4">
-				{#if tours > 0}<span class="inline-flex items-center gap-2 text-[13px] text-muted-foreground"><Route class="size-4 shrink-0" strokeWidth={1.7} aria-hidden="true" />On {tours} {tours === 1 ? 'safari' : 'safaris'}</span>{/if}
-				<span class="stay-cta ml-auto inline-flex items-center gap-1.5 text-sm font-semibold text-navy" aria-hidden="true">Discover the stay<ArrowRight class="size-4" /></span>
-			</div>
+	<div class="stay-copy">
+		{#if kind}<p class="stay-kind">{kind}</p>{/if}
+		<svelte:element this={`h${headingLevel}`} class="stay-name"><a {href} class="stay-link">{stay.name}</a></svelte:element>
+		<!-- Phones, compact: the style rides under the name instead of on the photo. -->
+		<p class="stay-meta" aria-hidden="true"><span class="dot"></span>{stayStyleLabel(stay)}{#if tours > 0}<span class="sep">·</span>On {tours} {tours === 1 ? 'safari' : 'safaris'}{/if}</p>
+		{#if excerpt}<p class="stay-excerpt">{excerpt}</p>{/if}
+		{#if suits.length}<p class="stay-suits"><span class="sr-only">{'Perfect for: '}</span>{suits.slice(0, 3).join(' · ')}{#if suits.length > 3}{` +${suits.length - 3}`}<span class="sr-only">{' more'}</span>{/if}</p>{/if}
+		<div class="stay-foot">
+			{#if tours > 0}<span class="stay-tours"><Route class="size-4 shrink-0" strokeWidth={1.7} aria-hidden="true" />On {tours} {tours === 1 ? 'safari' : 'safaris'}</span>{/if}
+			<span class="stay-cta" aria-hidden="true">Discover the stay<ArrowRight class="size-4" /></span>
 		</div>
 	</div>
+	<span class="stay-chevron" aria-hidden="true"><ChevronRight class="size-5" /></span>
 </article>
 
 <style>
+	.stay-card { position: relative; display: flex; flex-direction: column; height: 100%; overflow: hidden; border-radius: 14px; background: white; box-shadow: 0 0 0 1px rgb(43 39 34 / 0.08), 0 18px 40px -34px rgb(39 36 31 / 0.45); }
+	.stay-photo { position: relative; isolation: isolate; aspect-ratio: 5 / 4; overflow: hidden; background: var(--navy); }
+	.stay-media { position: absolute; inset: 0; transition: scale 450ms cubic-bezier(0.22, 1, 0.36, 1); }
+	.stay-style, .stay-featured { position: absolute; top: 12px; z-index: 1; display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+	.stay-style { left: 12px; background: rgb(255 255 255 / 0.94); color: var(--navy); }
+	.stay-featured { right: 12px; background: var(--sun); color: var(--navy); }
+	.dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--style-color); }
+	.stay-copy { display: flex; flex: 1; flex-direction: column; padding: 20px 22px 20px; }
+	.stay-kind { margin: 0 0 6px; overflow: hidden; color: var(--muted-foreground); font-size: 12.5px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+	.stay-name { margin: 0; font-family: var(--font-display); font-size: 21px; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; color: var(--navy); text-wrap: balance; }
+	.stay-meta { display: none; }
+	.stay-excerpt { display: -webkit-box; margin: 10px 0 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; color: rgb(43 39 34 / 0.72); font-size: 14px; line-height: 1.65; }
+	.stay-suits { margin: 10px 0 0; color: var(--muted-foreground); font-size: 12.5px; line-height: 1.5; }
+	.stay-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; margin-top: auto; padding-top: 16px; }
+	.stay-tours { display: inline-flex; align-items: center; gap: 8px; color: var(--muted-foreground); font-size: 13px; }
+	.stay-cta { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; color: var(--navy); font-size: 14px; font-weight: 600; }
+	.stay-chevron { display: none; }
 	/* One link per card: the title link covers the whole card. */
+	.stay-link { color: inherit; text-decoration: none; }
 	.stay-link::after { content: ''; position: absolute; inset: 0; z-index: 2; }
 	.stay-link:focus-visible { outline: none; }
-	:global(.stay-card:has(.stay-link:focus-visible)) { outline: 3px solid var(--sun); outline-offset: 4px; }
-	.style-dot { width: 0.5rem; height: 0.5rem; flex-shrink: 0; border-radius: 999px; }
-	.stay-media { transition: scale 450ms ease-out; }
-	:global(.stay-card:hover) .stay-media { scale: 1.04; }
+	.stay-card:has(.stay-link:focus-visible) { outline: 3px solid var(--sun); outline-offset: 4px; }
 	.stay-cta :global(svg) { transition: translate 180ms ease-out; }
-	:global(.stay-card:hover) .stay-cta :global(svg) { translate: 3px 0; }
+	@media (hover: hover) {
+		.stay-card:hover .stay-media { scale: 1.04; }
+		.stay-card:hover .stay-cta :global(svg) { translate: 3px 0; }
+	}
+
+	/* Phones, compact: one row per stay. */
+	@media (max-width: 639px) {
+		.compact { flex-direction: row; align-items: center; gap: 14px; height: auto; padding: 10px 40px 10px 10px; border-radius: 12px; transition: scale 0.18s ease; }
+		.compact:active { scale: 0.985; }
+		.compact .stay-photo { flex: none; width: 104px; aspect-ratio: 1; border-radius: 9px; }
+		.compact .stay-style, .compact .stay-featured { display: none; }
+		/* A park landscape stands in for missing rooms: the pin still says so. */
+		.compact :global(.place-label) { left: 6px; bottom: 6px; max-width: none; padding: 4px; }
+		.compact :global(.place-label > span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+		.compact :global(.placeholder-text) { display: none; }
+		.compact :global(.placeholder-mark) { width: 40px; height: 40px; }
+		.compact .stay-copy { min-width: 0; padding: 0; }
+		.compact .stay-kind { margin-bottom: 4px; font-size: 12px; }
+		.compact .stay-name { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; font-size: 16.5px; line-height: 1.25; }
+		.compact .stay-meta { display: flex; align-items: center; gap: 6px; margin: 7px 0 0; color: var(--muted-foreground); font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+		.compact .stay-meta .sep { color: #c9c2b4; }
+		.compact .stay-excerpt, .compact .stay-suits, .compact .stay-foot { display: none; }
+		.compact .stay-chevron { position: absolute; right: 12px; top: 50%; display: grid; color: #b3ab9c; translate: 0 -50%; }
+	}
 	@media (prefers-reduced-motion: reduce) {
-		.stay-media, .stay-cta :global(svg) { transition: none; }
-		:global(.stay-card:hover) .stay-media { scale: none; }
-		:global(.stay-card:hover) .stay-cta :global(svg) { translate: none; }
+		.stay-media, .stay-cta :global(svg), .compact { transition: none; }
+		.stay-card:hover .stay-media, .compact:active { scale: none; }
+		.stay-card:hover .stay-cta :global(svg) { translate: none; }
 	}
 </style>

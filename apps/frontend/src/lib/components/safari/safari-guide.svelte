@@ -76,7 +76,6 @@
 {#if articles.length > 1}
 	<section id="before-you-book" class="sp-section sp-cream guide" aria-labelledby="guide-title">
 		<div class="sp-head guide-heading">
-			<p class="sp-eyebrow">Plan with confidence</p>
 			<h2 id="guide-title" class="sp-h2">Important information before you book</h2>
 			<p class="sp-sub">The practical details of the {tour.title}, gathered in one place.</p>
 		</div>

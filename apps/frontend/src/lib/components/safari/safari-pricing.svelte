@@ -67,7 +67,6 @@
 <section id="prices" class="sp-section pricing" aria-labelledby="pricing-title">
 	<div class="sp-head pricing-top">
 		<div>
-			<p class="sp-eyebrow">Choose your travel style</p>
 			<h2 id="pricing-title" class="sp-h2">Safari packages &amp; pricing</h2>
 			<p class="sp-sub">{rows.length > 1 ? `One journey. ${rows.length === 2 ? 'Two' : 'Three'} ways to experience it.` : rows.length ? 'Per-person prices by the size of your group.' : 'Share your dates, group size and preferred comfort level for a personal quotation.'}</p>
 		</div>
@@ -186,7 +185,7 @@
 	.dots b { margin-left: 1px; font-size: 11px; font-weight: 700; line-height: 1; color: #a8946a; }
 	.amount { font-size: 22px; font-weight: 650; line-height: 1.15; letter-spacing: -0.02em; color: var(--sp-ink); font-variant-numeric: tabular-nums; }
 	.pp { font-size: 12px; color: var(--sp-muted); }
-	.best-tag { position: absolute; top: 12px; right: 12px; padding: 3px 8px; border-radius: 5px; background: var(--sp-sun); font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #2b2722; }
+	.best-tag { position: absolute; top: 12px; right: 12px; padding: 3px 8px; border-radius: 5px; background: var(--sp-sun); font-size: 13px; font-weight: 700; color: #2b2722; }
 
 	.select-package { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 46px; padding: 11px 20px; border: 1px solid var(--sp-line); border-radius: var(--radius-control); background: #fff; color: var(--sp-ink); font: 700 14px var(--sp-sans); cursor: pointer; transition: background-color 0.2s ease, border-color 0.2s ease; }
 	.select-package:hover { border-color: #cfc6b2; }

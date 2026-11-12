@@ -8,8 +8,11 @@
  * an ease-out when the state moves. Style it per component with
  * `:global(.glide-mark)`; give the active item a transparent background.
  * The motion itself lives in layout.css (`.glide-mark`), reduced-motion aware.
+ *
+ * `center`: when the group scrolls sideways (a strip of tabs on a phone), the
+ * active item is brought to the middle whenever it changes.
  */
-type Options = { selector?: string; name?: string };
+type Options = { selector?: string; name?: string; center?: boolean };
 
 const ACTIVE = '[aria-current="true"], [aria-current="page"], [aria-selected="true"], [aria-pressed="true"], [data-state="active"], [data-state="on"]';
 
@@ -23,6 +26,7 @@ export function glide(node: HTMLElement, options: Options = {}) {
 	node.prepend(mark);
 
 	let frame = 0;
+	let current: HTMLElement | null = null;
 	function place() {
 		const item = node.querySelector<HTMLElement>(options.selector ?? ACTIVE);
 		if (!item) {
@@ -37,6 +41,11 @@ export function glide(node: HTMLElement, options: Options = {}) {
 		mark.style.height = `${it.height}px`;
 		mark.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 		mark.style.opacity = '1';
+		if (options.center && item !== current && node.scrollWidth > node.clientWidth + 1) {
+			const still = !current || matchMedia('(prefers-reduced-motion: reduce)').matches;
+			node.scrollTo({ left: x + it.width / 2 - node.clientWidth / 2, behavior: still ? 'instant' : 'smooth' });
+		}
+		current = item;
 	}
 	const schedule = () => {
 		cancelAnimationFrame(frame);

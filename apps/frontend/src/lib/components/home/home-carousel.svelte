@@ -2,6 +2,7 @@
   import { onMount, type Snippet } from 'svelte';
   import { ChevronLeft, ChevronRight } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
+  import { rail } from '$lib/motion/rail';
   // `head` is the section's heading: when given, it sits on the left of one row
   // with `actions` and the arrows on the right, all on the heading's last line.
   let {items, label, card, columns=4, head, actions}: {items:T[];label:string;card:Snippet<[T,number]>;columns?:number;head?:Snippet;actions?:Snippet}=$props();
@@ -20,7 +21,7 @@
   {:else}
     <div class="controls">{@render arrows()}</div>
   {/if}
-  <ul {id} bind:this={track} onscroll={update} onscrollend={()=>{target=track?.scrollLeft??0;update();}} onpointerdown={()=>target=track?.scrollLeft??0} onwheel={()=>target=track?.scrollLeft??0} class="track">
+  <ul {id} bind:this={track} onscroll={update} onscrollend={()=>{target=track?.scrollLeft??0;update();}} onpointerdown={()=>target=track?.scrollLeft??0} onwheel={()=>target=track?.scrollLeft??0} class="track" use:rail>
     {#each items as item,i}<li class="slide" aria-label={`${i+1} of ${items.length}`}>{@render card(item,i)}</li>{/each}
   </ul>
 </div>
@@ -31,7 +32,9 @@
  @media(max-width:1023px){.slide{flex-basis:calc((100% - 24px)/2)}}
  /* Touch screens swipe; the arrows are for a mouse. */
  @media(hover:none){.arrows,.divider,.controls{display:none}}
- /* Phones: an app rail. It runs edge to edge (the home container leaves a 5vw
-    gutter), cards snap to the gutter and the next one peeks in. */
- @media(max-width:767px){.carousel-head{flex-direction:column;align-items:stretch;gap:14px;margin-bottom:20px}.head-actions{justify-content:flex-start}.divider,.arrows{display:none}.track{gap:14px;margin-inline:-5vw;padding:4px 5vw 14px;scroll-padding-inline:5vw}.slide{flex-basis:80%}}
+ /* Phones: an app rail. It runs edge to edge, the card in view rests in the
+    middle with its neighbours peeking in, and they sit back a little in step
+    with the finger (use:rail sets --rail-abs on each slide). */
+ @media(max-width:767px){.carousel-head{flex-direction:column;align-items:stretch;gap:14px;margin-bottom:20px}.head-actions{justify-content:flex-start}.divider,.arrows{display:none}.track{--card:min(78vw,360px);gap:10px;margin-inline:calc(50% - 50vw);padding:6px calc((100vw - var(--card))/2) 14px;scroll-padding-inline:0}.slide{flex-basis:var(--card);scroll-snap-align:center;scroll-snap-stop:always;scale:calc(1 - var(--rail-abs,0)*.05)}}
+ @media(max-width:767px) and (prefers-reduced-motion:reduce){.slide{scale:none}}
 </style>

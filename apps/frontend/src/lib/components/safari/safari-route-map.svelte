@@ -210,7 +210,7 @@
 <style>
 	.route-map { margin: 0; padding: 20px; overflow: hidden; border: 1px solid var(--sp-line); border-radius: var(--radius-surface); background: #f4f1e8; }
 	.map-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; font-size: 14px; font-weight: 600; }
-	.map-top span:last-child { font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sp-kicker); }
+	.map-top span:last-child { font-size: 13px; font-weight: 600; color: var(--sp-kicker); }
 	.map-frame { position: relative; overflow: hidden; aspect-ratio: 4 / 3.4; min-height: 320px; max-height: 480px; border-radius: var(--radius-control); background: #ebe7da; }
 	.gl { position: absolute; inset: 0; }
 	.map-sketch { position: absolute; inset: 0; width: 100%; height: 100%; background: #f4f1e8; transition: opacity 0.5s ease; }

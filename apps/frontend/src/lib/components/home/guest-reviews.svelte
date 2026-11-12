@@ -4,6 +4,7 @@
   import * as Dialog from '$lib/components/ui/dialog';
   import { safeUrl, textContent } from '$lib/home-content';
   import { approvedReviews, type GuestReview } from '$lib/homepage-guides';
+  import { rail, steer } from '$lib/motion/rail';
 
   // Every review card on the site: green stars, the quote, then who wrote it
   // and where. A grid on larger screens, a swipeable row with dots on phones.
@@ -55,17 +56,21 @@
     }
   }
 
-  // Phones only: which card the row is showing, for the dots.
+  // Which card the row is showing, for the dots and arrows. On phones the
+  // cards rest in the middle and the side padding is symmetric, so card i is
+  // showing exactly when the row has scrolled i card-steps; the same holds for
+  // the start-aligned rows on larger screens.
   function syncDots() {
     if (!track) return;
     const card = track.children[0] as HTMLElement | undefined;
-    const step = card ? card.getBoundingClientRect().width + parseFloat(getComputedStyle(track).gap) : 1;
+    const step = card ? card.getBoundingClientRect().width + parseFloat(getComputedStyle(track).columnGap || '0') : 1;
     atStart = track.scrollLeft <= 2; atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 2;
     active = Math.min(shown.length - 1, Math.max(0, Math.round(track.scrollLeft / step)));
   }
   function showCard(index: number) {
     const card = track?.children[index] as HTMLElement | undefined;
     if (!track || !card) return;
+    if (getComputedStyle(card).scrollSnapAlign.includes('center')) return steer(track, index);
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     track.scrollTo({ left: track.scrollLeft + card.getBoundingClientRect().left - track.getBoundingClientRect().left - parseFloat(getComputedStyle(track).paddingLeft), behavior: reduce ? 'auto' : 'smooth' });
   }
@@ -73,7 +78,7 @@
 
 <div class="reviews" class:tour-reviews={variant === 'tour'} class:home-reviews={variant === 'home'}>
   {#if variant === 'home'}<div class="home-review-side">{#if aside}{@render aside()}{/if}{#if shown.length > 1}<div class="home-review-controls"><button type="button" aria-label="Previous review" disabled={atStart} onclick={()=>showCard(Math.max(0,active-1))}><ChevronLeft size={20} /></button><button type="button" aria-label="Next review" disabled={atEnd} onclick={()=>showCard(Math.min(shown.length-1,active+1))}><ChevronRight size={20} /></button></div>{/if}</div>{/if}
-  <div class="review-track" bind:this={track} onscroll={syncDots}>
+  <div class="review-track" bind:this={track} onscroll={syncDots} use:rail>
     {#each shown as review (review.id)}
       {@const text = plain(review.message)}
       <article class="review-card" data-motion="card">
@@ -106,7 +111,13 @@
     {/each}
   </div>
 
-  {#if shown.length > 1}
+  {#if shown.length > 7}
+    <!-- A long row: a slim bar shows where you are instead of a dot for each. -->
+    <div class="review-progress" style={`--n:${shown.length};--at:${active}`} role="status" aria-live="polite">
+      <span class="bar" aria-hidden="true"><span class="thumb"></span></span>
+      <span class="count">{active + 1} / {shown.length}</span>
+    </div>
+  {:else if shown.length > 1}
     <div class="review-dots" aria-label="Choose a review">
       {#each shown as review, i (review.id)}
         <button type="button" class:on={i === active} aria-label={`Show review ${i + 1} of ${shown.length}`} aria-current={i === active ? 'true' : undefined} onclick={() => showCard(i)}></button>
@@ -142,21 +153,27 @@
   .full-review { max-height: 55dvh; overflow-y: auto; padding-right: 8px; white-space: pre-line; overflow-wrap: anywhere; font-size: 15px; line-height: 1.85; color: #524b41; margin: 0; }
   .original-review { display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: var(--navy); font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
   .review-dots { display: none; justify-content: center; gap: 8px; margin-top: 18px; }
-  .review-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: #e0ddd7; cursor: pointer; transition: background-color .2s ease; }
-  .review-dots button.on { background: var(--sun); }
+  .review-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: #dcd7cc; cursor: pointer; transition: width .45s cubic-bezier(.22,1,.36,1), background-color .3s ease; }
+  .review-dots button.on { width: 22px; background: var(--navy); }
+  .review-progress { display: none; align-items: center; justify-content: center; gap: 14px; margin-top: 18px; }
+  .review-progress .bar { position: relative; width: 132px; height: 3px; overflow: hidden; border-radius: 3px; background: #e2ddd2; }
+  .review-progress .thumb { --w: max(16px, 100% / var(--n)); position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: inherit; background: var(--navy); left: calc((100% - var(--w)) * var(--at) / max(1, var(--n) - 1)); transition: left .45s cubic-bezier(.22,1,.36,1); }
+  .review-progress .count { min-width: 44px; font-size: 12.5px; font-weight: 600; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
   .review-actions { display: grid; justify-items: center; gap: 8px; margin-top: 28px; }
   .review-load { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 22px; border: 1.5px solid var(--sun); border-radius: var(--radius-surface); background: white; color: var(--navy); font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color .2s ease; }
   .review-load:hover:not(:disabled) { background: color-mix(in oklch, var(--sun) 14%, white); }
   .review-load:disabled { opacity: .7; cursor: progress; }
   .review-error { font-size: 12px; color: var(--muted-foreground); }
   @media (max-width: 1023px) { .review-track { gap: 16px; } .review-card { padding: 24px; } }
-  /* Phones: one card at a time with the next peeking in, swiped sideways. */
+  /* Phones: an edge-to-edge rail. The review being read rests in the middle,
+     its neighbours peek in either side and sit back a little, in step with the
+     finger (use:rail sets --rail-abs on each card). */
   @media (max-width: 767px) {
-    .review-track, .tour-reviews .review-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 16px; margin-inline: -16px; padding: 4px 16px 8px; scrollbar-width: none; }
+    .review-track, .tour-reviews .review-track { --card: min(80vw, 380px); display: flex; gap: 10px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; margin-inline: calc(50% - 50vw); padding: 6px calc((100vw - var(--card)) / 2) 12px; scrollbar-width: none; }
     .review-track::-webkit-scrollbar { display: none; }
-    .review-card { flex: 0 0 86%; scroll-snap-align: start; padding: 22px; }
+    .review-card { flex: 0 0 var(--card); scroll-snap-align: center; scroll-snap-stop: always; padding: 22px; scale: calc(1 - var(--rail-abs, 0) * 0.05); }
     .review-card blockquote { font-size: 15px; -webkit-line-clamp: 8; line-clamp: 8; }
-    .review-dots { display: flex; }
+    .review-dots, .review-progress { display: flex; }
     .review-actions { margin-top: 20px; }
   }
 
@@ -167,10 +184,11 @@
  .home-reviews .review-track{position:relative;display:flex;min-width:0;margin:0;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:4px 2px 12px;gap:24px}
  .home-reviews .review-card{flex:0 0 calc((100% - 24px)/2);scroll-snap-align:start;min-height:330px}
  .home-reviews .review-card blockquote{font-size:15px;-webkit-line-clamp:6;line-clamp:6}
- .home-reviews .review-author h3{font-size:15px}.home-reviews .review-author p{font-size:13px}.home-reviews .review-dots{display:none}
- @media(max-width:900px){.home-reviews{grid-template-columns:1fr;gap:28px}.home-review-controls{margin-top:20px}}
+ .home-reviews .review-author h3{font-size:15px}.home-reviews .review-author p{font-size:13px}.home-reviews .review-dots,.home-reviews .review-progress{display:none}
+ @media(max-width:900px){.home-reviews{grid-template-columns:minmax(0,1fr);gap:28px}.home-review-controls{margin-top:20px}}
  /* Touch screens swipe; the arrows are for a mouse. */
  @media(hover:none){.home-review-controls{display:none}}
  /* Phones: an edge-to-edge rail, the next review peeking in, dots under it. */
- @media(max-width:767px){.home-reviews .review-track{margin-inline:calc(50% - 50vw);padding:4px calc(50vw - 50%) 12px;scroll-padding-inline:calc(50vw - 50%);gap:14px}.home-reviews .review-card{flex-basis:84%;min-height:0}.home-reviews .review-dots{display:flex;margin-top:12px}}
+ @media(max-width:767px){.home-reviews .review-track{margin-inline:calc(50% - 50vw);padding:6px calc((100vw - var(--card))/2) 12px;gap:10px}.home-reviews .review-card{flex-basis:var(--card);min-height:0;scroll-snap-align:center}.home-reviews .review-dots,.home-reviews .review-progress{display:flex;margin-top:12px}}
+ @media(max-width:767px) and (prefers-reduced-motion:reduce){.review-card{scale:none}.review-progress .thumb{transition:none}}
 </style>

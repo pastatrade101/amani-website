@@ -63,7 +63,7 @@
 		<div class="flex items-center gap-4 px-4 py-3 md:px-6">
 			<Dialog.Title class="sr-only">{title} photos</Dialog.Title>
 			<p aria-live="polite" aria-atomic="true" class="text-sm tabular-nums text-white/85"><span class="sr-only">Photo </span>{current + 1}<span aria-hidden="true"> / </span><span class="sr-only"> of </span>{count}</p>
-			{#if group}<p class="text-[12px] font-medium uppercase tracking-[.16em] text-white/60">{group}</p>{/if}
+			{#if group}<p class="text-[13px] font-medium text-white/65">{group}</p>{/if}
 			<Dialog.Close>
 				{#snippet child({ props })}
 					<Button variant="ghost" size="icon" class="ml-auto size-11 text-white hover:bg-white/10 hover:text-white" {...props}><X class="size-5" /><span class="sr-only">Close photos</span></Button>

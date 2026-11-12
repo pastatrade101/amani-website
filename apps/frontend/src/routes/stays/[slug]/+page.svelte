@@ -138,16 +138,15 @@
 		<div class="page-container grid gap-12 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-20">
 			<div class="min-w-0">
 				<div data-motion="reveal">
-					<p class="eyebrow text-[var(--gold-ink)]">The stay</p>
-					<h2 id="overview-title" class="lux-heading mt-4">About {stay.name}</h2>
+					<h2 id="overview-title" class="lux-heading">About {stay.name}</h2>
 				</div>
 				{#if photos.length && showLead}<p class="mt-7 max-w-[40ch] font-display text-[22px] leading-[1.45] text-navy/90 sm:text-[26px]">{lead}</p>{/if}
 				{#if perfectFor.length}
-					<p id="perfect-for" class="mt-8 text-[12px] font-medium uppercase tracking-[.16em] text-muted-foreground">Perfect for</p>
+					<h3 id="perfect-for" class="mt-9 text-[14px] font-semibold text-navy">Perfect for</h3>
 					<ul aria-labelledby="perfect-for" class="mt-3 flex flex-wrap gap-2">
 						{#each perfectFor as item (item.label)}
 							{@const Icon = bestForIcon(item.code)}
-							<li class="inline-flex h-10 items-center gap-2 rounded-md border border-navy/15 bg-[oklch(.985_.006_85)] px-4 text-sm text-navy"><Icon class="size-4 text-[#D9A900]" aria-hidden="true" />{item.label}</li>
+							<li class="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#f1ede4] px-3.5 text-sm font-medium text-navy"><Icon class="size-4 text-[#D9A900]" aria-hidden="true" />{item.label}</li>
 						{/each}
 					</ul>
 				{/if}
@@ -156,7 +155,7 @@
 					<p class="mt-5 max-w-xl text-sm leading-7 text-muted-foreground">We’re still writing this stay’s full story.{canEnquire ? ' Ask us anything about staying here and our team will answer from first-hand knowledge.' : ''}</p>
 				{/if}
 				{#if highlights.length && highlights.length < 3}
-					<h3 class="mt-10 text-[12px] font-medium uppercase tracking-[.16em] text-muted-foreground">Highlights</h3>
+					<h3 class="mt-10 text-[14px] font-semibold text-navy">Highlights</h3>
 					<ul class="mt-4 grid gap-3">
 						{#each highlights as highlight, i (i)}
 							<li class="flex items-start gap-3 text-[15px] leading-7 text-navy"><span class="mt-[11px] size-1.5 shrink-0 rotate-45 bg-sun" aria-hidden="true"></span>{highlight}</li>
@@ -183,8 +182,7 @@
 			<div class="page-container">
 				<div data-motion="reveal" class="flex flex-wrap items-end justify-between gap-5">
 					<div class="max-w-2xl">
-						<p class="eyebrow text-[var(--gold-ink)]">On our safaris</p>
-						<h2 id="safaris-title" class="lux-heading mt-4">Safaris that stay here</h2>
+						<h2 id="safaris-title" class="lux-heading">Safaris that stay here</h2>
 						<p class="section-description mt-4">{tours.length === 1 ? 'One of our safaris includes' : `${tours.length} of our safaris include`} {stay.name}. Under each you’ll see the style and day it stays here.</p>
 					</div>
 					{#if place}<Button href={`/tours?destination_id=${encodeURIComponent(place.id)}#tour-results`} variant="outline" class="h-11 px-5">All safaris to {placeShort} <ArrowRight class="size-4" /></Button>{/if}
@@ -209,14 +207,13 @@
 			<div class="page-container">
 				<div data-motion="reveal" class="flex flex-wrap items-end justify-between gap-5">
 					<div class="max-w-2xl">
-						<p class="eyebrow text-[var(--gold-ink)]">Nearby</p>
-						<h2 id="nearby-title" class="lux-heading mt-4">More stays in {place?.name ?? 'the area'}</h2>
+						<h2 id="nearby-title" class="lux-heading">More stays in {place?.name ?? 'the area'}</h2>
 					</div>
 					{#if place}<Button href={staysHref({}, { destination_id: place.id })} variant="outline" class="h-11 px-5">See all stays in {placeShort} <ArrowRight class="size-4" /></Button>{/if}
 				</div>
-				<div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+				<div class="mt-8 grid gap-2.5 sm:mt-10 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-8">
 					{#each nearby as other (other.id)}
-						<StayCard stay={other} destination={placeDetails} />
+						<StayCard stay={other} destination={placeDetails} compact />
 					{/each}
 				</div>
 			</div>
@@ -226,8 +223,7 @@
 	<section id="explore" class="scroll-mt-14 border-t border-navy/10 bg-white py-16 md:py-24" aria-labelledby="explore-title">
 		<div class="page-container">
 			<div data-motion="reveal" class="max-w-2xl">
-				<p class="eyebrow text-[var(--gold-ink)]">Keep exploring</p>
-				<h2 id="explore-title" class="lux-heading mt-4">{placeShort ? `Around ${placeShort}` : 'More to explore'}</h2>
+				<h2 id="explore-title" class="lux-heading">{placeShort ? `Around ${placeShort}` : 'More to explore'}</h2>
 			</div>
 			<div class="mt-10 grid gap-10 md:grid-cols-2 lg:grid-cols-3 lg:gap-14">
 				{#if areas.length}
@@ -284,7 +280,7 @@
 	.overnight-note { display: flex; align-items: flex-start; gap: 0.55rem; border-radius: var(--radius-control); background: white; padding: 0.7rem 0.9rem; color: var(--muted-foreground); font-size: 13px; line-height: 1.5; box-shadow: inset 0 0 0 1px var(--border); }
 	.overnight-note :global(svg) { margin-top: 0.1rem; color: #D9A900; }
 	.overnight-note strong { color: var(--navy); font-weight: 600; }
-	.explore-title { display: flex; align-items: center; gap: 0.5rem; padding-bottom: 0.75rem; font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted-foreground); }
+	.explore-title { display: flex; align-items: center; gap: 0.5rem; padding-bottom: 0.75rem; font-size: 14px; font-weight: 600; color: var(--navy); }
 	.explore-title :global(svg) { color: #D9A900; }
 	.explore-links { display: grid; border-bottom: 1px solid color-mix(in oklch, var(--navy) 10%, transparent); }
 	.explore-links a { display: flex; min-height: 3.25rem; align-items: center; justify-content: space-between; gap: 0.75rem; border-top: 1px solid color-mix(in oklch, var(--navy) 10%, transparent); padding: 0.6rem 0; color: var(--navy); font-size: 15px; line-height: 1.45; }

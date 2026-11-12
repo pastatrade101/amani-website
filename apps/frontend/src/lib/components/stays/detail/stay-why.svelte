@@ -14,16 +14,16 @@
 <section id="why" aria-labelledby="why-title" class={`relative isolate overflow-hidden bg-navy py-20 text-white md:py-28 ${photo ? '' : 'rings'}`}>
 	<div class={photo ? 'page-container grid items-center gap-10 lg:grid-cols-12 lg:gap-16' : 'page-container'}>
 		{#if photo}
-			<button type="button" data-motion="image" onclick={(event) => onOpen(event.currentTarget)} aria-label={`Open photo: ${photo.alt}`} class="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-white/5 lg:col-span-5 lg:aspect-[4/5]">
+			<button type="button" data-motion="image" onclick={(event) => onOpen(event.currentTarget)} aria-label={`Open photo: ${photo.alt}`} class="group relative aspect-[4/3] overflow-hidden rounded-[12px] bg-white/5 lg:col-span-5 lg:aspect-[4/5]">
 				<img src={photo.src} alt="" loading="lazy" decoding="async" class="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03] motion-reduce:transform-none" />
 			</button>
 		{/if}
 		<div data-motion="reveal" class={photo ? 'lg:col-span-7' : 'mx-auto max-w-3xl text-center'}>
-			<p id="why-title" class="eyebrow text-sun">Why we recommend it</p>
+			<h2 id="why-title" class="font-display text-[20px] font-semibold tracking-[-.02em] text-white">Why we recommend it</h2>
 			<Quote class={`mt-6 size-10 text-sun ${photo ? '' : 'mx-auto'}`} aria-hidden="true" />
 			<figure>
-				<blockquote class={`quote mt-5 font-display font-medium tracking-[-.02em] ${long ? 'text-[19px] leading-[1.55] sm:text-[21px] lg:text-[24px]' : 'text-[22px] leading-[1.4] sm:text-[27px] lg:text-[32px]'}`}><RichText value={why} /></blockquote>
-				<figcaption class="mt-8 text-xs uppercase tracking-[.2em] text-white/60">— The {team} team</figcaption>
+				<blockquote class={`quote mt-5 font-display font-medium tracking-[-.02em] ${long ? 'text-[17px] leading-[1.6] sm:text-[21px] lg:text-[24px]' : 'text-[20px] leading-[1.45] sm:text-[27px] lg:text-[32px]'}`}><RichText value={why} /></blockquote>
+				<figcaption class="mt-7 text-[13px] font-medium text-white/65">The {team} team</figcaption>
 			</figure>
 		</div>
 	</div>

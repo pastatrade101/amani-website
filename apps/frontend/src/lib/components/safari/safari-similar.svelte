@@ -13,7 +13,6 @@
 
 <section class="sp-section similar" aria-labelledby="similar-title" style="--slider-bleed: 5vw">
 	<div class="sp-head">
-		<p class="sp-eyebrow">Keep exploring</p>
 		<h2 id="similar-title" class="sp-h2">More journeys into the wild.</h2>
 		<p class="sp-sub">Discover another way to experience Tanzania.</p>
 	</div>

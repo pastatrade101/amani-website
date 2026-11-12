@@ -33,7 +33,7 @@
 <style>
 	.stay-cell { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
 	.stay-icon { display: grid; flex-shrink: 0; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 999px; background: color-mix(in oklch, var(--sun) 22%, white); color: var(--navy); }
-	.stay-label { display: flex; flex-wrap: wrap; align-items: center; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted-foreground); }
+	.stay-label { display: flex; flex-wrap: wrap; align-items: center; font-size: 13px; font-weight: 600; color: var(--muted-foreground); }
 	/* Property names can be one long word; they wrap rather than widen the panel. */
 	.stay-value { margin-top: 0.1rem; font-size: 14px; font-weight: 600; line-height: 1.45; color: var(--navy); overflow-wrap: anywhere; }
 	.stay-link { text-decoration: underline; text-decoration-color: color-mix(in oklch, var(--sun) 70%, transparent); text-decoration-thickness: 2px; text-underline-offset: 3px; transition: text-decoration-color 160ms ease-out; }

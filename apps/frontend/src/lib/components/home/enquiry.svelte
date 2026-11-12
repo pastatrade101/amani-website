@@ -40,7 +40,7 @@
 </script>
 <section id="request-quote" class="bg-secondary/70 py-16 md:py-24">
 	<div class="page-container grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:gap-20">
-		<div data-motion="reveal" class="lg:pt-5"><p class="eyebrow text-muted-foreground">{section.subtitle}</p><div class="gold-line mt-4"></div><h2 class="section-heading mt-5 max-w-md text-3xl md:text-4xl">{section.title}</h2><p class="mt-5 max-w-md text-sm leading-7 text-muted-foreground">{textContent(section.content)}</p>
+		<div data-motion="reveal" class="lg:pt-5"><h2 class="section-heading max-w-md text-3xl md:text-4xl">{section.title}</h2><p class="mt-5 max-w-md text-sm leading-7 text-muted-foreground">{textContent(section.content)}</p>
 			<div class="mt-8 grid gap-5 text-sm"><p class="flex items-center gap-3"><MapPin class="size-5" /> Local knowledge, personal attention</p><p class="flex items-center gap-3"><Compass class="size-5" /> A journey shaped around your interests</p><p class="flex items-center gap-3"><Check class="size-5" /> An enquiry, with no obligation to book</p></div>
 			<img src={PHOTO.popUpRoofView} alt="A safari vehicle on a Tanzania game drive" loading="lazy" class="mt-9 h-44 w-full max-w-md rounded-2xl object-cover" />
 		</div>

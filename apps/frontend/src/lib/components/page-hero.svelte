@@ -16,7 +16,8 @@
 		imageAlt = '',
 		imagePosition = 'center',
 		crumbs = [],
-		eyebrow = '',
+		// Kept for old callers; the hero no longer shows a kicker over the title.
+		eyebrow: _eyebrow = '',
 		title,
 		intro = '',
 		media,
@@ -58,7 +59,6 @@
 		{/if}
 		<div class="page-hero-main">
 			<div class="page-hero-copy">
-				{#if eyebrow}<p data-motion="hero" class="page-hero-eyebrow">{eyebrow}</p>{/if}
 				<h1 id={titleId} data-motion="hero" data-motion-delay="0.08">{title}</h1>
 				{#if intro}<p data-motion="hero" data-motion-delay="0.16" class="page-hero-intro">{intro}</p>{/if}
 				{#if actions}<div data-motion="hero" data-motion-delay="0.24" class="page-hero-actions">{@render actions()}</div>{/if}
@@ -88,9 +88,7 @@
 	.page-hero-crumbs :global(svg) { width: 12px; height: 12px; }
 	.page-hero-main { display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; margin-top: auto; padding-top: 96px; }
 	.page-hero-copy { min-width: 0; max-width: 780px; }
-	.page-hero-eyebrow { display: flex; align-items: center; gap: 14px; margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--sun); text-shadow: 0 1px 8px rgb(20 18 15 / 0.5); }
-	.page-hero-eyebrow::before { content: ''; flex: none; width: 32px; height: 1px; background: currentColor; }
-	.page-hero h1 { margin: 18px 0 0; max-width: 16ch; font-size: clamp(42px, 5vw, 72px); line-height: 1.04; text-wrap: balance; }
+	.page-hero h1 { margin: 0; max-width: 16ch; font-size: clamp(42px, 5vw, 72px); line-height: 1.04; text-wrap: balance; }
 	.page-hero-intro { margin: 22px 0 0; max-width: 54ch; font-size: clamp(15px, 1.2vw, 17px); line-height: 1.75; color: rgb(255 255 255 / 0.86); }
 	.page-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 34px; }
 	.page-hero-actions :global([data-slot='button']) { min-height: 50px; padding-inline: 24px; font-size: 14px; }
@@ -103,7 +101,7 @@
 		.page-hero-veil { background: linear-gradient(180deg, rgb(20 18 15 / 0.5) 0%, rgb(20 18 15 / 0) 20%), linear-gradient(0deg, rgb(20 18 15 / 0.94) 0%, rgb(20 18 15 / 0.74) 50%, rgb(20 18 15 / 0.22) 86%); }
 		.page-hero-inner { min-height: 600px; padding-block: 20px 40px; }
 		.page-hero-main { display: block; padding-top: 120px; }
-		.page-hero h1 { margin-top: 14px; font-size: clamp(36px, 10.5vw, 44px); line-height: 1.06; }
+		.page-hero h1 { margin-top: 0; font-size: clamp(36px, 10.5vw, 44px); line-height: 1.06; }
 		.page-hero-intro { margin-top: 16px; font-size: 15px; line-height: 1.7; }
 		.page-hero-actions { flex-direction: column; align-items: stretch; margin-top: 26px; }
 		.page-hero-actions :global([data-slot='button']) { width: 100%; justify-content: center; }

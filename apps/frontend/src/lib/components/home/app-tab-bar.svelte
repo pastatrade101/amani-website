@@ -10,8 +10,10 @@
 	// planner hides the bar: it is a task with its own bottom dock.
 	let { canEnquire = true }: { canEnquire?: boolean } = $props();
 
-	// A tapped tab lights up at once and its marker starts to glide while the
-	// next page loads; the page's own path takes over when it arrives.
+	// Browsers with view transitions carry the marker from the old tab to the
+	// new one as the page changes (layout.css, `tab-mark`), in one movement.
+	// Elsewhere the tapped tab lights up at once and its marker glides while
+	// the next page loads; the page's own path takes over when it arrives.
 	let tapped = $state<string | null>(null);
 	let path = $derived(page.url.pathname);
 	$effect(() => {
@@ -21,7 +23,9 @@
 	let here = $derived(tapped ?? path);
 	let onPlanner = $derived(path === PLANNER_PATH);
 	const is = (prefix: string) => (prefix === '/' ? here === '/' : here === prefix || here.startsWith(`${prefix}/`));
-	const tap = (prefix: string) => () => (tapped = prefix);
+	const tap = (prefix: string) => () => {
+		if (!('startViewTransition' in document)) tapped = prefix;
+	};
 </script>
 
 {#if !onPlanner}

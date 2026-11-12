@@ -15,9 +15,9 @@
 	let tours = $derived(stay.featured_in_tours?.length ?? 0);
 </script>
 
-<aside aria-labelledby="plan-title" class="h-fit rounded-2xl bg-white p-7 shadow-[0_30px_60px_-40px_rgb(39_36_31/.45)] ring-1 ring-navy/10 lg:sticky lg:top-[calc(var(--site-header-height)+5rem)]">
-	<h3 id="plan-title" class="eyebrow text-[var(--gold-ink)]">Plan your stay</h3>
-	<p class="mt-3 font-display text-[22px] leading-tight font-semibold tracking-[-.02em] text-navy">{stay.name}</p>
+<aside aria-labelledby="plan-title" class="h-fit rounded-[12px] bg-white p-6 sm:p-7 shadow-[0_30px_60px_-40px_rgb(39_36_31/.45)] ring-1 ring-navy/10 lg:sticky lg:top-[calc(var(--site-header-height)+5rem)]">
+	<h3 id="plan-title" class="text-[13px] font-semibold text-muted-foreground">Plan your stay</h3>
+	<p class="mt-2 font-display text-[22px] leading-tight font-semibold tracking-[-.02em] text-navy">{stay.name}</p>
 	<p class="mt-1 text-sm text-muted-foreground">{kind}</p>
 	{#if rate}<p class="mt-5 text-sm font-semibold text-navy">{rate}</p>{/if}
 	{#if destination || coordinates}
@@ -27,7 +27,7 @@
 		</ul>
 	{/if}
 	{#if canEnquire}<Button variant="safari" href={planHref({ stay: stay.slug, from: 'stay_page' })} data-cta="plan_my_trip" data-cta-location="stay_page" onclick={onEnquire} class="mt-6 h-12 w-full text-sm">Enquire about this stay <ArrowRight class="size-4" /></Button>{/if}
-	{#if tours}<a href="#safaris" class="mt-4 block text-center text-sm text-muted-foreground underline decoration-border decoration-2 underline-offset-4 hover:text-navy hover:decoration-sun">Included on {tours} {tours === 1 ? 'safari' : 'safaris'}</a>{/if}
+	{#if tours}<a href="#safaris" class="mt-4 block text-center text-sm font-medium text-muted-foreground hover:text-navy">Included on {tours} {tours === 1 ? 'safari' : 'safaris'}</a>{/if}
 </aside>
 
 <style>
