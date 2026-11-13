@@ -52,11 +52,14 @@
   </div>
   <!-- Links to the quote form ("/#request-quote") from the menus and other pages land on this form. -->
   {#if canEnquire}<aside id="plan-form" class="hero-form" aria-labelledby="hero-form-title" data-motion="hero" data-motion-delay="0.2"><span id="request-quote" class="quote-anchor" aria-hidden="true"></span>
-   <p class="form-eyebrow">{String(extra.form_eyebrow||'Get a safari quote')}</p>
-   <h2 id="hero-form-title">{String(extra.form_title||'Plan Your Safari')}</h2>
+   <div class="form-head">
+    <div class="min-w-0"><p class="form-eyebrow">{String(extra.form_eyebrow||'Get a safari quote')}</p>
+    <h2 id="hero-form-title">{String(extra.form_title||'Plan Your Safari')}</h2></div>
+    <!-- Progress sits opposite the title: the bars, then which step this is. -->
+    {#if ready&&!(form?.success&&!sentAgain)}<div class="form-steps" aria-live="polite"><span class="bars" aria-hidden="true"><i class="on"></i><i class:on={step===2}></i></span><span class="step-count">Step {step} of 2<span class="sr-only"> · {step===1?'Trip basics':'Your details'}</span></span><span class="step-name" aria-hidden="true">{step===1?'Trip basics':'Your details'}</span></div>{/if}
+   </div>
    {#if form?.success&&!sentAgain}<div role="status" class="form-done"><Check class="size-5 text-sun" />{form.message}<button type="button" onclick={reset}>Send another request</button></div>
    {:else}
-   {#if ready}<div class="form-steps" aria-live="polite"><span class="bars" aria-hidden="true"><i class="on"></i><i class:on={step===2}></i></span>Step {step} of 2 · {step===1?'Trip basics':'Your details'}</div>{/if}
    <form method="POST" action="?/heroEnquire#plan-form" novalidate use:enhance={({cancel})=>{if(!validate()){cancel();return;}sending=true;return async({result,update})=>{try{await update({reset:false,invalidateAll:false});if(result.type==='success'&&result.data?.success){idempotencyKey=newTransactionId();sentAgain=false;name='';email='';details='';trackEvent('form_submitted',{form_name:'homepage_hero',lead_source:'enquiry_form',transaction_id:newTransactionId()});}}finally{sending=false;}};}}>
     {#if form?.message&&!form.success}<p role="alert" class="form-alert">{form.message}</p>{/if}
     <div class="step" hidden={ready&&step!==1}>
@@ -118,7 +121,10 @@
  .hero-form{background:linear-gradient(160deg,rgb(30 34 36 / .74),rgb(36 30 24 / .68));border:1px solid rgb(255 255 255 / .16);border-radius:var(--radius-surface);padding:24px;backdrop-filter:blur(14px) saturate(1.1);-webkit-backdrop-filter:blur(14px) saturate(1.1);box-shadow:0 30px 70px -30px rgb(0 0 0 / .6);scroll-margin-top:120px}
  .form-eyebrow{font-size:var(--text-xs);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--sun)}
  .hero-form h2{margin-top:6px;font-size:var(--text-xl);font-weight:600;line-height:1.2;letter-spacing:-.02em}
- .form-steps{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:var(--text-xs);font-weight:500;color:rgb(255 255 255 / .72)}
+ .form-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+ .form-steps{display:grid;flex:none;justify-items:end;gap:7px;padding-bottom:3px;text-align:right}
+ .step-count{font-size:var(--text-xs);font-weight:600;font-variant-numeric:tabular-nums;line-height:1;color:#fff}
+ .step-name{font-size:var(--text-xs);font-weight:500;line-height:1;color:rgb(255 255 255 / .62)}
  .bars{display:flex;gap:6px}.bars i{display:block;width:18px;height:3px;border-radius:2px;background:rgb(255 255 255 / .28);transition:width .3s ease,background-color .3s ease}.bars i.on{width:30px;background:var(--sun)}
  .hero-form form{margin-top:18px}
  .step{display:grid;gap:14px}.step[hidden]{display:none}

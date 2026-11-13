@@ -5,15 +5,18 @@
 	// MapLibre parses tiles in a web worker; Vite bundles it and hands back its URL.
 	import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 	import { TANZANIA } from '$lib/safari-page';
-	import type { Place } from '$lib/destination-explorer';
 
-	// Every place on a real map (MapLibre on OpenFreeMap tiles, as on the safari
-	// pages), pinned at its CMS coordinates. The list beside it drives the map:
-	// hovering a place lights its pin, the filters frame what is shown, and a
-	// pin opens that place. A drawn outline shows first and stays without WebGL.
-	let { places, shown, hovered = $bindable(null), selected = $bindable(null) }: { places: Place[]; shown: Place[]; hovered?: string | null; selected?: string | null } = $props();
+	// Places on a real map (MapLibre on OpenFreeMap tiles, as on the safari
+	// pages), pinned at their CMS coordinates. The list beside it drives the map:
+	// hovering an item lights its pin, the filters frame what is shown, and a
+	// pin selects its place (the page decides what that opens). Pins with a
+	// count show it (the stays page: stays per place). A drawn outline shows
+	// first and stays without WebGL.
+	type MapPin = { id: string; name: string; lat: number | null; lng: number | null; count?: number };
+	let { places, shown, hovered = $bindable(null), selected = $bindable(null) }: { places: MapPin[]; shown: MapPin[]; hovered?: string | null; selected?: string | null } = $props();
 
-	type Pinned = Place & { lat: number; lng: number };
+	type Pinned = MapPin & { lat: number; lng: number };
+	let counted = $derived(places.some((place) => (place.count ?? 0) > 0));
 	let pinned = $derived(places.filter((place): place is Pinned => place.lat !== null && place.lng !== null));
 	let visible = $derived(shown.filter((place): place is Pinned => place.lat !== null && place.lng !== null));
 
@@ -38,6 +41,14 @@
 	});
 
 	const reduceMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	const features = (items: Pinned[]) => ({ type: 'FeatureCollection' as const, features: items.map((place, i) => ({ type: 'Feature' as const, id: i, properties: { i, name: place.name, count: place.count ? String(place.count) : '' }, geometry: { type: 'Point' as const, coordinates: [place.lng, place.lat] } })) });
+
+	// Counts follow the filters (the stays page), so the pins are redrawn with them.
+	$effect(() => {
+		const data = features(pinned);
+		if (!ready || !live) return;
+		(live.getSource('places') as import('maplibre-gl').GeoJSONSource | undefined)?.setData(data);
+	});
 
 	// Light the hovered or selected pin.
 	$effect(() => {
@@ -87,7 +98,7 @@
 				bounds: all,
 				fitBoundsOptions: { padding: padding(), maxZoom: 8 },
 				maxBounds: fence,
-				attributionControl: { compact: true },
+				attributionControl: false,
 				cooperativeGestures: true,
 				dragRotate: false,
 				pitchWithRotate: false,
@@ -98,6 +109,8 @@
 			map.touchZoomRotate.disableRotation();
 			map.keyboard.disableRotation();
 			map.addControl(new maplibre.NavigationControl({ showCompass: false }), 'top-right');
+			// The map credit sits under the zoom buttons, clear of the card over the map's foot.
+			map.addControl(new maplibre.AttributionControl({ compact: true }), 'top-right');
 
 			frameTo = (items, animate) => {
 				if (!map || !items.length) return;
@@ -111,19 +124,17 @@
 				const tint = [['background', 'background-color', '#f4f1e8'], ['water', 'fill-color', '#cfdcdc'], ['park', 'fill-color', '#dfe5cc']] as const;
 				for (const [layer, property, value] of tint) if (map.getLayer(layer)) map.setPaintProperty(layer, property, value);
 
-				map.addSource('places', {
-					type: 'geojson',
-					data: { type: 'FeatureCollection', features: pinned.map((place, i) => ({ type: 'Feature', id: i, properties: { i, name: place.name, safaris: place.safaris.count > 0 }, geometry: { type: 'Point', coordinates: [place.lng, place.lat] } })) }
-				});
+				map.addSource('places', { type: 'geojson', data: features(pinned) });
 				const hidden = ['boolean', ['feature-state', 'hidden'], false];
 				const on = ['boolean', ['feature-state', 'on'], false];
 				map.addLayer({ id: 'place-halo', type: 'circle', source: 'places', paint: { 'circle-radius': ['case', on, 22, 0], 'circle-color': '#f6d21b', 'circle-opacity': ['case', hidden, 0, 0.35], 'circle-radius-transition': { duration: 220 } } as never });
-				map.addLayer({ id: 'place-pin', type: 'circle', source: 'places', paint: { 'circle-radius': ['case', on, 10, 7.5], 'circle-color': ['case', hidden, '#b9b2a2', '#f6d21b'], 'circle-opacity': ['case', hidden, 0.45, 1], 'circle-stroke-color': ['case', hidden, '#ffffff', '#2b2722'], 'circle-stroke-width': ['case', on, 3, 2], 'circle-stroke-opacity': ['case', hidden, 0.6, 1], 'circle-radius-transition': { duration: 220 } } as never });
+				map.addLayer({ id: 'place-pin', type: 'circle', source: 'places', paint: { 'circle-radius': counted ? ['case', on, 15, 12.5] : ['case', on, 10, 7.5], 'circle-color': ['case', hidden, '#b9b2a2', '#f6d21b'], 'circle-opacity': ['case', hidden, 0.45, 1], 'circle-stroke-color': ['case', hidden, '#ffffff', '#2b2722'], 'circle-stroke-width': ['case', on, 3, 2], 'circle-stroke-opacity': ['case', hidden, 0.6, 1], 'circle-radius-transition': { duration: 220 } } as never });
 				map.addLayer({
 					id: 'place-name', type: 'symbol', source: 'places',
-					layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Bold'], 'text-size': 12, 'text-max-width': 12, 'text-padding': 3, 'text-variable-anchor': ['left', 'right', 'top', 'bottom'], 'text-radial-offset': 1.1, 'text-justify': 'auto' },
+					layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Bold'], 'text-size': 12, 'text-max-width': 12, 'text-padding': 3, 'text-variable-anchor': ['left', 'right', 'top', 'bottom'], 'text-radial-offset': counted ? 1.6 : 1.1, 'text-justify': 'auto' },
 					paint: { 'text-color': '#2b2722', 'text-halo-color': '#ffffff', 'text-halo-width': 2, 'text-opacity': ['case', hidden, 0, 1] } as never
 				});
+				if (counted) map.addLayer({ id: 'place-count', type: 'symbol', source: 'places', layout: { 'text-field': ['get', 'count'], 'text-font': ['Noto Sans Bold'], 'text-size': 11, 'text-allow-overlap': true, 'text-ignore-placement': true }, paint: { 'text-color': '#2b2722', 'text-opacity': ['case', hidden, 0.5, 1] } as never });
 
 				// A pin opens its place; hovering one lights its row in the list.
 				map.on('click', 'place-pin', (event) => { const i = Number(event.features?.[0]?.properties?.i); if (Number.isInteger(i)) selected = pinned[i].id; });

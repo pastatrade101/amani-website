@@ -140,13 +140,13 @@
 				<div data-motion="reveal">
 					<h2 id="overview-title" class="lux-heading">About {stay.name}</h2>
 				</div>
-				{#if photos.length && showLead}<p class="mt-7 max-w-[40ch] font-display text-xl leading-[1.45] text-navy/90 sm:text-2xl">{lead}</p>{/if}
+				{#if photos.length && showLead}<p class="stay-lead mt-6">{lead}</p>{/if}
 				{#if perfectFor.length}
 					<h3 id="perfect-for" class="mt-9 text-sm font-semibold text-navy">Perfect for</h3>
 					<ul aria-labelledby="perfect-for" class="mt-3 flex flex-wrap gap-2">
 						{#each perfectFor as item (item.label)}
 							{@const Icon = bestForIcon(item.code)}
-							<li class="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#f1ede4] px-3.5 text-sm font-medium text-navy"><Icon class="size-4 text-[#D9A900]" aria-hidden="true" />{item.label}</li>
+							<li class="inline-flex h-9 items-center gap-2 rounded-[8px] bg-[#f1ede4] px-3 text-sm font-medium text-navy"><Icon class="size-4 text-[#D9A900]" aria-hidden="true" />{item.label}</li>
 						{/each}
 					</ul>
 				{/if}
@@ -272,8 +272,12 @@
 
 <style>
 	/* The story in long-form type, opening on a drop cap when the first paragraph is a real one. */
-	div.story :global(.rich-text) { max-width: 64ch; font-size: var(--text-base); line-height: 1.9; color: color-mix(in oklch, var(--navy) 80%, transparent); }
-	div.drop-cap :global(.rich-text > p:first-child::first-letter) { float: left; padding: 0.08em 0.12em 0 0; font-family: var(--font-display); font-size: 4.4em; line-height: 0.8; color: var(--navy); }
+	/* One step above the body (20px over 16px), not a second headline. */
+	.stay-lead { max-width: 60ch; font-family: var(--font-display); font-size: var(--text-lg); line-height: 1.6; letter-spacing: -0.01em; color: color-mix(in oklch, var(--navy) 92%, transparent); text-wrap: pretty; }
+	@media (min-width: 640px) { .stay-lead { font-size: var(--text-xl); } }
+	div.story :global(.rich-text) { max-width: 64ch; font-size: var(--text-base); line-height: 1.8; color: color-mix(in oklch, var(--navy) 80%, transparent); }
+	/* Two lines tall, so it opens the paragraph rather than outweighing it. */
+	div.drop-cap :global(.rich-text > p:first-child::first-letter) { float: left; margin: 0.06em 0.1em 0 0; font-family: var(--font-display); font-size: 3.3em; font-weight: 500; line-height: 0.92; color: var(--navy); }
 	div.story :global(.rich-text h2), div.story :global(.rich-text h3) { margin: 1.6em 0 0.5em; font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 500; line-height: 1.2; color: var(--navy); }
 	div.story :global(.rich-text > :first-child) { margin-top: 0; }
 	div.story :global(.rich-text h2 strong), div.story :global(.rich-text h3 strong) { font-weight: 500; }
