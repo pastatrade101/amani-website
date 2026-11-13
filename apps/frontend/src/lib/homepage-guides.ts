@@ -62,6 +62,18 @@ export function averageRating(rows: GuestReview[]): number | null {
   return ratings.length ? Math.round((ratings.reduce((sum, value) => sum + value, 0) / ratings.length) * 10) / 10 : null;
 }
 
+/**
+ * The name to show for a reviewer. TripAdvisor gives anonymous members a
+ * handle such as "Flyer58396101285", which says nothing about the person, so
+ * it reads as "TripAdvisor traveller". The stored name is left as it is.
+ */
+export function reviewerName(review: Pick<GuestReview, 'author_name' | 'platform'>): string {
+  const name = review.author_name?.trim() ?? '';
+  if (!/^[A-Za-z]+\d{5,}$/.test(name)) return name;
+  const platform = review.platform?.trim();
+  return platform ? `${platform} traveller` : 'Guest';
+}
+
 export function approvedReviews(rows: GuestReview[], max = 3): GuestReview[] {
   return rows.filter(r => r.status === 'approved' && r.message?.trim() && r.author_name?.trim() && Number.isFinite(Number(r.rating)) && Number(r.rating) >= 1 && Number(r.rating) <= 5).slice(0, max);
 }

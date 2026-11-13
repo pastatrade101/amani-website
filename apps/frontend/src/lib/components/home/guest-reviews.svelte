@@ -3,7 +3,7 @@
   import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, Check, Star } from '@lucide/svelte';
   import * as Dialog from '$lib/components/ui/dialog';
   import { safeUrl, textContent } from '$lib/home-content';
-  import { approvedReviews, type GuestReview } from '$lib/homepage-guides';
+  import { approvedReviews, reviewerName, type GuestReview } from '$lib/homepage-guides';
   import { rail, steer } from '$lib/motion/rail';
 
   // Every review card on the site: green stars, the quote, then who wrote it
@@ -88,13 +88,13 @@
         <blockquote>“{excerpt(review.message)}”</blockquote>
         {#if text.length > LIMIT}
           <Dialog.Root>
-            <Dialog.Trigger class="review-more" aria-label={`Read full review by ${review.author_name}`}>Read full review <ArrowUpRight size={14} aria-hidden="true" /></Dialog.Trigger>
+            <Dialog.Trigger class="review-more" aria-label={`Read full review by ${reviewerName(review)}`}>Read full review <ArrowUpRight size={14} aria-hidden="true" /></Dialog.Trigger>
             <Dialog.Content onOpenAutoFocus={(event) => { event.preventDefault(); document.getElementById(`review-body-${review.id}`)?.focus(); }} class="max-h-[90dvh] overflow-hidden rounded-2xl sm:max-w-xl">
               <Dialog.Header class="pr-8 text-left">
-                <Dialog.Title>Review by {review.author_name}</Dialog.Title>
+                <Dialog.Title>Review by {reviewerName(review)}</Dialog.Title>
                 <Dialog.Description>{[review.country, review.platform, `${review.rating} out of 5 stars`].filter(Boolean).join(' · ')}</Dialog.Description>
               </Dialog.Header>
-              <blockquote class="full-review" id={`review-body-${review.id}`} tabindex="-1" aria-label={`Full review by ${review.author_name}`}>{textContent(review.message)}</blockquote>
+              <blockquote class="full-review" id={`review-body-${review.id}`} tabindex="-1" aria-label={`Full review by ${reviewerName(review)}`}>{textContent(review.message)}</blockquote>
               {#if review.source_url && safeUrl(review.source_url, '')}
                 <a class="original-review" href={safeUrl(review.source_url, '')} target="_blank" rel="noopener noreferrer">Read original review <ArrowUpRight size={16} /></a>
               {/if}
@@ -102,7 +102,7 @@
           </Dialog.Root>
         {/if}
         <footer class="review-author">
-          <h3>{review.author_name}</h3>
+          <h3>{reviewerName(review)}</h3>
           {#if review.country}<p>{review.country}</p>{/if}
           <!-- Only what is true of every review: where it was left. -->
           {#if review.platform}<p class="review-source"><span class="tick" aria-hidden="true"><Check size={12} strokeWidth={3} /></span>Reviewed on {review.platform}</p>{/if}

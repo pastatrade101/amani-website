@@ -4,7 +4,7 @@
 	import { safeUrl, textContent } from '$lib/home-content';
 	import { formatPrice } from '$lib/safari-pricing';
 	import { siteInfo } from '$lib/site-info';
-	import type { GuestReview } from '$lib/homepage-guides';
+	import { reviewerName, type GuestReview } from '$lib/homepage-guides';
 	import type { FaqItem } from '$lib/components/faq/faq-list.svelte';
 	import type { TourDetail } from '$lib/types/api';
 
@@ -50,8 +50,8 @@
 					<blockquote>“{shown(review)}”</blockquote>
 					{#if expandable(review)}<button type="button" class="read" aria-expanded={open.includes(review.id)} onclick={() => (open = open.includes(review.id) ? open.filter((id) => id !== review.id) : [...open, review.id])}>{open.includes(review.id) ? 'Show less' : 'Read full review'}</button>{/if}
 					<div class="reviewer">
-						<span class="avatar" aria-hidden="true">{review.author_name.trim().charAt(0).toUpperCase()}</span>
-						<div><strong>{review.author_name}</strong>{#if review.country || review.platform}<small>{[review.country, review.platform ? `Reviewed on ${review.platform}` : ''].filter(Boolean).join(' · ')}</small>{/if}</div>
+						<span class="avatar" aria-hidden="true">{reviewerName(review).charAt(0).toUpperCase()}</span>
+						<div><strong>{reviewerName(review)}</strong>{#if review.country || review.platform}<small>{[review.country, review.platform ? `Reviewed on ${review.platform}` : ''].filter(Boolean).join(' · ')}</small>{/if}</div>
 					</div>
 				</li>
 			{/each}

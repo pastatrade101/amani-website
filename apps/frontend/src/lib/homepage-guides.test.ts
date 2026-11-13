@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { approvedReviews, costRows, guideRows } from './homepage-guides';
+import { approvedReviews, costRows, guideRows, reviewerName } from './homepage-guides';
 import { mergeSections } from './home-content';
 
 test('CMS guide copy, ordering, and hidden markers override defaults', () => {
@@ -25,4 +25,11 @@ test('review cards require approval and valid rating; no fabricated reviews', ()
   const base={id:'1',author_name:'Guest',message:'A wonderful experience',rating:4};
   assert.deepEqual(approvedReviews([]),[]);
   assert.deepEqual(approvedReviews([{...base,status:'pending'},{...base,status:'approved',rating:9},{...base,status:'approved'}]),[{...base,status:'approved'}]);
+});
+test('automatic TripAdvisor handles read as a traveller; real names stay', () => {
+  assert.equal(reviewerName({author_name:'Flyer58396101285',platform:'TripAdvisor'}),'TripAdvisor traveller');
+  assert.equal(reviewerName({author_name:'Voyager785010',platform:'TripAdvisor'}),'TripAdvisor traveller');
+  assert.equal(reviewerName({author_name:'Wanderer13121770950'}),'Guest');
+  assert.equal(reviewerName({author_name:'atltraveller1',platform:'TripAdvisor'}),'atltraveller1');
+  assert.equal(reviewerName({author_name:' Shangwe M ',platform:'TripAdvisor'}),'Shangwe M');
 });
