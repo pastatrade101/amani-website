@@ -29,7 +29,7 @@
 	let description = $derived(textContent(content?.content) || 'Wild places, island escapes and journeys that stay with you. Explore our destinations and find the places that belong in your story.');
 	let hero = $derived(safeUrl(content?.image_url, '') || safeUrl(data.featured?.banner_image_url || data.featured?.main_image_url || data.featured?.image_url, ''));
 	let onPage = $derived(['top', 'destination-results', ...(enquiry ? ['request-quote'] : [])]);
-	let countries = $derived([...new Set(data.places.map((p) => p.country).filter(Boolean))]);
+	let countries = $derived(data.countries.map((country) => country.name));
 
 	// The explorer's filters live in the address, so a region or a search can be shared.
 	let query = $derived(data.query);
@@ -69,7 +69,26 @@
 		{#snippet media()}<DestinationImage urls={[hero, data.featured?.main_image_url, data.featured?.image_url]} alt={data.featured?.name || 'Discover our destinations'} fallback={PHOTO.acaciaHaze} hero />{/snippet}
 		{#snippet actions()}<Button href="#destination-results" variant="safari">Explore destinations <ArrowDown size={16} /></Button>{#if enquiry}<Button href={planHref({ from: 'destinations' })} data-cta="plan_my_trip" data-cta-location="destinations" variant="outline">Help me choose</Button>{/if}{/snippet}
 		{#snippet aside()}
-			{#if data.regions.length > 1}
+			{#if data.countries.length > 1}
+				<!-- Places in several countries: each country is a way in, to its own page. -->
+				<nav id="countries" class="region-finder" aria-labelledby="region-finder-title">
+					<div class="region-finder-head">
+						<h2 id="region-finder-title">Explore by country</h2>
+						<p>{data.places.length} places in {data.countries.length} countries</p>
+					</div>
+					<ul>
+						{#each data.countries as country (country.slug)}
+							<li>
+								<a href={country.href}>
+									<span class="region-name"><strong>{country.name}</strong>{#if country.description}<small>{country.description}</small>{/if}</span>
+									<span class="region-count">{country.count}</span>
+									<ArrowRight aria-hidden="true" />
+								</a>
+							</li>
+						{/each}
+					</ul>
+				</nav>
+			{:else if data.regions.length > 1}
 				<nav class="region-finder" aria-labelledby="region-finder-title">
 					<div class="region-finder-head">
 						<h2 id="region-finder-title">Explore by region</h2>
@@ -149,21 +168,6 @@
 <SiteFooter visible={chrome.visible} destinations={chrome.destinations} onInterest={chooseInterest} {onPage} />
 
 <style>
-	/* Hero: the regions as a way in, in the same glass as the tours finder. */
-	.region-finder { display: grid; gap: 14px; padding: 22px; border: 1px solid rgb(255 255 255 / 0.16); border-radius: var(--radius-surface); background: linear-gradient(160deg, rgb(30 34 36 / 0.72), rgb(36 30 24 / 0.66)); -webkit-backdrop-filter: blur(14px) saturate(1.1); backdrop-filter: blur(14px) saturate(1.1); box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.6); color: #fff; }
-	.region-finder-head h2 { margin: 0; font-size: var(--text-xl); font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; }
-	.region-finder-head p { margin: 4px 0 0; font-size: var(--text-sm); color: rgb(255 255 255 / 0.7); }
-	.region-finder ul { display: grid; margin: 0; padding: 0; list-style: none; }
-	.region-finder li + li { border-top: 1px solid rgb(255 255 255 / 0.12); }
-	.region-finder a { display: grid; grid-template-columns: minmax(0, 1fr) auto 16px; align-items: center; gap: 12px; min-height: 58px; padding: 8px 4px; color: #fff; text-decoration: none; }
-	.region-name { display: grid; min-width: 0; }
-	.region-name strong { font-size: var(--text-base); font-weight: 600; }
-	.region-name small { overflow: hidden; color: rgb(255 255 255 / 0.66); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
-	.region-count { min-width: 28px; color: var(--sun); font-size: var(--text-sm); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
-	.region-finder a :global(svg) { width: 16px; height: 16px; color: rgb(255 255 255 / 0.7); transition: translate 0.2s ease, color 0.2s ease; }
-	.region-finder a:hover :global(svg) { translate: 3px 0; color: #fff; }
-	.region-finder a:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; border-radius: 6px; }
-
 	/* Real safaris as routes through the places. */
 	.routes { padding-block: 24px 72px; }
 	.routes-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
@@ -205,5 +209,5 @@
 		.route-grid::-webkit-scrollbar { display: none; }
 		.route { flex: 0 0 82%; scroll-snap-align: center; }
 	}
-	@media (prefers-reduced-motion: reduce) { .route, .route-photo img, .region-finder a :global(svg) { transition: none; } }
+	@media (prefers-reduced-motion: reduce) { .route, .route-photo img { transition: none; } }
 </style>

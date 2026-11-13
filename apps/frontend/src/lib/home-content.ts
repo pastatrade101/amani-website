@@ -3,6 +3,7 @@ import { guideSections } from './homepage-guides';
 import { formatPrice } from './safari-pricing.js';
 import type { Destination, HomepageSection, Tour } from './types/api.js';
 import { LANDSCAPES, PHOTO } from './media-photos';
+import { countrySlug, isHomeCountry } from './countries';
 
 export const defaultSections: HomepageSection[] = [
 	...guideSections,
@@ -205,7 +206,13 @@ export function tourPhotos(tours: Pick<Tour, 'main_image_url' | 'main_image_url_
 	});
 }
 
+/**
+ * A place's group on the site: one of Tanzania's safari circuits, or, for a
+ * place in another country, that country's slug (e.g. "kenya"), so Kenya's
+ * coast or northern parks never fall into Tanzania's circuits.
+ */
 export function circuitFor(destination: Destination): string {
+	if (!isHomeCountry(destination.country)) return countrySlug(String(destination.country));
 	const location = `${destination.region ?? ''} ${destination.name} ${destination.slug}`.toLowerCase();
 	// Southern/western Serengeti are areas within the Northern Circuit.
 	if (/serengeti|ndutu/.test(location)) return 'northern';

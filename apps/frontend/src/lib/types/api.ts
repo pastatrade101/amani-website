@@ -40,6 +40,28 @@ export type Destination = {
 	main_image_url_thumbnail?: string;
 	image_url_thumbnail?: string;
 };
+/** A country hub from the CMS (countries table); joins places through their `country` name. */
+export type Country = {
+	id: string;
+	name: string;
+	slug: string;
+	hero_image_url?: string | null;
+	intro_text?: string | null;
+	best_months?: string[] | null;
+	visa_info?: string | null;
+	health_info?: string | null;
+	currency?: string | null;
+	capital?: string | null;
+	phase?: 'live' | 'planned' | 'future' | null;
+	status?: 'draft' | 'published' | 'archived';
+	is_featured?: boolean | null;
+	seo_title?: string | null;
+	meta_title?: string | null;
+	meta_description?: string | null;
+	og_image_url?: string | null;
+	created_at?: string;
+	updated_at?: string;
+};
 export type Activity = {
 	id: string;
 	name: string;

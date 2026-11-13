@@ -670,7 +670,7 @@
                   <section class="cms-form-section grid gap-5">
                     <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-forest/70">Where it is</p>
                     <div class="grid gap-1.5">
-                      <PlaceSelect label="Country" name="country" required options={DESTINATION_COUNTRIES} bind:value={form.country} onchange={changeCountry} hint="Shown on the card photo and in the page header, and used by the Country filter on /destinations." />
+                      <PlaceSelect label="Country" name="country" required options={DESTINATION_COUNTRIES} bind:value={form.country} onchange={changeCountry} hint="Shown on the card photo and in the page header, and puts the place on its country’s page (e.g. /destinations/kenya)." />
                       {#if attemptedSave && countryError}<span class="text-[11px] font-semibold text-clay">{countryError}</span>{/if}
                     </div>
                     <PlaceSelect label="Safari region" name="region" options={regionOptions} bind:value={form.region} emptyLabel="Not set" placeholder="Choose a safari region…" hint={form.country === 'Tanzania' ? 'The label above the name on cards, and the Safari region filter on /destinations (Northern, Southern, Western circuit, Zanzibar & coast).' : 'The label above the name on destination cards, and part of the page header.'} />

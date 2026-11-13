@@ -54,6 +54,7 @@ export const groups: NavGroup[] = [
       links: [
         { href: '/admin/tours', label: 'Tours', icon: Map, exact: true },
         { href: '/admin/categories', label: 'Categories', icon: Tags },
+        { href: '/admin/countries', label: 'Countries', icon: Globe },
         { href: '/admin/destinations', label: 'Destinations', icon: MapPin },
         { href: '/admin/lodges', label: 'Lodges & Camps', icon: Hotel },
         { href: '/admin/specialists', label: 'Tour Specialists', icon: Users },

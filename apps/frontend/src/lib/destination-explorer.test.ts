@@ -30,8 +30,13 @@ test('counts the safaris that visit each place and keeps the lowest dollar price
 	assert.equal(places[3].safaris.count, 0);
 });
 
-test('regions list only regions with places, and name a one-country "more places" after it', () => {
-	assert.deepEqual(regionsOf(places).map((r) => [r.key, r.title, r.count]), [['northern', 'Northern circuit', 2], ['coast', 'Zanzibar & coast', 1], ['other', 'Kenya', 1]]);
+test('regions list Tanzania\'s circuits with places, then each other country under its own name', () => {
+	assert.deepEqual(regionsOf(places).map((r) => [r.key, r.title, r.count, r.country]), [['northern', 'Northern circuit', 2, 'Tanzania'], ['coast', 'Zanzibar & coast', 1, 'Tanzania'], ['kenya', 'Kenya', 1, 'Kenya']]);
+	// With another country on the page, a circuit says it is Tanzania's.
+	assert.equal(regionsOf(places)[1].description, 'Tanzania’s Indian Ocean escape');
+	assert.equal(regionsOf(places.slice(0, 3))[1].description, 'Your Indian Ocean escape');
+	// A country is described by its own areas.
+	assert.equal(regionsOf(places)[2].description, 'Nairobi');
 });
 
 test('best-for reads the two strongest scores of 8 or more, and says nothing otherwise', () => {
@@ -52,6 +57,8 @@ test('the query round-trips through the address, ignoring unknown values', () =>
 	assert.deepEqual(query, { search: 'beach', region: 'coast', country: '', sort: 'wildlife' });
 	assert.equal(queryString(query), '?search=beach&circuit=coast&sort=wildlife');
 	assert.deepEqual(readQuery(new URLSearchParams('circuit=mars&sort=price')), { search: '', region: '', country: '', sort: 'recommended' });
+	assert.equal(readQuery(new URLSearchParams('circuit=kenya')).region, 'kenya');
+	assert.deepEqual(explore(places, { search: '', region: 'kenya', country: '', sort: 'recommended' }).map((p) => p.slug), ['nairobi']);
 });
 
 test('combinations are real safaris with three or more stops, featured first', () => {
@@ -65,4 +72,9 @@ test('the locator marks the place inside the frame', () => {
 	assert.ok(map.outline.startsWith('M') && map.outline.endsWith('Z'));
 	assert.ok(map.x > 0 && map.x < 160 && map.y > 0 && map.y < 120);
 	assert.equal(map.dots.length, 1);
+	// Abroad: no outline, the place centred, only its neighbours as dots.
+	const abroad = locator({ lat: -0.37, lng: 36.08 }, [{ lat: -0.77, lng: 36.35 }, { lat: -6.16, lng: 39.19 }], 160, 120, false);
+	assert.equal(abroad.outline, '');
+	assert.deepEqual([abroad.x, abroad.y], [80, 60]);
+	assert.equal(abroad.dots.length, 1);
 });

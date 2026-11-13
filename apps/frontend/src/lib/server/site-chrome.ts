@@ -26,7 +26,7 @@ export async function loadSiteChrome(fetch: typeof globalThis.fetch) {
 	return {
 		sections,
 		visible: linkedSections(sections, noHomeFaqs),
-		destinations: destinations.status === 'fulfilled' ? destinations.value.items.filter((item) => !item.country || item.country.toLowerCase() === 'tanzania') : referenceDestinations,
+		destinations: destinations.status === 'fulfilled' ? destinations.value.items : referenceDestinations,
 		destinationsAreReference: destinations.status === 'rejected',
 		activities: activities.status === 'fulfilled' ? activities.value.items : referenceActivities,
 		categories: categories.status === 'fulfilled' ? categories.value.items : [],

@@ -7,21 +7,27 @@
 import { circuitFor, safeUrl, textContent, tourPhotos } from './home-content';
 import { tourFacts, tourPriceValue } from './tour-filter';
 import { TANZANIA } from './safari-page';
+import { EAST_AFRICA_COUNTRIES, countrySlug, isHomeCountry } from './countries';
 import type { DestinationDetail } from './destination-content';
 import type { Tour } from './types/api';
 
-export type RegionKey = 'northern' | 'southern' | 'western' | 'coast' | 'other';
+/** One of Tanzania's circuits, or another country's slug (e.g. "kenya"). */
+export type CircuitKey = 'northern' | 'southern' | 'western' | 'coast' | 'other';
+export type RegionKey = CircuitKey | (string & {});
 export type TraitKey = 'wildlife' | 'photography' | 'family' | 'adventure' | 'luxury';
 export type SortKey = 'recommended' | TraitKey;
 
-const REGION_ORDER: RegionKey[] = ['northern', 'southern', 'western', 'coast', 'other'];
-const REGION_COPY: Record<RegionKey, { title: string; description: string }> = {
-	northern: { title: 'Northern circuit', description: 'The classic Tanzania safari' },
-	southern: { title: 'Southern circuit', description: 'Wild, remote and unhurried' },
-	western: { title: 'Western circuit', description: 'Forests, lakes and wild horizons' },
-	coast: { title: 'Zanzibar & coast', description: 'Your Indian Ocean escape' },
-	other: { title: 'More places', description: '' }
+const REGION_ORDER: CircuitKey[] = ['northern', 'southern', 'western', 'coast', 'other'];
+/** `wide` is the line used once other countries share the page, so a circuit reads as Tanzania's. */
+const REGION_COPY: Record<CircuitKey, { title: string; description: string; wide: { title: string; description: string } }> = {
+	northern: { title: 'Northern circuit', description: 'The classic Tanzania safari', wide: { title: 'Northern circuit', description: 'The classic Tanzania safari' } },
+	southern: { title: 'Southern circuit', description: 'Wild, remote and unhurried', wide: { title: 'Southern circuit', description: 'Tanzania’s wild, remote south' } },
+	western: { title: 'Western circuit', description: 'Forests, lakes and wild horizons', wide: { title: 'Western circuit', description: 'Tanzania’s forests, lakes and wild west' } },
+	coast: { title: 'Zanzibar & coast', description: 'Your Indian Ocean escape', wide: { title: 'Zanzibar & coast', description: 'Tanzania’s Indian Ocean escape' } },
+	other: { title: 'More places', description: '', wide: { title: 'More in Tanzania', description: '' } }
 };
+/** Other countries' slugs in the East African list's order. */
+const COUNTRY_ORDER = EAST_AFRICA_COUNTRIES.filter((country) => !isHomeCountry(country)).map(countrySlug);
 
 /** The same names the place pages use for the scores. */
 export const TRAITS: { key: TraitKey; label: string; best: string; field: keyof DestinationDetail }[] = [
@@ -52,7 +58,7 @@ export type Place = {
 	safaris: PlaceSafaris;
 };
 
-export type Region = { key: RegionKey; title: string; description: string; count: number };
+export type Region = { key: RegionKey; title: string; description: string; count: number; country: string };
 
 export type Combination = { id: string; slug: string; title: string; days: number; stops: { name: string; slug: string | null }[]; from: { amount: number; currency: string } | null; photo: string };
 
@@ -106,19 +112,28 @@ export function toPlace(d: DestinationDetail, safaris: Map<string, PlaceSafaris>
 }
 
 /**
- * Regions that have places, in map order. "More places" takes the country's
- * name when every place in it is in one other country (e.g. Kenya).
+ * Regions that have places: Tanzania's circuits in map order, then each other
+ * country (titled with its name, described by its own areas), in the East
+ * African list's order.
  */
 export function regionsOf(places: Place[]): Region[] {
-	return REGION_ORDER.flatMap((key) => {
+	const abroad = [...new Set(places.map((place) => place.region).filter((key) => !isCircuit(key)))].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+	const wide = abroad.length > 0;
+	const circuits = REGION_ORDER.flatMap((key) => {
 		const inside = places.filter((place) => place.region === key);
 		if (!inside.length) return [];
-		const copy = { ...REGION_COPY[key] };
-		const countries = [...new Set(inside.map((place) => place.country).filter(Boolean))];
-		if (key === 'other' && countries.length === 1 && countries[0].toLowerCase() !== 'tanzania') copy.title = countries[0];
-		return [{ key, ...copy, count: inside.length }];
+		const copy = wide ? REGION_COPY[key].wide : REGION_COPY[key];
+		return [{ key, title: copy.title, description: copy.description, count: inside.length, country: 'Tanzania' }];
 	});
+	const countries = abroad.map((key) => {
+		const inside = places.filter((place) => place.region === key);
+		const areas = [...new Set(inside.map((place) => place.area).filter(Boolean))];
+		const description = areas.length > 4 ? `${areas.slice(0, 3).join(', ')} and ${areas.length - 3} more` : areas.join(', ');
+		return { key, title: inside[0].country, description, count: inside.length, country: inside[0].country };
+	});
+	return [...circuits, ...countries];
 }
+const rank = (key: string) => { const i = COUNTRY_ORDER.indexOf(key); return i === -1 ? COUNTRY_ORDER.length : i; };
 
 /** The two strongest scores of 8 or more, e.g. "Best for wildlife and photography". */
 export function bestFor(place: Pick<Place, 'scores'>): string {
@@ -137,7 +152,9 @@ export function sortsFor(places: Place[]): SortKey[] {
 
 export type ExplorerQuery = { search: string; region: RegionKey | ''; country: string; sort: SortKey };
 
-export const isRegion = (value: string): value is RegionKey => (REGION_ORDER as string[]).includes(value);
+export const isCircuit = (value: string): value is CircuitKey => (REGION_ORDER as string[]).includes(value);
+/** A circuit, or an East African country's slug. */
+export const isRegion = (value: string): value is RegionKey => isCircuit(value) || COUNTRY_ORDER.includes(value);
 export const isSort = (value: string): value is SortKey => value === 'recommended' || TRAITS.some((trait) => trait.key === value);
 
 export function readQuery(params: URLSearchParams): ExplorerQuery {
@@ -204,11 +221,15 @@ export function combinations(tours: Tour[], places: Place[], limit = 3): Combina
 /**
  * A small locator map: Tanzania's outline (Natural Earth) with one place
  * marked and the others as faint dots, for a place that has no photo yet.
+ * A place outside Tanzania gets no outline (we hold no other country's
+ * shape): a window around it, with the places near it as dots.
  */
-export function locator(target: { lat: number; lng: number }, others: { lat: number; lng: number }[], width = 160, height = 120) {
+export function locator(target: { lat: number; lng: number }, others: { lat: number; lng: number }[], width = 160, height = 120, inTanzania = true) {
 	const mercator = (lng: number, lat: number): [number, number] => [(lng * Math.PI) / 180, -Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360))];
-	const outline = TANZANIA.map(([lng, lat]) => mercator(lng, lat));
-	const all = [...outline, mercator(target.lng, target.lat)];
+	const outline = inTanzania ? TANZANIA.map(([lng, lat]) => mercator(lng, lat)) : [];
+	// About 4 by 3 degrees around a place abroad, the frame's own shape.
+	const frame = inTanzania ? outline : [mercator(target.lng - 2, target.lat + 1.5), mercator(target.lng + 2, target.lat - 1.5)];
+	const all = [...frame, mercator(target.lng, target.lat)];
 	const xs = all.map((p) => p[0]);
 	const ys = all.map((p) => p[1]);
 	const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
@@ -219,7 +240,7 @@ export function locator(target: { lat: number; lng: number }, others: { lat: num
 	const place = ([x, y]: [number, number]): [number, number] => [Math.round((offsetX + (x - minX) * scale) * 10) / 10, Math.round((offsetY + (y - minY) * scale) * 10) / 10];
 	const [x, y] = place(mercator(target.lng, target.lat));
 	return {
-		outline: `M${outline.map(place).map((p) => p.join(',')).join('L')}Z`,
+		outline: outline.length ? `M${outline.map(place).map((p) => p.join(',')).join('L')}Z` : '',
 		x,
 		y,
 		dots: others.filter((o) => o.lat !== target.lat || o.lng !== target.lng).map((o) => place(mercator(o.lng, o.lat))).filter(([dx, dy]) => dx >= 0 && dx <= width && dy >= 0 && dy <= height)

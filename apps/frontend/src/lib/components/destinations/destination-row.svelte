@@ -23,7 +23,7 @@
 <article class="place" class:active data-place={place.id} onpointerenter={() => onhover?.(place.id)} onpointerleave={() => onhover?.(null)} onfocusin={() => onhover?.(place.id)} onfocusout={() => onhover?.(null)}>
 	<div class="place-media">
 		{#if photo}<img src={photo} alt="" loading="lazy" decoding="async" onerror={() => (failed = true)} />
-		{:else}<LocatorMap lat={place.lat} lng={place.lng} {others} name={place.name} />{/if}
+		{:else}<LocatorMap lat={place.lat} lng={place.lng} {others} name={place.name} country={place.country} />{/if}
 	</div>
 	<div class="place-body">
 		{#if where}<p class="place-where">{where}</p>{/if}

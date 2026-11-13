@@ -1,17 +1,19 @@
 <script lang="ts">
 	import { MapPin } from '@lucide/svelte';
 	import { locator } from '$lib/destination-explorer';
+	import { isHomeCountry } from '$lib/countries';
 
-	// Stands in for a place's photo until it has one: where it is in Tanzania,
-	// with the other places as faint dots. Never another place's photo.
-	let { lat, lng, others = [], name }: { lat: number | null; lng: number | null; others?: { lat: number; lng: number }[]; name: string } = $props();
-	let map = $derived(lat !== null && lng !== null ? locator({ lat, lng }, others) : null);
+	// Stands in for a place's photo until it has one: where it is in Tanzania
+	// (or, abroad, among its neighbours), with the other places as faint dots.
+	// Never another place's photo.
+	let { lat, lng, others = [], name, country = '' }: { lat: number | null; lng: number | null; others?: { lat: number; lng: number }[]; name: string; country?: string } = $props();
+	let map = $derived(lat !== null && lng !== null ? locator({ lat, lng }, others, 160, 120, isHomeCountry(country)) : null);
 </script>
 
 <div class="locator" role="img" aria-label={`Where ${name} is`}>
 	{#if map}
 		<svg viewBox="0 0 160 120" aria-hidden="true">
-			<path d={map.outline} class="land" />
+			{#if map.outline}<path d={map.outline} class="land" />{/if}
 			{#each map.dots as [x, y], i (i)}<circle cx={x} cy={y} r="1.6" class="dot" />{/each}
 			<circle cx={map.x} cy={map.y} r="9" class="halo" />
 			<circle cx={map.x} cy={map.y} r="4" class="pin" />

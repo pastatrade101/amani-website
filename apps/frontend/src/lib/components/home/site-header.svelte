@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { PHOTO } from '$lib/media-photos';
 	import { onDestroy } from 'svelte';
-	import { Menu, ArrowRight, ArrowUpRight, Search, Compass, Map, Binoculars, BedDouble, BookOpen } from '@lucide/svelte';
+	import { Menu, ArrowRight, ArrowUpRight, Search, Compass, Map, MapPin, Binoculars, BedDouble, BookOpen } from '@lucide/svelte';
 	import { destinationHref } from '$lib/destination-content';
 	import { siteInfo } from '$lib/site-info';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -11,6 +11,7 @@
 	import CurrencyPicker from './currency-picker.svelte';
 	import { STYLE_ICONS } from '$lib/components/stays/stay-icons';
 	import { GUIDE_PAGE_KEYS, GUIDE_PATH, safeUrl, circuitFor, destinationPhoto, tourDuration, tourFromPrice, tourPhotos } from '$lib/home-content';
+	import { countryGroups, homeFirst, isHomeCountry } from '$lib/countries';
 	import { SAFARI_STYLE_THEME } from '$lib/safari-pricing';
 	import { ownStayPhoto, STAY_STYLES, stayLocation, stayTypeLabel } from '$lib/stay-content';
 	import { PLANNER_PATH, planHref } from '$lib/planner/plan-href';
@@ -51,6 +52,11 @@
 	let menuPhotos = $derived(tourPhotos(menuTours));
 	// Only circuits with a published place get a column.
 	let circuits = $derived(destinationGroups.map((group) => ({ group, places: destinations.filter((destination) => circuitFor(destination) === group.circuit).slice(0, 5) })).filter((item) => item.places.length));
+	// Places in other countries: one column of country pages, beside Tanzania's circuits.
+	let countries = $derived(countryGroups(destinations));
+	let abroad = $derived(countries.filter((country) => !isHomeCountry(country.name)));
+	let mobilePlaces = $derived(homeFirst(destinations).slice(0, abroad.length ? 6 : 8));
+	const placeCount = (count: number) => `${count} ${count === 1 ? 'place' : 'places'}`;
 	let toursHeading = $derived(menuTours.some((tour) => tour.is_featured) ? 'Featured safaris' : 'Latest safaris');
 	function tourMeta(tour: Tour) {
 		const price = tourFromPrice(tour);
@@ -210,7 +216,7 @@
 										</NavigationMenu.Link>
 									</div>
 								{:else if item.id === 'destinations'}
-									<div class="mega-grid mega-grid-places" style:--cols={circuits.length}>
+									<div class="mega-grid mega-grid-places" style:--cols={circuits.length + (abroad.length ? 1 : 0)}>
 										{#each circuits as { group, places } (group.circuit)}
 											<div class="mega-col">
 												<NavigationMenu.Link href={`/destinations?circuit=${group.circuit}#destination-results`} onclick={closeMenu} class="mega-circuit"><strong>{group.title}</strong><small>{group.description}</small></NavigationMenu.Link>
@@ -221,9 +227,19 @@
 												</ul>
 											</div>
 										{/each}
+										{#if abroad.length}
+											<div class="mega-col">
+												<NavigationMenu.Link href="/destinations#countries" onclick={closeMenu} class="mega-circuit"><strong>Across East Africa</strong><small>Country by country</small></NavigationMenu.Link>
+												<ul class="mega-list">
+													{#each countries as country (country.slug)}
+														<li><NavigationMenu.Link href={country.href} onclick={closeMenu} class="mega-link mega-country">{country.name}<small>{placeCount(country.count)}</small><ArrowRight /></NavigationMenu.Link></li>
+													{/each}
+												</ul>
+											</div>
+										{/if}
 										<NavigationMenu.Link href="/destinations" onclick={closeMenu} class="mega-feature">
 											<img src={PHOTO.wildebeest} alt="" loading="lazy" />
-											<span class="mega-feature-copy"><strong>Find your corner of Tanzania</strong><span>Explore all destinations <ArrowRight /></span></span>
+											<span class="mega-feature-copy"><strong>{abroad.length ? 'Find your corner of East Africa' : 'Find your corner of Tanzania'}</strong><span>Explore all destinations <ArrowRight /></span></span>
 										</NavigationMenu.Link>
 									</div>
 								{/if}
@@ -262,7 +278,8 @@
                                             {#each activities as activity}<a data-motion="reveal" class="mobile-menu-link" href={enquiryHref} onclick={() => choose(activity.name)}><img src={safeUrl(activity.image_url_thumbnail || activity.image_url || activity.hero_image_url, PHOTO.vehiclesAcacia)} alt="" /><span>{activity.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
                                             <a class="mobile-menu-link mobile-view-all" href={anchor('experiences')} onclick={closeMenu}>View all experiences <ArrowRight class="size-4" /></a>
                                         {:else if item.id === 'destinations'}
-                                            {#each destinations.slice(0, 8) as destination, i}<a data-motion="reveal" class="mobile-menu-link" href={destinationHref(destination)} onclick={closeMenu}><img src={destinationPhoto(destination, i)} alt="" /><span>{destination.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
+                                            {#if abroad.length}{#each countries as country (country.slug)}<a class="mobile-menu-link" href={country.href} onclick={closeMenu}><span class="mobile-stay-mark"><MapPin class="size-[18px]" strokeWidth={1.5} /></span><span>{country.name}<small class="mobile-tour-meta">{placeCount(country.count)}</small></span><ArrowUpRight class="size-3.5" /></a>{/each}{/if}
+                                            {#each mobilePlaces as destination, i}<a data-motion="reveal" class="mobile-menu-link" href={destinationHref(destination)} onclick={closeMenu}><img src={destinationPhoto(destination, i)} alt="" /><span>{destination.name}</span><ArrowUpRight class="size-3.5" /></a>{/each}
                                             <a class="mobile-menu-link mobile-view-all" href="/destinations" onclick={closeMenu}>Explore all destinations <ArrowRight class="size-4" /></a>
                                         {/if}
                                     </div>
@@ -331,6 +348,8 @@
 	/* Plain text links: the arrow trails the words without taking their room. */
 	:global(.mega-link:not(.mega-style)) { position: relative; width: fit-content; max-width: 100%; }
 	:global(.mega-link:not(.mega-style) > svg) { position: absolute; top: 50%; left: calc(100% + 6px); margin-top: -7.5px; }
+	:global(.mega-country) { gap: 8px; }
+	:global(.mega-country small) { font-size: var(--text-xs); font-weight: 500; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
 	:global(.mega-link:focus-visible), :global(.mega-row:focus-visible), :global(.mega-feature:focus-visible), :global(.mega-circuit:focus-visible) { outline: 2px solid var(--sun); outline-offset: 2px; }
 	:global(.mega-style) { justify-content: flex-start; padding-block: 10px; }
 	:global(.mega-style > span:nth-child(2)) { flex: 1; min-width: 0; }

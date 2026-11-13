@@ -47,6 +47,12 @@ test('destinations use backend region/name fields and preserve unknown places', 
 	assert.equal(circuitFor({ id: '1', name: 'Ruaha National Park', slug: 'ruaha' }), 'southern');
 	assert.equal(circuitFor({ id: '2', name: 'Pemba Island', slug: 'pemba' }), 'coast');
 	assert.equal(circuitFor({ id: '3', name: 'A new park', slug: 'new-park' }), 'other');
+	assert.equal(circuitFor({ id: '4', name: 'Saadani', slug: 'saadani', country: 'Tanzania' }), 'coast');
+});
+test('places in other countries group under their country, never a Tanzania circuit', () => {
+	assert.equal(circuitFor({ id: '5', name: 'Diani Beach', slug: 'diani', country: 'Kenya', region: 'Kenya Coast' }), 'kenya');
+	assert.equal(circuitFor({ id: '6', name: 'Bwindi', slug: 'bwindi', country: 'Uganda', region: 'Western Region' }), 'uganda');
+	assert.equal(circuitFor({ id: '7', name: 'Somewhere', slug: 'x', country: 'Democratic Republic of the Congo' }), 'democratic-republic-of-the-congo');
 });
 test('rich descriptions are rendered as text without raw HTML', () => {
 	assert.equal(textContent('<p>Wildlife &amp; beaches</p>'), 'Wildlife & beaches');

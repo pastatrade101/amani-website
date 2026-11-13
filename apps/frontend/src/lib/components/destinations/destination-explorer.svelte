@@ -11,7 +11,8 @@
 	// The explorer: region tabs, a search and a "best for" sort over the list
 	// of places, with every place on the map beside it. The list and the map
 	// answer each other: hover a place to find it, tap a pin to open it.
-	let { places, regions, sorts, query, onquery }: { places: Place[]; regions: Region[]; sorts: SortKey[]; query: ExplorerQuery; onquery: (next: ExplorerQuery) => void } = $props();
+	// `base` is the page the filters live on: /destinations, or a country's page.
+	let { places, regions, sorts, query, onquery, base = '/destinations' }: { places: Place[]; regions: Region[]; sorts: SortKey[]; query: ExplorerQuery; onquery: (next: ExplorerQuery) => void; base?: string } = $props();
 
 	let hovered = $state<string | null>(null);
 	let selected = $state<string | null>(null);
@@ -20,11 +21,11 @@
 	let others = $derived(places.filter((p) => p.lat !== null && p.lng !== null).map((p) => ({ lat: p.lat as number, lng: p.lng as number })));
 	let filtered = $derived(Boolean(query.search || query.region || query.country));
 	// With nothing chosen the list reads by region; a filter or a sort makes it one ranked list.
-	let groups = $derived(!filtered && query.sort === 'recommended' ? regions.map((region) => ({ region, items: shown.filter((p) => p.region === region.key) })).filter((g) => g.items.length) : null);
+	let groups = $derived(!filtered && query.sort === 'recommended' && regions.length > 1 ? regions.map((region) => ({ region, items: shown.filter((p) => p.region === region.key) })).filter((g) => g.items.length) : null);
 	let current = $derived(places.find((p) => p.id === selected) ?? null);
 	const SORT_LABEL: Record<SortKey, string> = { recommended: 'Recommended', wildlife: 'Best for wildlife', photography: 'Best for photography', family: 'Best for families', adventure: 'Best for adventure', luxury: 'Best for comfort' };
 
-	const regionHref = (key: string) => `/destinations${queryString({ ...query, region: key as ExplorerQuery['region'] })}#destination-results`;
+	const regionHref = (key: string) => `${base}${queryString({ ...query, region: key as ExplorerQuery['region'] })}#destination-results`;
 	function pickRegion(event: MouseEvent, key: ExplorerQuery['region']) {
 		if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
 		event.preventDefault();
@@ -40,14 +41,14 @@
 
 <div class="explorer">
 	<div class="toolbar">
-		<nav class="regions" aria-label="Safari region" use:glide={{ center: true }}>
+		{#if regions.length > 1}<nav class="regions" aria-label="Safari region" use:glide={{ center: true }}>
 			<a href={regionHref('')} data-sveltekit-noscroll aria-current={query.region === '' ? 'true' : undefined} onclick={(e) => pickRegion(e, '')}>All places<span>{places.length}</span></a>
 			{#each regions as region (region.key)}
 				<a href={regionHref(region.key)} data-sveltekit-noscroll aria-current={query.region === region.key ? 'true' : undefined} onclick={(e) => pickRegion(e, region.key)}>{region.title}<span>{region.count}</span></a>
 			{/each}
-		</nav>
+		</nav>{/if}
 		<div class="controls">
-			<form class="search" role="search" method="GET" action="/destinations#destination-results" onsubmit={(e) => e.preventDefault()}>
+			<form class="search" role="search" method="GET" action={`${base}#destination-results`} onsubmit={(e) => e.preventDefault()}>
 				<Search class="search-icon" aria-hidden="true" />
 				<label for="destination-query" class="sr-only">Find a place</label>
 				<input id="destination-query" name="search" type="search" value={query.search} oninput={(e) => onquery({ ...query, search: e.currentTarget.value.slice(0, 120) })} maxlength={120} autocomplete="off" enterkeyhint="search" placeholder="Find a park, island or town" />
@@ -106,7 +107,7 @@
 				{#if current}
 					<div class="map-card">
 						<div class="map-card-media">
-							{#if current.photos[0]}<img src={current.photos[0]} alt="" />{:else}<LocatorMap lat={current.lat} lng={current.lng} {others} name={current.name} />{/if}
+							{#if current.photos[0]}<img src={current.photos[0]} alt="" />{:else}<LocatorMap lat={current.lat} lng={current.lng} {others} name={current.name} country={current.country} />{/if}
 						</div>
 						<div class="map-card-body">
 							{#if where(current)}<p>{where(current)}</p>{/if}

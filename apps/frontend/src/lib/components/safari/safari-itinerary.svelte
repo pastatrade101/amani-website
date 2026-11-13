@@ -100,7 +100,7 @@
 					     the name and place, a short read, the facts and the ways in. One stay
 					     takes the whole row, words beside its photos; several share the row. -->
 					<h4>{stays.length === 1 ? 'Accommodation' : 'Accommodation options'}</h4>
-					<ul class="stays" class:single={stays.length === 1} data-count={Math.min(stays.length, 3)}>
+					<div class="stays-wrap"><ul class="stays" class:single={stays.length === 1} data-count={Math.min(stays.length, 3)}>
 						{#each stays as card (card.style)}
 							{@const lodge = card.stay!.lodge}
 							{@const name = card.stay!.name}
@@ -143,7 +143,7 @@
 								</div>
 							</li>
 						{/each}
-					</ul>
+					</ul></div>
 				{/if}
 				{#if i === days.length - 1 && end}<p class="ending"><Sun aria-hidden="true" />Your safari ends in {end}.</p>{/if}
 			</article>
@@ -168,9 +168,10 @@
 	.day-meta li { display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); color: var(--sp-muted); }
 	.day-meta :global(svg) { flex-shrink: 0; width: 17px; height: 17px; color: #98723c; }
 	h4 { margin: 0 0 14px; font-size: var(--text-base); font-weight: 600; color: var(--sp-ink); }
-	/* One card for every stay. Several share the row, photo over words. */
-	.stays { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 0; padding: 0; list-style: none; }
-	.stays[data-count='2'] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	/* One card for every stay. The row answers its own width, not the window's,
+	   so no card is ever left beside an empty column as the page narrows. */
+	.stays-wrap { container: stays / inline-size; }
+	.stays { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; margin: 0; padding: 0; list-style: none; }
 	.stay-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--sp-line); border-radius: var(--radius-surface); background: #fff; }
 	.stay-media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: #ece8dd; }
 	.stand-in { position: absolute; inset: 0; }
@@ -205,27 +206,36 @@
 	.mosaic button:hover img { transform: scale(1.04); }
 	.mosaic button:focus-visible { outline: 2px solid var(--sp-sun); outline-offset: -2px; }
 	.mosaic .more { position: absolute; inset: 0; display: grid; place-items: center; background: rgb(20 18 15 / 0.45); font-size: var(--text-xl); font-weight: 600; color: #fff; }
-	/* One stay takes the row: the words on the left, its photos (or the stand-in) on the right. */
-	.single { grid-template-columns: minmax(0, 1fr); }
-	.single .stay-card { display: grid; grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.7fr); }
-	.single .stay-media { order: 2; aspect-ratio: auto; min-height: 320px; margin: 4px; border-radius: calc(var(--radius-surface) - 4px); }
-	.single .stay-body { justify-content: center; padding: 32px; }
-	.single .stay-name { margin-top: 14px; font-size: var(--text-2xl); }
+	/* One stay takes the row: photos over words while the row is narrow, then the
+	   words on the left and its photos (or the stand-in) on the right. */
+	.single .stay-media { aspect-ratio: 16 / 9; }
+	.single .stay-name { margin-top: 14px; }
 	.single .blurb { margin-top: 16px; -webkit-line-clamp: 3; line-clamp: 3; }
 	.single .stay-facts { margin-top: 0; padding-top: 22px; }
 	.single .mosaic button { border-radius: 0; }
-	.single .mosaic[data-count='3'] button:first-child { border-radius: calc(var(--radius-surface) - 4px) 0 0 calc(var(--radius-surface) - 4px); }
+	@container stays (max-width: 519.98px) { .stay-body { padding: 20px; } }
+	@container stays (min-width: 520px) {
+		.stays[data-count='2'], .stays[data-count='3'] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		/* Three stays in two columns: the third takes the whole row, photo beside words. */
+		.stays[data-count='3'] .stay-card:nth-child(3) { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.stays[data-count='3'] .stay-card:nth-child(3) .stay-media { aspect-ratio: auto; min-height: 260px; }
+		.single .stay-body { padding: 28px; }
+	}
+	@container stays (min-width: 760px) {
+		.single .stay-card { display: grid; grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.6fr); }
+		.single .stay-media { order: 2; aspect-ratio: auto; min-height: 320px; margin: 4px; border-radius: calc(var(--radius-surface) - 4px); }
+		.single .stay-body { justify-content: center; padding: 32px; }
+		.single .mosaic[data-count='3'] button:first-child { border-radius: calc(var(--radius-surface) - 4px) 0 0 calc(var(--radius-surface) - 4px); }
+	}
+	@container stays (min-width: 820px) {
+		.stays[data-count='3'] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+		.stays[data-count='3'] .stay-card:nth-child(3) { grid-column: auto; display: flex; }
+		.stays[data-count='3'] .stay-card:nth-child(3) .stay-media { aspect-ratio: 16 / 10; min-height: 0; }
+	}
+	@container stays (min-width: 920px) { .single .stay-name { font-size: var(--text-2xl); } }
 	.ending { display: flex; align-items: center; gap: 10px; max-width: 860px; margin: 24px 0 0; padding: 15px 18px; border-radius: var(--radius-control); background: #fff1b8; color: #5c4b00; font-size: var(--text-base); font-weight: 500; }
 	.ending :global(svg) { width: 18px; height: 18px; }
 	.stay-note { margin: 32px 0 0; padding-left: 44px; font-size: var(--text-sm); line-height: 1.7; color: var(--sp-muted); }
-	@media (max-width: 960px) {
-		.stays { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-		.single .stay-card { display: flex; }
-		.single .stay-media { order: 0; min-height: 0; aspect-ratio: 16 / 9; }
-		.single .mosaic button, .single .mosaic[data-count='3'] button:first-child { border-radius: 0; }
-		.single .stay-media { margin: 0; border-radius: 0; }
-	}
-	@media (max-width: 600px) { .stays, .stays[data-count='2'] { grid-template-columns: minmax(0, 1fr); } .stay-body, .single .stay-body { padding: 20px; } .single .stay-name { font-size: var(--text-xl); } }
 	@media (prefers-reduced-motion: reduce) { .mosaic img { transition: none; } }
 	@media (max-width: 767px) {
 		.timeline { margin-left: 6px; padding-left: 24px; } article { padding-bottom: 40px; } article::before { left: -32px; } .summary { font-size: var(--text-base); } .stay-note { padding-left: 0; }

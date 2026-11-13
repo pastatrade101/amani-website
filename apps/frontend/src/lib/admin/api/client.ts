@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import { API_URL } from '$lib/admin/config/env';
 import type { EntityTranslations, Language, TranslationRecord } from '$lib/admin/types';
 import type { LegalDefaults } from '$lib/admin/legal';
+import type { Country } from '$lib/types/api';
 import type { Activity, AdvisorDonePayload, AdvisorMeta, AdvisorPageContext, AdvisorRecommendation, AiChatResponse, ApiResponse, BlogPost, Comparison, CurrencyApiState, Destination, FAQ, Lodge, MigrationEntry, PageSeo, Paginated, Review, ReviewSummary, SafariPackage, SafetyTopic, Specialist, Testimonial, Tour, TourListOption, TourCategory, TourContentBody, TravelStyle, TripPoint } from '$lib/admin/types';
 
 type QueryValue = string | number | boolean | undefined | null;
@@ -362,6 +363,13 @@ export const api = {
     create: (body: Record<string, unknown>) => apiRequest<TripPoint>('/trip-points', { method: 'POST', body }),
     update: (id: string, body: Record<string, unknown>) => apiRequest<TripPoint>(`/trip-points/${id}`, { method: 'PUT', body }),
     remove: (id: string) => apiRequest(`/trip-points/${id}`, { method: 'DELETE' })
+  },
+  countries: {
+    list: (params?: Record<string, QueryValue>) => apiRequest<Paginated<Country>>(`/countries${queryString(params)}`),
+    get: (slug: string) => apiRequest<Country>(`/countries/${slug}`),
+    create: (body: Record<string, unknown>) => apiRequest<Country>('/countries', { method: 'POST', body }),
+    update: (id: string, body: Record<string, unknown>) => apiRequest<Country>(`/countries/${id}`, { method: 'PUT', body }),
+    remove: (id: string) => apiRequest(`/countries/${id}`, { method: 'DELETE' })
   },
   safetyTopics: {
     list: (params?: Record<string, QueryValue>) => apiRequest<Paginated<SafetyTopic>>(`/safety-topics${queryString(params)}`),

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ArrowRight, ArrowUp, ChevronDown, Compass, MapPin, MessageCircle, Star } from '@lucide/svelte';
 	import { destinationHref } from '$lib/destination-content';
+	import { countryGroups, homeFirst } from '$lib/countries';
 	import { siteInfo } from '$lib/site-info';
 	import { GUIDE_PAGE_KEYS, GUIDE_PATH, safeUrl } from '$lib/home-content';
 	import { TRIPADVISOR_URL, WHATSAPP_URL } from '$lib/homepage-refresh';
@@ -35,8 +36,11 @@
 			...(visible.includes('experiences') ? [{ label: 'Safari experiences', href: anchor('experiences') }] : []),
 			{ label: 'Where to stay', href: '/stays' }
 		];
+		// With places in several countries, the countries lead; then Tanzania's places.
+		const countries = countryGroups(destinations);
+		const placeLinks: FooterLink[] = [...(countries.length > 1 ? countries.map((country) => ({ label: country.name, href: country.href })) : []), ...homeFirst(destinations).map((destination) => ({ label: destination.name, href: destinationHref(destination) }))].slice(0, 6);
 		const places: FooterLink[] = [
-			...(visible.includes('destinations') ? destinations.slice(0, 6).map((destination) => ({ label: destination.name, href: destinationHref(destination) })) : []),
+			...(visible.includes('destinations') ? placeLinks : []),
 			{ label: 'All destinations', href: '/destinations' }
 		];
 		const plan: FooterLink[] = [

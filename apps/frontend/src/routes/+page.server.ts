@@ -41,7 +41,7 @@ export const load: PageServerLoad = async ({ fetch, url, setHeaders }) => {
 		reviewAverage: reviews.status === 'fulfilled' ? averageRating(reviews.value.items) : null,
 		faqs: faqs.status === 'fulfilled' ? faqs.value.items : null,
 		sections: mergeSections(homepage.status === 'fulfilled' && Array.isArray(homepage.value) ? homepage.value : []),
-		destinations: destinations.status === 'fulfilled' ? destinations.value.items.filter((item) => !item.country || item.country.toLowerCase() === 'tanzania') : referenceDestinations,
+		destinations: destinations.status === 'fulfilled' ? destinations.value.items : referenceDestinations,
 		activities: activities.status === 'fulfilled' ? activities.value.items : referenceActivities,
 		categories: categories.status === 'fulfilled' ? categories.value.items : [],
 		tours: tours.status === 'fulfilled' ? tours.value.items : [],

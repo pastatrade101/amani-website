@@ -62,6 +62,7 @@ const selectWithout = async (table: string, select: string, omit: string[]): Pro
 const THUMBNAIL_COLUMNS: Record<string, string[]> = {
   tours: ['main_image_url'],
   destinations: ['main_image_url', 'image_url', 'banner_image_url'],
+  countries: ['hero_image_url'],
   lodges: ['image_url', 'hero_image_url'],
   blog_posts: ['featured_image_url'],
   tour_categories: ['image_url', 'icon_url'],

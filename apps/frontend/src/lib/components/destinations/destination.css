@@ -13,3 +13,20 @@
 @media(min-width:1200px){.destination-tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:767px){.destination-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
 @media(max-width:639px){.destination-grid:not(.destination-tiles){gap:10px}}
+
+/* The hero's finder card: regions or countries as a way in, in the same glass as the tours finder. Shared by the destinations and country pages. */
+.region-finder { display: grid; gap: 14px; padding: 22px; border: 1px solid rgb(255 255 255 / 0.16); border-radius: var(--radius-surface); background: linear-gradient(160deg, rgb(30 34 36 / 0.72), rgb(36 30 24 / 0.66)); -webkit-backdrop-filter: blur(14px) saturate(1.1); backdrop-filter: blur(14px) saturate(1.1); box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.6); color: #fff; }
+.region-finder-head h2 { margin: 0; font-size: var(--text-xl); font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; }
+.region-finder-head p { margin: 4px 0 0; font-size: var(--text-sm); color: rgb(255 255 255 / 0.7); }
+.region-finder ul { display: grid; margin: 0; padding: 0; list-style: none; }
+.region-finder li + li { border-top: 1px solid rgb(255 255 255 / 0.12); }
+.region-finder a { display: grid; grid-template-columns: minmax(0, 1fr) auto 16px; align-items: center; gap: 12px; min-height: 58px; padding: 8px 4px; color: #fff; text-decoration: none; }
+.region-name { display: grid; min-width: 0; }
+.region-name strong { font-size: var(--text-base); font-weight: 600; }
+.region-name small { overflow: hidden; color: rgb(255 255 255 / 0.66); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.region-count { min-width: 28px; color: var(--sun); font-size: var(--text-sm); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.region-finder a svg { width: 16px; height: 16px; color: rgb(255 255 255 / 0.7); transition: translate 0.2s ease, color 0.2s ease; }
+.region-finder a:hover svg { translate: 3px 0; color: #fff; }
+.region-finder a:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; border-radius: 6px; }
+
+@media (prefers-reduced-motion: reduce) { .region-finder a svg { transition: none; } }

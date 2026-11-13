@@ -21,6 +21,7 @@
     '/admin/pricing-options': 'Pricing Options',
     '/admin/exchange-rates': 'Exchange Rates',
     '/admin/categories': 'Tour Categories',
+    '/admin/countries': 'Countries',
     '/admin/destinations': 'Destinations',
     '/admin/bookings': 'Bookings',
     '/admin/payments': 'Payments',
