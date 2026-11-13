@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { PHOTO } from '$lib/media-photos';
 	import { tick } from 'svelte';
-	import { replaceState } from '$app/navigation';
+	import { afterNavigate, replaceState } from '$app/navigation';
+	import { TOUR_SEARCH_ID } from '$lib/tour-search';
 	import { page } from '$app/state';
 	import { ArrowRight, Search, SlidersHorizontal, X } from '@lucide/svelte';
 	import PageHero from '$lib/components/page-hero.svelte';
@@ -107,6 +108,9 @@
 		document.getElementById('tour-results')?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 	}
 
+	// The header's search button links here (/tours#tour-search): put the cursor in the box.
+	let searchInput = $state<HTMLInputElement>();
+	afterNavigate(({ to }) => { if (to?.url.hash === `#${TOUR_SEARCH_ID}`) searchInput?.focus({ preventScroll: true }); });
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 	const cleanSearch = (value: string) => value.replace(/\s+/g, ' ').trim().slice(0, 150);
 	function typeSearch(value: string) {
@@ -199,8 +203,8 @@
 				<div class="toolbar">
 					<form class="search" role="search" method="GET" action="/tours" onsubmit={submitSearch}>
 						<Search class="search-icon" aria-hidden="true" />
-						<label for="tour-search" class="sr-only">Search safaris</label>
-						<input id="tour-search" name="search" type="search" value={searchText} oninput={(event) => typeSearch(event.currentTarget.value)} maxlength={150} autocomplete="off" enterkeyhint="search" placeholder="Search a park, animal or experience" />
+						<label for={TOUR_SEARCH_ID} class="sr-only">Search safaris</label>
+						<input bind:this={searchInput} id={TOUR_SEARCH_ID} name="search" type="search" value={searchText} oninput={(event) => typeSearch(event.currentTarget.value)} maxlength={150} autocomplete="off" enterkeyhint="search" placeholder="Search a park, animal or experience" />
 						{#if searchText}<button type="button" class="clear" aria-label="Clear search" onclick={() => removeChip({ facet: 'search', value: '', label: '' })}><X class="size-4" /></button>{/if}
 					</form>
 					<button type="button" class="filters-button" aria-haspopup="dialog" onclick={() => (sheetOpen = true)}>

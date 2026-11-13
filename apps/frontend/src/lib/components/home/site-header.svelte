@@ -16,6 +16,7 @@
 	import { PLANNER_PATH, planHref } from '$lib/planner/plan-href';
 	import type { Activity, Category, Destination, Stay, Tour } from '$lib/types/api';
 	import { page } from '$app/state';
+	import { TOUR_SEARCH_ID } from '$lib/tour-search';
 
 	let open = $state(false);
 	// CMS branding from the root layout; empty keeps the built-in mark.
@@ -43,10 +44,8 @@
 	// The safari guide page shows while any of its sections is switched on.
 	let hasGuide = $derived(GUIDE_PAGE_KEYS.some((key) => visible.includes(key)));
 	let enquiryHref = $derived(anchor(visible.includes('enquiry') ? 'request-quote' : visible.includes('experiences') ? 'experiences' : 'destinations'));
-	// On the home page the search panel exists only while safari packages are shown.
 	// "Plan my safari" opens the trip planner from every page but the planner itself.
 	let onPlanner = $derived(page.url.pathname === PLANNER_PATH);
-	let searchHref = $derived((onPage ? onPage.includes('safari-search') : visible.includes('safari_packages')) ? '#safari-search' : '/tours#safari-search');
 	// Featured tours first, otherwise the API's newest-first order.
 	let menuTours = $derived([...tours].sort((a, b) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured))).slice(0, 5));
 	let menuPhotos = $derived(tourPhotos(menuTours));
@@ -93,6 +92,17 @@
 	onDestroy(keepMenuOpen);
 	function closeMenu() { keepMenuOpen(); open = false; menu = ''; }
 	function choose(name: string) { onInterest(name); closeMenu(); }
+	// Search lives on the tours page: the button goes there and puts the cursor in the box
+	// (or, already on that page, scrolls to the box and focuses it).
+	const searchHref = `/tours#${TOUR_SEARCH_ID}`;
+	function openSearch(event: MouseEvent) {
+		const input = document.getElementById(TOUR_SEARCH_ID);
+		if (!(input instanceof HTMLInputElement) || event.metaKey || event.ctrlKey || event.shiftKey) return;
+		event.preventDefault();
+		closeMenu();
+		input.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+		input.focus({ preventScroll: true });
+	}
 </script>
 
 <header class="site-header">
@@ -108,7 +118,7 @@
 		<NavigationMenu.Root value={menu} onValueChange={(value) => menu = value} viewport={false} onpointerenter={keepMenuOpen} onpointerleave={leaveNavigation} class="desktop-navigation" aria-label="Main navigation">
 			<NavigationMenu.List class="gap-1">
 				{#each navigation as item}
-					<NavigationMenu.Item value={item.id} class="mega-menu-item" onpointerenter={(event) => hoverMenu(event, item.id)}>
+					<NavigationMenu.Item value={item.id} openOnHover={false} class="mega-menu-item" onpointerenter={(event) => hoverMenu(event, item.id)}>
                         <div class="main-menu-control" class:menu-open={menu === item.id}>
                             <NavigationMenu.Link href={mainLink(item.id)} onclick={closeMenu} active={isCurrent(item.id)} class="main-menu-link">{item.label}</NavigationMenu.Link>
                             <NavigationMenu.Trigger class="main-menu-trigger" aria-label={`${item.label} menu`} />
@@ -224,9 +234,9 @@
 				{#if hasGuide}<NavigationMenu.Item value="guide" class="mega-menu-item"><div class="main-menu-control"><NavigationMenu.Link href={GUIDE_PATH} onclick={closeMenu} active={isCurrent('guide')} class="main-menu-link plain-menu-link">Safari guide</NavigationMenu.Link></div></NavigationMenu.Item>{/if}
 			</NavigationMenu.List>
 		</NavigationMenu.Root>
-		<div class="header-actions"><CurrencyPicker /><Button href={searchHref} variant="ghost" size="icon" aria-label="Search safaris" class=""><Search class="size-5" /></Button>{#if !onPlanner}<Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" class="h-11 px-5 text-sm">Plan my safari <ArrowRight class="size-4" /></Button>{/if}</div>
+		<div class="header-actions"><CurrencyPicker /><Button href={searchHref} onclick={openSearch} variant="ghost" size="icon" aria-label="Search safaris"><Search class="size-5" /></Button>{#if !onPlanner}<Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" class="h-11 px-5 text-sm">Plan my safari <ArrowRight class="size-4" /></Button>{/if}</div>
 		<div class="mobile-actions">
-		<a href={searchHref} class="mobile-search" aria-label="Search safaris"><Search class="size-[22px]" strokeWidth={1.9} /></a>
+		<a href={searchHref} onclick={openSearch} class="mobile-search" aria-label="Search safaris"><Search class="size-[22px]" strokeWidth={1.9} /></a>
 		<Sheet.Root bind:open>
 			<Sheet.Trigger class="mobile-navigation" aria-label="Open navigation"><Menu class="size-6" strokeWidth={1.9} /></Sheet.Trigger>
             <Sheet.Content side="right" class="mobile-menu-panel">
@@ -271,7 +281,13 @@
 </header>
 
 <style>
-	.site-header { view-transition-name: site-header; position: sticky; top: 0; z-index: 50; box-shadow: 0 8px 24px -20px rgb(39 36 31 / .3); border-bottom: 1px solid var(--border); background: var(--background); transition: transform .25s ease; }
+	/* Frosted glass: the page shows softly through the header as it scrolls beneath. */
+	.site-header { view-transition-name: site-header; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid rgb(39 36 31 / .08); background: color-mix(in oklab, var(--background) 72%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: inset 0 -1px 0 rgb(255 255 255 / .4), 0 8px 24px -20px rgb(39 36 31 / .3); transition: transform .25s ease, background-color .2s ease; }
+	/* With a menu open the header joins the solid panel below it. */
+	.site-header:has(:global(.mega-panel[data-state='open'])) { background: var(--background); }
+	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .site-header { background: var(--background); } }
+	/* Photo heroes run up behind the glass, so it reads as glass from the first view. */
+	:global(.site-header + main > :first-child:is(.home-hero, .page-hero)) { margin-top: calc(-1 * var(--site-header-height) - 1px); padding-top: calc(var(--site-header-height) + 1px); }
 	/* A page's own sticky bar can take the header's place while it is stuck
 	   (tour pages); keyboard focus inside the header still brings it back. */
 	:global(html[data-header-hidden]) .site-header:not(:focus-within) { transform: translateY(-100%); box-shadow: none; }
@@ -281,12 +297,15 @@
 	:global(.desktop-navigation) { position: static; display: flex; flex: none; }
 	:global(.mega-menu-item) { position: static; }
 	.main-menu-control { display: flex; align-items: center; }
-	/* One ink rule under the label: drawn in on hover and while its menu is open, solid on the page you are on. */
+	/* A sun-yellow rule sitting on the header's bottom edge, under the label: solid
+	   on the page you are on and while its menu is open, lighter on hover. The link is
+	   44px tall and centred, so half the leftover header height reaches the edge;
+	   one more pixel covers the header's border. */
 	:global(.main-menu-link) { position: relative; }
-	:global(.main-menu-link)::after { content: ''; position: absolute; left: 12px; right: 3px; bottom: 5px; height: 2px; border-radius: 1px; background: var(--navy); opacity: .28; transform: scaleX(0); transform-origin: left center; transition: transform .28s cubic-bezier(.2, .7, .2, 1), opacity .2s ease; }
+	:global(.main-menu-link)::after { content: ''; position: absolute; z-index: 2; left: 12px; right: 3px; bottom: calc((44px - var(--site-header-height)) / 2 - 1px); height: 3px; background: var(--sun); opacity: .5; transform: scaleX(0); transform-origin: center; transition: transform .28s cubic-bezier(.2, .7, .2, 1), opacity .2s ease; }
 	:global(.main-menu-link.plain-menu-link)::after { right: 12px; }
-	.main-menu-control:hover :global(.main-menu-link)::after, .main-menu-control.menu-open :global(.main-menu-link)::after { transform: scaleX(1); }
-	:global(.main-menu-link[data-active])::after { opacity: 1; transform: scaleX(1); }
+	.main-menu-control:hover :global(.main-menu-link)::after { transform: scaleX(1); }
+	.main-menu-control.menu-open :global(.main-menu-link)::after, :global(.main-menu-link[data-active])::after { opacity: 1; transform: scaleX(1); }
 	:global(.main-menu-link[data-active]) { font-weight: 600; }
 	:global(.main-menu-link) { height: 44px; padding: 0 3px 0 12px; border-radius: var(--radius-control) 0 0 var(--radius-control); color: var(--navy); font-size: var(--text-base); font-weight: 500; text-decoration: none; background: transparent; }
 	:global(.main-menu-link:hover), :global(.main-menu-link:focus), :global(.main-menu-link[data-active]) { background: transparent; }
