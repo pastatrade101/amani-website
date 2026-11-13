@@ -12,6 +12,7 @@
 	import Enquiry from '$lib/components/home/enquiry.svelte';
 	import TourCard from '$lib/components/tours/tour-card.svelte';
 	import TourFilterPanel from '$lib/components/tours/tour-filter-panel.svelte';
+	import TourFinder from '$lib/components/tours/tour-finder.svelte';
 	import FaqList from '$lib/components/faq/faq-list.svelte';
 	import SavedTours from '$lib/components/tours/saved-tours.svelte';
 	import TourCompare from '$lib/components/tours/tour-compare.svelte';
@@ -66,6 +67,8 @@
 			if (photo) photos[place.id] = photo;
 		}
 		for (const tour of data.tours) if (tour.category_id && !photos[tour.category_id] && photoById.get(tour.id)) photos[tour.category_id] = photoById.get(tour.id)!;
+		// A place with no photo of its own borrows one from a safari that goes there.
+		for (const item of facts) for (const id of item.placeIds) if (!photos[id] && photoById.get(item.tour.id)) photos[id] = photoById.get(item.tour.id)!;
 		return photos;
 	});
 	const hasPhoto = (place: Destination) => Boolean(place.main_image_url_thumbnail || place.image_url_thumbnail || place.main_image_url || place.image_url || place.banner_image_url || destinationFallbackPhoto(place));
@@ -96,6 +99,12 @@
 		if (!sheetOpen && resultsTop && resultsTop.getBoundingClientRect().top < 0) {
 			resultsTop.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 		}
+	}
+
+	// The hero card hands over its choices, then the list comes into view.
+	async function applyFinder(next: TourQuery) {
+		await update(next);
+		document.getElementById('tour-results')?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 	}
 
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
@@ -167,9 +176,12 @@
 <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-sun focus:p-4">Skip to content</a>
 <SiteHeader visible={data.visible} activities={data.activities} destinations={data.destinations} onInterest={chooseInterest} tours={data.navTours} categories={data.categories} stays={data.navStays} {onPage} />
 <main id="main">
-	<PageHero compact titleId="tours-title" image={PHOTO.wildebeest} imageAlt="Wildebeest herds grazing on the Serengeti plains" crumbs={[{ label: 'Home', href: '/' }, { label: 'Tours' }]} title="Safari tours & itineraries" intro="Day-by-day journeys through Tanzania’s parks and coast, each ready to shape around your dates, pace and comfort.">
+	<PageHero titleId="tours-title" asideWide image={PHOTO.wildebeest} imageAlt="Wildebeest herds grazing on the Serengeti plains" crumbs={[{ label: 'Home', href: '/' }, { label: 'Tours' }]} title="Safari tours & itineraries" intro="Day-by-day journeys through Tanzania’s parks and coast, each ready to shape around your dates, pace and comfort.">
 		{#snippet actions()}
 			{#if enquiry}<Button variant="safari" href={planHref({ from: 'tours_hero' })} data-cta="plan_my_trip" data-cta-location="tours_hero">Plan my safari <ArrowRight class="size-4" /></Button>{/if}
+		{/snippet}
+		{#snippet aside()}
+			{#if facts.length > 1}<TourFinder {facts} {query} categories={data.categories} destinations={data.destinations} photos={filterPhotos} onapply={applyFinder} />{/if}
 		{/snippet}
 	</PageHero>
 

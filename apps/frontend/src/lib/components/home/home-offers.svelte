@@ -231,27 +231,35 @@
 	/* ---- The ScrollCraft story ---- */
 	.offers:global([data-sc-live]) { padding-bottom: 72px; }
 	.offers:global([data-sc-live]) .offers-act { margin-top: 40px; }
-	.offers:global([data-sc-live]) .offers-stage { position: sticky; top: var(--site-header-height); height: calc(100svh - var(--site-header-height) - var(--compare-offset, 0px)); padding: 0 0 24px; overflow: clip; }
-	/* The same rail as every other section: 84% wide, never past the page max. */
-	.offers:global([data-sc-live]) .offers-frame { position: relative; isolation: isolate; width: 84%; max-width: var(--page-max); height: 100%; overflow: hidden; border-radius: 14px; background: #221e19; }
+	.offers:global([data-sc-live]) .offers-stage { position: sticky; top: var(--site-header-height); height: calc(100svh - var(--site-header-height) - var(--compare-offset, 0px)); padding: 0; overflow: clip; }
+	/* The photograph runs edge to edge; the words and the story bar keep the page
+	   margin (--inset), so they line up with every other section. */
+	.offers:global([data-sc-live]) .offers-frame { --inset: max(32px, calc((100% - min(84%, var(--page-max))) / 2)); position: relative; isolation: isolate; width: 100%; max-width: none; height: 100%; overflow: hidden; border-radius: 0; background: #14110d; }
+	/* Fine film grain over the picture, under the words. */
+	.offers:global([data-sc-live]) .offers-frame::after { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0.09; mix-blend-mode: overlay; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 	.offers:global([data-sc-live]) .offers-photos { position: absolute; inset: 0; z-index: -1; display: block; }
 	/* Taller than the frame, so the drift never shows an edge. */
 	.offers:global([data-sc-live]) .offers-drift { position: absolute; inset: -48px 0; }
-	.offers:global([data-sc-live]) .offers-drift img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+	.offers:global([data-sc-live]) .offers-drift img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(1.06) contrast(1.08) brightness(0.94); animation: offers-push 28s ease-out infinite alternate; }
+	@keyframes offers-push { from { scale: 1; } to { scale: 1.09; } }
 	/* Dark only where the words sit: the left side and the story bar. */
-	.offers:global([data-sc-live]) .offers-scrim { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(22 19 15 / 0.9) 0%, rgb(22 19 15 / 0.8) 22%, rgb(22 19 15 / 0.52) 40%, rgb(22 19 15 / 0.18) 56%, rgb(22 19 15 / 0) 68%), linear-gradient(0deg, rgb(22 19 15 / 0.72) 0%, rgb(22 19 15 / 0.3) 14%, rgb(22 19 15 / 0) 28%); }
-	.offers:global([data-sc-live]) .journeys { position: absolute; inset: 0 auto 120px 0; display: grid; align-items: center; width: min(58%, 640px); margin: 0; padding-left: clamp(36px, 4.5vw, 64px); }
+	.offers:global([data-sc-live]) .offers-scrim { position: absolute; inset: 0; background:
+		radial-gradient(130% 100% at 72% 38%, rgb(12 10 8 / 0) 40%, rgb(12 10 8 / 0.5) 100%),
+		linear-gradient(90deg, rgb(12 10 8 / 0.82) 0%, rgb(12 10 8 / 0.66) 24%, rgb(12 10 8 / 0.3) 44%, rgb(12 10 8 / 0) 62%),
+		linear-gradient(0deg, rgb(12 10 8 / 0.88) 0%, rgb(12 10 8 / 0.4) 20%, rgb(12 10 8 / 0) 40%),
+		linear-gradient(180deg, rgb(12 10 8 / 0.35) 0%, rgb(12 10 8 / 0) 18%); }
+	.offers:global([data-sc-live]) .journeys { position: absolute; inset: 0 auto 132px 0; z-index: 1; display: grid; align-items: center; width: calc(var(--inset) + min(54%, 660px)); margin: 0; padding-left: var(--inset); }
 	.offers:global([data-sc-live]) .journey { grid-area: 1 / 1; display: block; min-height: 0; padding: 0; overflow: visible; border-radius: 0; background: none; box-shadow: none; }
 	.offers:global([data-sc-live]) .journey-where { display: none; }
 	.offers:global([data-sc-live]) .journey-photo { display: none; }
 	.offers:global([data-sc-live]) .journey-copy { display: block; padding: 0; }
-	.offers:global([data-sc-live]) h3 { font-size: var(--text-title); line-height: 1.05; letter-spacing: -0.035em; }
+	.offers:global([data-sc-live]) h3 { font-size: var(--text-display); line-height: 1.02; letter-spacing: -0.04em; text-shadow: 0 2px 30px rgb(0 0 0 / 0.28); }
 	.offers:global([data-sc-live]) .journey-text { margin-top: 20px; max-width: 32rem; font-size: var(--text-lg); line-height: 1.7; }
 	.offers:global([data-sc-live]) .journey-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 28px; max-width: 34rem; margin-top: 28px; padding-top: 22px; }
 	.offers:global([data-sc-live]) .journey-facts div:nth-child(n + 3) { display: block; }
 	.offers:global([data-sc-live]) .journey-foot { padding-top: 30px; }
 	/* The story bar: one track per journey, filling with the scroll. */
-	.offers:global([data-sc-live]) .offers-switch { position: absolute; inset: auto clamp(36px, 4.5vw, 64px) 34px; display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: 24px; margin: 0; padding: 0; overflow: visible; }
+	.offers:global([data-sc-live]) .offers-switch { position: absolute; z-index: 1; inset: auto var(--inset) 40px; display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: 24px; margin: 0; padding: 0; overflow: visible; }
 	.offers:global([data-sc-live]) .offers-switch :global(.glide-mark), .offers:global([data-sc-live]) .offers-switch button::before { display: none; }
 	.offers:global([data-sc-live]) .offers-switch button { display: grid; gap: 14px; justify-items: start; min-height: 52px; padding: 0; border: 0; border-radius: 0; background: none; color: rgb(255 255 255 / 0.6); font-size: var(--text-base); text-align: left; transition: color 0.4s ease; }
 	.offers:global([data-sc-live]) .offers-switch button:hover, .offers:global([data-sc-live]) .offers-switch button[aria-current='true'] { color: white; }

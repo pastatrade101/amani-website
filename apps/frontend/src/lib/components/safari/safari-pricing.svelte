@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { convertedPrice } from '$lib/currency';
 	import { ArrowRight, ArrowUpRight, BedDouble, CalendarDays, Check, Sparkles, Tent, TrendingDown } from '@lucide/svelte';
 	import { SAFARI_STYLES, formatPrice, seasonForStyle, styleOf, stylesWithPrices, type PricingSeason, type SafariStyle } from '$lib/safari-pricing';
 
@@ -58,8 +59,10 @@
 	let active = $derived(rows.find((row) => row.style === selected) ?? rows[0]);
 	let lowest = $derived(active?.low ?? null);
 	let currency = $derived(rows[0]?.currency ?? usable[0]?.currency ?? 'USD');
+	// Dollar prices show in the visitor's chosen currency, so the badge follows it.
+	let shownCurrency = $derived(convertedPrice(1, currency)?.code ?? currency);
 	let symbol = $derived.by(() => {
-		try { return new Intl.NumberFormat('en-US', { style: 'currency', currency }).formatToParts(0).find((part) => part.type === 'currency')?.value ?? ''; } catch { return ''; }
+		try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: shownCurrency }).formatToParts(0).find((part) => part.type === 'currency')?.value ?? ''; } catch { return ''; }
 	});
 	let choosing = $derived(rows.length > 1);
 </script>
@@ -70,7 +73,7 @@
 			<h2 id="pricing-title" class="sp-h2">Safari packages &amp; pricing</h2>
 			<p class="sp-sub">{rows.length > 1 ? `One journey. ${rows.length === 2 ? 'Two' : 'Three'} ways to experience it.` : rows.length ? 'Per-person prices by the size of your group.' : 'Share your dates, group size and preferred comfort level for a personal quotation.'}</p>
 		</div>
-		{#if rows.length}<span class="currency">{symbol && symbol !== currency ? `${symbol} ` : ''}{currency}</span>{/if}
+		{#if rows.length}<span class="currency">{symbol && symbol !== shownCurrency ? `${symbol} ` : ''}{shownCurrency}</span>{/if}
 	</div>
 
 	{#if rows.length}

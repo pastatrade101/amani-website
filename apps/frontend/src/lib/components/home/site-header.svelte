@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { PHOTO } from '$lib/media-photos';
- import DestinationIcon from './destination-icon.svelte';
 	import { onDestroy } from 'svelte';
 	import { Menu, ArrowRight, ArrowUpRight, Search, Compass, Map, Binoculars, BedDouble, BookOpen } from '@lucide/svelte';
 	import { destinationHref } from '$lib/destination-content';
@@ -9,6 +8,7 @@
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import * as NavigationMenu from '$lib/components/ui/navigation-menu/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
+	import CurrencyPicker from './currency-picker.svelte';
 	import { STYLE_ICONS } from '$lib/components/stays/stay-icons';
 	import { GUIDE_PAGE_KEYS, GUIDE_PATH, safeUrl, circuitFor, destinationPhoto, tourDuration, tourFromPrice, tourPhotos } from '$lib/home-content';
 	import { SAFARI_STYLE_THEME } from '$lib/safari-pricing';
@@ -48,8 +48,11 @@
 	let onPlanner = $derived(page.url.pathname === PLANNER_PATH);
 	let searchHref = $derived((onPage ? onPage.includes('safari-search') : visible.includes('safari_packages')) ? '#safari-search' : '/tours#safari-search');
 	// Featured tours first, otherwise the API's newest-first order.
-	let menuTours = $derived([...tours].sort((a, b) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured))).slice(0, 4));
+	let menuTours = $derived([...tours].sort((a, b) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured))).slice(0, 5));
 	let menuPhotos = $derived(tourPhotos(menuTours));
+	// Only circuits with a published place get a column.
+	let circuits = $derived(destinationGroups.map((group) => ({ group, places: destinations.filter((destination) => circuitFor(destination) === group.circuit).slice(0, 5) })).filter((item) => item.places.length));
+	let toursHeading = $derived(menuTours.some((tour) => tour.is_featured) ? 'Featured safaris' : 'Latest safaris');
 	function tourMeta(tour: Tour) {
 		const price = tourFromPrice(tour);
 		return [tourDuration(tour.duration_days), price ? `From ${price}` : 'On request'].filter(Boolean).join(' · ');
@@ -60,12 +63,13 @@
 	let staysHeading = $derived(menuStays.some((stay) => stay.is_featured) ? 'Featured stays' : 'Places to stay');
 	const stayMeta = (stay: Stay) => [stayTypeLabel(stay.lodge_type), stay.destinations?.name?.trim() || stayLocation(stay)].filter(Boolean).join(' · ');
 	const styleVars = (id: keyof typeof SAFARI_STYLE_THEME) => `--style-ink:${SAFARI_STYLE_THEME[id].priceColor};--style-light:${SAFARI_STYLE_THEME[id].light}`;
-	function footerLink(id: string) {
-		if (id === 'tours') return { href: '/tours', label: 'View all tours' };
-		if (id === 'stays') return { href: '/stays', label: 'View all stays' };
-		if (id === 'experiences') return { href: anchor('experiences'), label: 'View all experiences' };
-		if (id === 'destinations') return { href: '/destinations', label: 'Explore all destinations' };
-		return { href: enquiryHref, label: 'Start planning' };
+	// The menu for the page you are on, so the nav can mark it (a safari page sits under Tours).
+	function isCurrent(id: string) {
+		const path = page.url.pathname;
+		if (id === 'tours') return path === '/tours' || path.startsWith('/tours/') || path === '/compare';
+		if (id === 'stays' || id === 'destinations') return path === `/${id}` || path.startsWith(`/${id}/`);
+		if (id === 'guide') return path === GUIDE_PATH;
+		return false;
 	}
 	// Labels are real links; the adjacent chevron retains the accessible disclosure.
 	function mainLink(id: string) {
@@ -106,100 +110,121 @@
 				{#each navigation as item}
 					<NavigationMenu.Item value={item.id} class="mega-menu-item" onpointerenter={(event) => hoverMenu(event, item.id)}>
                         <div class="main-menu-control" class:menu-open={menu === item.id}>
-                            <NavigationMenu.Link href={mainLink(item.id)} onclick={closeMenu} active={page.url.pathname === mainLink(item.id)} class="main-menu-link">{item.label}</NavigationMenu.Link>
+                            <NavigationMenu.Link href={mainLink(item.id)} onclick={closeMenu} active={isCurrent(item.id)} class="main-menu-link">{item.label}</NavigationMenu.Link>
                             <NavigationMenu.Trigger class="main-menu-trigger" aria-label={`${item.label} menu`} />
                         </div>
 						<NavigationMenu.Content class="mega-panel">
-							{#if item.id === 'tours'}
-								<div class="experience-menu">
-									<NavigationMenu.Link href="/tours" onclick={closeMenu} class="menu-feature">
-										<img src={PHOTO.balloonPlains} alt="Elephants on the savannah beside a safari vehicle" />
-										<div class="feature-copy"><span class="menu-eyebrow">SAFARI TOURS</span><h2>Ready-made journeys.<br />Shaped around you.</h2><span class="feature-cta">Browse all tours <ArrowUpRight class="size-4" /></span></div>
-									</NavigationMenu.Link>
-									<div class="experience-options">
-										<div class="menu-heading"><p class="menu-eyebrow">TANZANIA SAFARI ITINERARIES</p><h2>Find a safari that feels like you</h2></div>
-										{#if menuTours.length}
-											<div class="experience-links">
-												{#each menuTours as tour, i (tour.id)}
-													<NavigationMenu.Link data-motion-hover="card" href={`/tours/${encodeURIComponent(tour.slug)}`} onclick={closeMenu} class="experience-link tour-menu-link">
-														<img src={menuPhotos[i]} alt="" /><span><strong>{tour.title}</strong><small>{tourMeta(tour)}</small></span><ArrowUpRight class="menu-arrow size-4" />
-													</NavigationMenu.Link>
-												{/each}
-											</div>
-										{:else}
-											<p class="menu-empty">New itineraries are on their way. Browse our tours, or tell us the trip you have in mind.</p>
-										{/if}
-										{#if categories.length}<div class="popular-experiences"><span>Safari styles:</span>{#each categories.slice(0, 6) as category (category.id)}<NavigationMenu.Link href={`/tours?category_id=${encodeURIComponent(category.id)}`} onclick={closeMenu} class="popular-link">{category.name}</NavigationMenu.Link>{/each}</div>{/if}
-									</div>
-								</div>
-							{:else if item.id === 'stays'}
-								<div class="experience-menu">
-									<NavigationMenu.Link href="/stays" onclick={closeMenu} class="menu-feature">
-										<img src={PHOTO.guidePicnic} alt="A table laid for lunch in the shade of an acacia, with elephants grazing beyond" />
-										<div class="feature-copy"><span class="menu-eyebrow">WHERE YOU’LL STAY</span><h2>Wake up somewhere wild.</h2><span class="feature-cta">Browse all stays <ArrowUpRight class="size-4" /></span></div>
-									</NavigationMenu.Link>
-									<div class="experience-options">
-										<div class="menu-heading"><p class="menu-eyebrow">LODGES &amp; CAMPS BY STYLE</p><h2>Choose the comfort that feels like you</h2></div>
-										<div class="stay-style-links">
-											{#each STAY_STYLES as style (style.id)}
-												{@const StyleIcon = STYLE_ICONS[style.id]}
-												<NavigationMenu.Link data-motion-hover="card" href={`/stays?style=${style.id}`} onclick={closeMenu} class="stay-style-link" style={styleVars(style.id)}>
-													<span class="stay-style-icon"><StyleIcon class="size-5" strokeWidth={1.6} /></span><span><strong>{style.label}</strong><small>{style.hint}</small></span><ArrowUpRight class="menu-arrow size-4" />
-												</NavigationMenu.Link>
-											{/each}
-										</div>
-										{#if menuStays.length}
-											<p class="stay-menu-subheading">{staysHeading}</p>
-											<div class="experience-links">
-												{#each menuStays as stay (stay.id)}
-													{@const photo = ownStayPhoto(stay)}
-													<NavigationMenu.Link href={`/stays/${encodeURIComponent(stay.slug)}`} onclick={closeMenu} class="experience-link stay-menu-link">
-														{#if photo}<img src={photo} alt="" />{:else}<span class="stay-menu-mark"><BedDouble class="size-5" strokeWidth={1.5} /></span>{/if}<span><strong>{stay.name}</strong>{#if stayMeta(stay)}<small>{stayMeta(stay)}</small>{/if}</span><ArrowUpRight class="menu-arrow size-4" />
-													</NavigationMenu.Link>
-												{/each}
+							<div class="mega-inner">
+								{#if item.id === 'tours'}
+									<div class="mega-grid">
+										{#if categories.length}
+											<div class="mega-col">
+												<p class="mega-title">Safari styles</p>
+												<ul class="mega-list">
+													{#each categories.slice(0, 7) as category (category.id)}
+														<li><NavigationMenu.Link href={`/tours?category_id=${encodeURIComponent(category.id)}`} onclick={closeMenu} class="mega-link">{category.name}<ArrowRight /></NavigationMenu.Link></li>
+													{/each}
+												</ul>
 											</div>
 										{/if}
-									</div>
-								</div>
-							{:else if item.id === 'experiences'}
-								<div class="experience-menu">
-									<NavigationMenu.Link href={enquiryHref} onclick={() => choose('A Tanzania safari')} class="menu-feature">
-										<img src={PHOTO.acaciaHaze} alt="Lions resting on a rocky Serengeti kopje" />
-										<div class="feature-copy"><span class="menu-eyebrow">YOUR KIND OF ADVENTURE</span><h2>Extraordinary days.<br />Unforgettable stories.</h2><span class="feature-cta">Create your safari <ArrowUpRight class="size-4" /></span></div>
-									</NavigationMenu.Link>
-									<div class="experience-options">
-										<div class="menu-heading"><p class="menu-eyebrow">EXPERIENCE TANZANIA</p><h2>What moves you?</h2></div>
-										<div class="experience-links">
-											{#each experienceGroups as group}
-												<NavigationMenu.Link data-motion-hover="card" href={enquiryHref} onclick={() => choose(group.title)} class="experience-link">
-													<img src={group.image} alt="" /><span><strong>{group.title}</strong><small>{group.description}</small></span><ArrowUpRight class="menu-arrow size-4" />
-												</NavigationMenu.Link>
-											{/each}
+										<div class="mega-col">
+											<p class="mega-title">{toursHeading}</p>
+											{#if menuTours.length}
+												<ul class="mega-index">
+													{#each menuTours as tour, i (tour.id)}
+														{@const price = tourFromPrice(tour)}
+														<li><NavigationMenu.Link href={`/tours/${encodeURIComponent(tour.slug)}`} onclick={closeMenu} class="mega-trip"><img src={menuPhotos[i]} alt="" loading="lazy" /><span class="mega-trip-name"><strong>{tour.title}</strong>{#if tourDuration(tour.duration_days)}<small>{tourDuration(tour.duration_days)}</small>{/if}</span><span class="mega-trip-price">{#if price}<small>From</small>{price}{:else}<small>Price</small>On request{/if}</span></NavigationMenu.Link></li>
+													{/each}
+												</ul>
+											{:else}
+												<p class="mega-empty">New itineraries are on their way. Browse our tours, or tell us the trip you have in mind.</p>
+											{/if}
 										</div>
-										{#if activities.length}<div class="popular-experiences"><span>Explore:</span>{#each activities.slice(0, 3) as activity}<NavigationMenu.Link href={enquiryHref} onclick={() => choose(activity.name)} class="popular-link">{activity.name}</NavigationMenu.Link>{/each}</div>{/if}
+										<NavigationMenu.Link href="/tours" onclick={closeMenu} class="mega-feature">
+											<img src={PHOTO.balloonPlains} alt="" loading="lazy" />
+											<span class="mega-feature-copy"><strong>Ready-made journeys, shaped around you</strong><span>Browse all tours <ArrowRight /></span></span>
+										</NavigationMenu.Link>
 									</div>
-								</div>
-							{:else if item.id === 'destinations'}
-								<div class="destination-menu">
-									<div class="menu-heading"><p class="menu-eyebrow">ONE COUNTRY. ENDLESS POSSIBILITIES.</p><h2>Find your corner of Tanzania</h2></div>
-									<div class="destination-columns">
-										{#each destinationGroups as group}
-											<section class="destination-column">
-												<NavigationMenu.Link href={`/destinations?circuit=${group.circuit}#destination-results`} onclick={closeMenu} class="destination-cover"><img src={group.image} alt="" /><span><strong>{group.title}</strong><small>{group.description}</small></span><ArrowUpRight class="size-4" /></NavigationMenu.Link>
-												<div class="destination-links">{#each destinations.filter((destination) => circuitFor(destination) === group.circuit).slice(0, 4) as destination}<NavigationMenu.Link href={destinationHref(destination)} onclick={closeMenu} class="destination-link"><span class="flex items-center gap-2"><DestinationIcon name={`${destination.name} ${destination.region || ''}`} compact />{destination.name}</span><ArrowRight class="size-3.5" /></NavigationMenu.Link>{/each}</div>
-											</section>
+								{:else if item.id === 'stays'}
+									<div class="mega-grid">
+										<div class="mega-col">
+											<p class="mega-title">By comfort</p>
+											<ul class="mega-list">
+												{#each STAY_STYLES as style (style.id)}
+													{@const StyleIcon = STYLE_ICONS[style.id]}
+													<li><NavigationMenu.Link href={`/stays?style=${style.id}`} onclick={closeMenu} class="mega-link mega-style" style={styleVars(style.id)}><span class="mega-style-mark"><StyleIcon strokeWidth={1.7} /></span><span><strong>{style.label}</strong><small>{style.hint}</small></span><ArrowRight /></NavigationMenu.Link></li>
+												{/each}
+											</ul>
+										</div>
+										<div class="mega-col">
+											<p class="mega-title">{staysHeading}</p>
+											{#if menuStays.length}
+												<ul class="mega-rows">
+													{#each menuStays as stay (stay.id)}
+														{@const photo = ownStayPhoto(stay)}
+														<li><NavigationMenu.Link href={`/stays/${encodeURIComponent(stay.slug)}`} onclick={closeMenu} class="mega-row">{#if photo}<img src={photo} alt="" loading="lazy" />{:else}<span class="mega-row-mark"><BedDouble strokeWidth={1.5} /></span>{/if}<span><strong>{stay.name}</strong>{#if stayMeta(stay)}<small>{stayMeta(stay)}</small>{/if}</span></NavigationMenu.Link></li>
+													{/each}
+												</ul>
+											{:else}
+												<p class="mega-empty">Our lodges and camps are on their way. Tell us where you would like to stay.</p>
+											{/if}
+										</div>
+										<NavigationMenu.Link href="/stays" onclick={closeMenu} class="mega-feature">
+											<img src={PHOTO.guidePicnic} alt="" loading="lazy" />
+											<span class="mega-feature-copy"><strong>Wake up somewhere wild</strong><span>Browse all stays <ArrowRight /></span></span>
+										</NavigationMenu.Link>
+									</div>
+								{:else if item.id === 'experiences'}
+									<div class="mega-grid">
+										{#if activities.length}
+											<div class="mega-col">
+												<p class="mega-title">Activities</p>
+												<ul class="mega-list">
+													{#each activities.slice(0, 7) as activity (activity.id ?? activity.name)}
+														<li><NavigationMenu.Link href={enquiryHref} onclick={() => choose(activity.name)} class="mega-link">{activity.name}<ArrowRight /></NavigationMenu.Link></li>
+													{/each}
+												</ul>
+											</div>
+										{/if}
+										<div class="mega-col">
+											<p class="mega-title">What moves you?</p>
+											<ul class="mega-rows">
+												{#each experienceGroups as group (group.title)}
+													<li><NavigationMenu.Link href={enquiryHref} onclick={() => choose(group.title)} class="mega-row"><img src={group.image} alt="" loading="lazy" /><span><strong>{group.title}</strong><small>{group.description}</small></span></NavigationMenu.Link></li>
+												{/each}
+											</ul>
+										</div>
+										<NavigationMenu.Link href={enquiryHref} onclick={() => choose('A Tanzania safari')} class="mega-feature">
+											<img src={PHOTO.acaciaHaze} alt="" loading="lazy" />
+											<span class="mega-feature-copy"><strong>Extraordinary days, planned around you</strong><span>Create your safari <ArrowRight /></span></span>
+										</NavigationMenu.Link>
+									</div>
+								{:else if item.id === 'destinations'}
+									<div class="mega-grid mega-grid-places" style:--cols={circuits.length}>
+										{#each circuits as { group, places } (group.circuit)}
+											<div class="mega-col">
+												<NavigationMenu.Link href={`/destinations?circuit=${group.circuit}#destination-results`} onclick={closeMenu} class="mega-circuit"><strong>{group.title}</strong><small>{group.description}</small></NavigationMenu.Link>
+												<ul class="mega-list">
+													{#each places as destination (destination.id)}
+														<li><NavigationMenu.Link href={destinationHref(destination)} onclick={closeMenu} class="mega-link">{destination.name}<ArrowRight /></NavigationMenu.Link></li>
+													{/each}
+												</ul>
+											</div>
 										{/each}
+										<NavigationMenu.Link href="/destinations" onclick={closeMenu} class="mega-feature">
+											<img src={PHOTO.wildebeest} alt="" loading="lazy" />
+											<span class="mega-feature-copy"><strong>Find your corner of Tanzania</strong><span>Explore all destinations <ArrowRight /></span></span>
+										</NavigationMenu.Link>
 									</div>
-								</div>
-							{/if}
-							<div class="menu-footer"><span><Compass class="size-4" /> Tanzania, with a local perspective.</span><NavigationMenu.Link href={footerLink(item.id).href} onclick={closeMenu} class="menu-footer-link">{footerLink(item.id).label}<ArrowRight class="size-4" /></NavigationMenu.Link></div>
+								{/if}
+							</div>
 						</NavigationMenu.Content>
 					</NavigationMenu.Item>
 				{/each}
-				{#if hasGuide}<NavigationMenu.Item value="guide" class="mega-menu-item"><div class="main-menu-control"><NavigationMenu.Link href={GUIDE_PATH} onclick={closeMenu} active={page.url.pathname === GUIDE_PATH} class="main-menu-link plain-menu-link">Safari guide</NavigationMenu.Link></div></NavigationMenu.Item>{/if}
+				{#if hasGuide}<NavigationMenu.Item value="guide" class="mega-menu-item"><div class="main-menu-control"><NavigationMenu.Link href={GUIDE_PATH} onclick={closeMenu} active={isCurrent('guide')} class="main-menu-link plain-menu-link">Safari guide</NavigationMenu.Link></div></NavigationMenu.Item>{/if}
 			</NavigationMenu.List>
 		</NavigationMenu.Root>
-		<div class="header-actions"><Button href={searchHref} variant="ghost" size="icon" aria-label="Search safaris" class=""><Search class="size-5" /></Button>{#if !onPlanner}<Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" class="h-11 px-5 text-sm">Plan my safari <ArrowRight class="size-4" /></Button>{/if}</div>
+		<div class="header-actions"><CurrencyPicker /><Button href={searchHref} variant="ghost" size="icon" aria-label="Search safaris" class=""><Search class="size-5" /></Button>{#if !onPlanner}<Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" class="h-11 px-5 text-sm">Plan my safari <ArrowRight class="size-4" /></Button>{/if}</div>
 		<div class="mobile-actions">
 		<a href={searchHref} class="mobile-search" aria-label="Search safaris"><Search class="size-[22px]" strokeWidth={1.9} /></a>
 		<Sheet.Root bind:open>
@@ -237,6 +262,7 @@
                     </Accordion.Root>
                     {#if hasGuide}<a class="mobile-guide-link" href={GUIDE_PATH} onclick={closeMenu}><span class="mobile-section-label"><BookOpen class="size-[18px]" strokeWidth={1.6} />Safari guide</span><ArrowRight class="size-4" /></a>{/if}
                 </div>
+                <div class="mobile-menu-currency"><CurrencyPicker variant="sheet" /></div>
                 {#if !onPlanner}<div class="mobile-menu-footer"><p>A journey, designed around you.</p><Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" onclick={closeMenu} class="h-12 w-full">Plan my safari <ArrowRight class="size-4" /></Button></div>{/if}
             </Sheet.Content>
 		</Sheet.Root>
@@ -250,12 +276,18 @@
 	   (tour pages); keyboard focus inside the header still brings it back. */
 	:global(html[data-header-hidden]) .site-header:not(:focus-within) { transform: translateY(-100%); box-shadow: none; }
 	@media (prefers-reduced-motion: reduce) { .site-header { transition: none; } }
-	.header-shell { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px; width: min(84%, var(--page-max)); height: var(--site-header-height); margin-inline: auto; }
+	.header-shell { display: flex; align-items: center; justify-content: space-between; gap: 20px; width: min(84%, var(--page-max)); height: var(--site-header-height); margin-inline: auto; }
 	@media (max-width: 767px) { .header-shell { width: 100%; padding-inline: 24px; } }
 	:global(.desktop-navigation) { position: static; display: flex; flex: none; }
 	:global(.mega-menu-item) { position: static; }
-	.main-menu-control { display: flex; align-items: center; border-radius: var(--radius-control); }
-	.main-menu-control:hover, .main-menu-control.menu-open { background: var(--secondary); }
+	.main-menu-control { display: flex; align-items: center; }
+	/* One ink rule under the label: drawn in on hover and while its menu is open, solid on the page you are on. */
+	:global(.main-menu-link) { position: relative; }
+	:global(.main-menu-link)::after { content: ''; position: absolute; left: 12px; right: 3px; bottom: 5px; height: 2px; border-radius: 1px; background: var(--navy); opacity: .28; transform: scaleX(0); transform-origin: left center; transition: transform .28s cubic-bezier(.2, .7, .2, 1), opacity .2s ease; }
+	:global(.main-menu-link.plain-menu-link)::after { right: 12px; }
+	.main-menu-control:hover :global(.main-menu-link)::after, .main-menu-control.menu-open :global(.main-menu-link)::after { transform: scaleX(1); }
+	:global(.main-menu-link[data-active])::after { opacity: 1; transform: scaleX(1); }
+	:global(.main-menu-link[data-active]) { font-weight: 600; }
 	:global(.main-menu-link) { height: 44px; padding: 0 3px 0 12px; border-radius: var(--radius-control) 0 0 var(--radius-control); color: var(--navy); font-size: var(--text-base); font-weight: 500; text-decoration: none; background: transparent; }
 	:global(.main-menu-link:hover), :global(.main-menu-link:focus), :global(.main-menu-link[data-active]) { background: transparent; }
 	:global(.main-menu-link:focus-visible), :global(.main-menu-trigger:focus-visible) { outline: 2px solid var(--sun); outline-offset: 2px; }
@@ -263,63 +295,72 @@
 	:global(.main-menu-trigger) { height: 44px; width: 30px; padding: 0; border: 0; border-radius: 0 var(--radius-control) var(--radius-control) 0; background: transparent; color: var(--navy); }
 	:global(.main-menu-trigger > svg) { margin-left: 0; top: 0; }
 	:global(.main-menu-trigger:hover), :global(.main-menu-trigger[data-state="open"]), :global(.main-menu-trigger[data-open]), :global(.main-menu-trigger[data-popup-open]) { background: transparent; }
-	:global(.mega-panel) { position: absolute; top: 100%; left: 0; right: 0; width: auto; margin: 0; max-height: calc(100dvh - 150px); overflow-y: auto; border: 1px solid var(--border); border-radius: 0 0 20px 20px; padding: 0; background: var(--background); box-shadow: 0 24px 50px -20px oklch(.3 0.015 75 / .28); transform: none; animation: menu-enter 180ms ease-out; }
-	@keyframes menu-enter { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-	.menu-eyebrow { display: block; font-size: var(--text-xs); font-weight: 600; line-height: 1.5; letter-spacing: .14em; }
-	.menu-heading { margin-bottom: 18px; }
-	.menu-heading .menu-eyebrow { color: var(--muted-foreground); }
-	.menu-heading h2 { margin-top: 5px; font-size: var(--text-xl); font-weight: 600; letter-spacing: -.04em; line-height: 1.4; }
-	.experience-menu { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 28px; padding: 26px; }
-	:global(.menu-feature) { position: relative; display: block; min-height: 285px; overflow: hidden; border-radius: var(--radius-surface); padding: 0; color: white; isolation: isolate; }
-	:global(.menu-feature)::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(18 17 15 / .03) 10%, rgb(18 17 15 / .85) 100%); }
-	:global(.menu-feature > img) { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform 240ms ease-out; }
-	:global(.menu-feature:hover > img) { transform: scale(1.035); }
-	.feature-copy { position: absolute; inset-inline: 22px; bottom: 24px; }
-	.feature-copy .menu-eyebrow { color: var(--sun); font-size: var(--text-xs); }
-	.feature-copy h2 { margin-top: 9px; font-size: var(--text-xl); font-weight: 600; line-height: 1.35; letter-spacing: -.035em; }
-	.feature-cta { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 13px; border-top: 1px solid rgb(255 255 255 / .3); font-size: var(--text-xs); font-weight: 600; }
-	.experience-options { min-width: 0; padding-top: 3px; }
-	.experience-links { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
-	:global(.experience-link) { display: flex; align-items: center; gap: 13px; min-width: 0; padding: 10px; border: 1px solid transparent; border-radius: var(--radius-control); }
-	:global(.experience-link:hover) { border-color: var(--border); background: var(--secondary); }
-	:global(.experience-link > img) { width: 68px; height: 76px; flex-shrink: 0; border-radius: var(--radius-surface); object-fit: cover; }
-	:global(.experience-link strong) { display: block; font-size: var(--text-sm); font-weight: 600; line-height: 1.45; }
-	:global(.experience-link small) { display: block; margin-top: 5px; color: var(--muted-foreground); font-size: var(--text-xs); line-height: 1.6; }
-	:global(.menu-arrow) { margin-left: auto; flex-shrink: 0; color: var(--muted-foreground); }
-	.popular-experiences { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 15px; padding-top: 16px; border-top: 1px solid var(--border); font-size: var(--text-xs); }
-	.popular-experiences > span { margin-right: 3px; color: var(--muted-foreground); }
-	:global(.popular-link) { padding: 5px 9px; border-radius: var(--radius-control); background: var(--secondary); font-size: var(--text-xs); }
-	:global(.tour-menu-link strong) { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
-	.menu-empty { max-width: 420px; font-size: var(--text-xs); line-height: 1.8; color: var(--muted-foreground); }
-	/* Stays: the three styles in their own colours, then a few featured properties. */
-	.stay-style-links { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
-	:global(.stay-style-link) { gap: 12px; min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-control); }
-	:global(.stay-style-link:hover) { background: var(--style-light); }
-	:global(.stay-style-link strong) { display: block; font-size: var(--text-sm); font-weight: 600; line-height: 1.45; }
-	:global(.stay-style-link small) { display: block; margin-top: 3px; color: var(--muted-foreground); font-size: var(--text-xs); line-height: 1.5; }
-	.stay-style-icon { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--style-light); color: var(--style-ink); }
-	.stay-menu-subheading { margin: 18px 0 8px; font-size: var(--text-sm); font-weight: 600; color: var(--muted-foreground); }
-	.stay-menu-mark { display: grid; place-items: center; flex-shrink: 0; width: 68px; height: 76px; border-radius: var(--radius-control); background: var(--navy); color: var(--sun); }
-	:global(.stay-menu-link) { padding-block: 6px; }
-	:global(.stay-menu-link > img) { height: 60px; }
-	:global(.stay-menu-link) .stay-menu-mark { height: 60px; }
-	.destination-menu { padding: 25px 26px 20px; }
-	.destination-columns { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 22px; }
-	.destination-column { min-width: 0; }
-	:global(.destination-cover) { display: block; padding: 0; border-radius: var(--radius-surface); background: transparent; }
-	:global(.destination-cover > img) { display: block; width: 100%; height: 110px; object-fit: cover; border-radius: var(--radius-control); }
-	:global(.destination-cover > span) { display: block; margin-top: 12px; }
-	:global(.destination-cover strong) { display: block; font-size: var(--text-sm); font-weight: 600; }
-	:global(.destination-cover small) { display: block; margin-top: 4px; font-size: var(--text-xs); color: var(--muted-foreground); }
-	:global(.destination-cover > svg) { display: none; }
-	.destination-links { display: grid; gap: 1px; margin-top: 13px; }
-	:global(.destination-link) { display: flex; justify-content: space-between; gap: 6px; padding: 7px 6px; margin-left: -6px; font-size: var(--text-sm); border-radius: 6px; line-height: 1.5; }
-	:global(.destination-link > svg) { flex-shrink: 0; opacity: 0; transition: opacity 150ms ease-out; }
-	:global(.destination-link:hover > svg), :global(.destination-link:focus-visible > svg) { opacity: 1; }
-	.menu-footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 13px 26px; border-top: 1px solid var(--border); background: oklch(.985 0.003 75); }
-	.menu-footer > span { display: flex; align-items: center; gap: 8px; font-size: var(--text-xs); color: var(--muted-foreground); }
-	:global(.menu-footer-link) { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: var(--text-sm); font-weight: 600; background: transparent; }
-	.header-actions { display: flex; align-items: center; gap: 9px; }
+	/* The menu panel runs the full width under the header; its content keeps the page's own margins. */
+	:global(.mega-panel) { position: absolute; top: 100%; left: 0; right: 0; width: auto; margin: 0; max-height: calc(100dvh - var(--site-header-height) - 24px); overflow-y: auto; overscroll-behavior: contain; border: 0; border-top: 1px solid var(--border); border-radius: 0; padding: 0; background: var(--background); box-shadow: 0 28px 40px -28px rgb(39 36 31 / .28), 0 1px 0 var(--border); transform: none; animation: menu-enter 200ms cubic-bezier(.2, .7, .2, 1); }
+	@keyframes menu-enter { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+	.mega-inner { width: min(84%, var(--page-max)); margin-inline: auto; padding-block: 32px 36px; }
+	.mega-grid { display: grid; grid-template-columns: 236px minmax(0, 1fr) 280px; gap: 56px; align-items: stretch; }
+	.mega-grid:not(:has(> .mega-col + .mega-col)) { grid-template-columns: minmax(0, 1fr) 272px; }
+	.mega-grid-places, .mega-grid-places:not(:has(> .mega-col + .mega-col)) { grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)) 248px; gap: 36px; }
+	.mega-col { min-width: 0; }
+	.mega-title { margin: 0 0 8px; padding-bottom: 12px; border-bottom: 1px solid var(--border); font-size: var(--text-sm); font-weight: 600; line-height: 1.3; color: var(--muted-foreground); }
+	.mega-list, .mega-rows { margin: 0; padding: 0; list-style: none; }
+	:global(.mega-link) { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-radius: 0; background: transparent; color: var(--navy); font-size: var(--text-sm); font-weight: 500; line-height: 1.4; }
+	:global(.mega-link:hover), :global(.mega-link:focus) { background: transparent; color: var(--navy); }
+	:global(.mega-link > svg) { flex: none; width: 15px; height: 15px; color: var(--muted-foreground); opacity: 0; translate: -4px 0; transition: opacity .16s ease, translate .2s cubic-bezier(.2, .7, .2, 1); }
+	:global(.mega-link:hover > svg), :global(.mega-link:focus-visible > svg) { opacity: 1; translate: 0 0; }
+	/* Plain text links: the arrow trails the words without taking their room. */
+	:global(.mega-link:not(.mega-style)) { position: relative; width: fit-content; max-width: 100%; }
+	:global(.mega-link:not(.mega-style) > svg) { position: absolute; top: 50%; left: calc(100% + 6px); margin-top: -7.5px; }
+	:global(.mega-link:focus-visible), :global(.mega-row:focus-visible), :global(.mega-feature:focus-visible), :global(.mega-circuit:focus-visible) { outline: 2px solid var(--sun); outline-offset: 2px; }
+	:global(.mega-style) { justify-content: flex-start; padding-block: 10px; }
+	:global(.mega-style > span:nth-child(2)) { flex: 1; min-width: 0; }
+	:global(.mega-style strong) { display: block; font-weight: 600; }
+	:global(.mega-style small) { display: block; margin-top: 2px; font-size: var(--text-xs); font-weight: 400; line-height: 1.45; color: var(--muted-foreground); }
+	.mega-style-mark { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 6px; background: var(--style-light); color: var(--style-ink); }
+	.mega-style-mark :global(svg) { width: 17px; height: 17px; }
+	.mega-rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 28px; }
+	:global(.mega-row) { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 14px; padding: 10px 0; border-radius: 0; background: transparent; color: var(--navy); }
+	:global(.mega-row:hover), :global(.mega-row:focus) { background: transparent; color: var(--navy); }
+	:global(.mega-row > img), .mega-row-mark { width: 76px; height: 57px; border-radius: 6px; object-fit: cover; background: var(--secondary); transition: filter .2s ease; }
+	:global(.mega-row:hover > img) { filter: brightness(1.06) saturate(1.08); }
+	.mega-row-mark { display: grid; place-items: center; background: var(--navy); color: var(--sun); }
+	.mega-row-mark :global(svg) { width: 20px; height: 20px; }
+	:global(.mega-row strong) { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; font-size: var(--text-sm); font-weight: 600; line-height: 1.4; transition: color .16s ease; }
+	:global(.mega-row:hover strong) { color: color-mix(in oklab, var(--navy) 72%, var(--sun)); }
+	:global(.mega-row small) { display: -webkit-box; margin-top: 4px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; font-size: var(--text-xs); line-height: 1.45; color: var(--muted-foreground); }
+	/* Tours: an index, one safari a row, the price lined up on the right. */
+	.mega-index { margin: 0; padding: 0; list-style: none; }
+	.mega-index li + li { border-top: 1px solid var(--border); }
+	:global(.mega-trip) { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 10px 0; border-radius: 0; background: transparent; color: var(--navy); }
+	:global(.mega-trip:hover), :global(.mega-trip:focus) { background: transparent; color: var(--navy); }
+	:global(.mega-trip:focus-visible) { outline: 2px solid var(--sun); outline-offset: 2px; }
+	:global(.mega-trip > img) { width: 64px; height: 48px; border-radius: 6px; object-fit: cover; background: var(--secondary); transition: filter .2s ease; }
+	:global(.mega-trip:hover > img) { filter: brightness(1.06) saturate(1.08); }
+	.mega-trip-name { display: grid; gap: 3px; min-width: 0; }
+	.mega-trip-name strong { overflow: hidden; font-size: var(--text-sm); font-weight: 600; line-height: 1.35; white-space: nowrap; text-overflow: ellipsis; transition: color .16s ease; }
+	:global(.mega-trip:hover) .mega-trip-name strong { color: color-mix(in oklab, var(--navy) 72%, var(--sun)); }
+	.mega-trip-name small, .mega-trip-price small { font-size: var(--text-xs); line-height: 1.3; color: var(--muted-foreground); }
+	.mega-trip-price { display: grid; justify-items: end; gap: 3px; font-size: var(--text-sm); font-weight: 600; line-height: 1.35; font-variant-numeric: tabular-nums; white-space: nowrap; }
+	:global(.mega-circuit) { display: block; margin-bottom: 8px; padding: 0 0 12px; border-bottom: 1px solid var(--border); border-radius: 0; background: transparent; color: var(--navy); }
+	:global(.mega-circuit:hover), :global(.mega-circuit:focus) { background: transparent; color: var(--navy); }
+	:global(.mega-circuit strong) { display: block; font-size: var(--text-sm); font-weight: 600; line-height: 1.3; }
+	:global(.mega-circuit small) { display: block; margin-top: 3px; font-size: var(--text-xs); line-height: 1.45; color: var(--muted-foreground); }
+	:global(.mega-feature) { position: relative; isolation: isolate; display: flex; align-items: flex-end; min-height: 236px; overflow: hidden; padding: 20px; border-radius: var(--radius-control); background: #2b2722; color: #fff; }
+	:global(.mega-feature:hover), :global(.mega-feature:focus) { background: #2b2722; color: #fff; }
+	:global(.mega-feature > img) { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: scale .6s cubic-bezier(.2, .7, .2, 1); }
+	:global(.mega-feature)::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(18 17 15 / 0) 30%, rgb(18 17 15 / .82) 100%); }
+	:global(.mega-feature:hover > img) { scale: 1.04; }
+	.mega-feature-copy { display: grid; gap: 12px; }
+	.mega-feature-copy strong { font-size: var(--text-lg); font-weight: 600; line-height: 1.3; letter-spacing: -.02em; text-wrap: balance; }
+	.mega-feature-copy > span { display: inline-flex; align-items: center; gap: 8px; font-size: var(--text-sm); font-weight: 600; color: rgb(255 255 255 / .9); }
+	.mega-feature-copy > span :global(svg) { width: 15px; height: 15px; transition: translate .2s cubic-bezier(.2, .7, .2, 1); }
+	:global(.mega-feature:hover) .mega-feature-copy > span :global(svg) { translate: 3px 0; }
+	.mega-empty { max-width: 420px; margin: 8px 0 0; font-size: var(--text-sm); line-height: 1.7; color: var(--muted-foreground); }
+	@media (max-width: 1279px) { .mega-grid { gap: 32px; grid-template-columns: minmax(170px, 200px) minmax(0, 1fr) 220px; } .mega-grid-places, .mega-grid-places:not(:has(> .mega-col + .mega-col)) { grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)) 200px; gap: 28px; } :global(.mega-row) { grid-template-columns: 64px minmax(0, 1fr); gap: 12px; } :global(.mega-row > img), .mega-row-mark { width: 64px; height: 48px; } }
+	.header-actions { display: flex; align-items: center; gap: 6px; }
+	.mobile-menu-currency { flex-shrink: 0; padding: 0 22px; }
+	.mobile-menu-currency:has(:global(.sheet-picker)) { padding-top: 16px; border-top: 1px solid var(--border); }
     :global(.mobile-menu-panel) { display: flex; width: min(92vw,400px); flex-direction: column; gap: 0; padding: 0; overflow: hidden; background: white; }
     :global(.mobile-menu-header) { flex-shrink: 0; padding: 25px 22px; border-bottom: 1px solid var(--border); text-align: left; }
     .mobile-brand { display: flex; align-items: center; gap: 12px; }
@@ -356,5 +397,5 @@
 	@media (max-width: 1099px) { :global(.desktop-navigation), .header-actions { display: none; } .mobile-actions { display: flex; } }
 	/* Phones: a compact app bar, logo left, search and menu right. */
 	@media (max-width: 767px) { .header-shell { padding-inline: 5vw; } .site-logo { height: 44px; } }
-	@media (prefers-reduced-motion: reduce) { :global(.mega-panel) { animation: none; } }
+	@media (prefers-reduced-motion: reduce) { :global(.mega-panel) { animation: none; } :global(.mega-feature > img), :global(.mega-link > svg), .mega-feature-copy > span :global(svg) { transition: none; } }
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { convertedPrice } from '$lib/currency';
 	import { onMount } from 'svelte';
 	import { ArrowDown, Check, Heart, Images, Link, Mail, Share2 } from '@lucide/svelte';
 	import * as Popover from '$lib/components/ui/popover';
@@ -49,7 +50,8 @@
 			<div class="price">
 				<dt class="sr-only">Price</dt>
 				{#if from}
-					<dd><span class="currency">{from.currency}</span><span class="amount">{Math.round(from.amount).toLocaleString('en-US')}</span><small>From price, per person</small></dd>
+					{@const shown = convertedPrice(from.amount, from.currency)}
+					<dd><span class="currency">{shown?.code ?? from.currency}</span><span class="amount">{Math.round(shown?.amount ?? from.amount).toLocaleString('en-US')}</span><small>From price, per person</small></dd>
 				{:else}
 					<dd><span class="amount on-request">On request</span><small>Priced for your dates and group</small></dd>
 				{/if}

@@ -23,8 +23,7 @@
 		media,
 		actions,
 		aside,
-		// Listing pages: a shorter photo, so the list starts near the top.
-		compact = false
+		asideWide = false
 	}: {
 		id?: string;
 		titleId: string;
@@ -38,11 +37,12 @@
 		media?: Snippet;
 		actions?: Snippet;
 		aside?: Snippet;
-		compact?: boolean;
+		/** A wider card (a tool rather than a note) that only shows from 1024px up. */
+		asideWide?: boolean;
 	} = $props();
 </script>
 
-<section {id} class="page-hero" class:compact aria-labelledby={titleId}>
+<section {id} class="page-hero" class:aside-wide={asideWide} aria-labelledby={titleId}>
 	{#if media}
 		<div class="page-hero-media">{@render media()}</div>
 	{:else if image}
@@ -99,12 +99,8 @@
 	.page-hero-actions :global([data-slot='button'] + [data-slot='button']) { border: 1px solid rgb(255 255 255 / 0.6); background: transparent; color: #fff; font-weight: 600; box-shadow: none; }
 	.page-hero-actions :global([data-slot='button'] + [data-slot='button']:hover) { border-color: #fff; background: rgb(255 255 255 / 0.1); color: #fff; }
 	.page-hero-aside { flex: none; width: min(280px, 100%); }
-	.compact .page-hero-inner { min-height: clamp(360px, 46svh, 440px); padding-block: 22px 44px; }
-	.compact .page-hero-main { padding-top: 56px; }
-	.compact h1 { font-size: var(--text-title); }
-	.compact .page-hero-intro { margin-top: 16px; }
-	.compact .page-hero-actions { margin-top: 26px; }
-	@media (max-width: 1023px) { .page-hero-main { gap: 28px; } .page-hero-aside { width: 220px; } }
+	.aside-wide .page-hero-aside { width: min(400px, 100%); }
+	@media (max-width: 1023px) { .page-hero-main { gap: 28px; } .page-hero-aside { width: 220px; } .aside-wide .page-hero-aside { display: none; } }
 	@media (max-width: 639px) {
 		.page-hero-veil { background: linear-gradient(180deg, rgb(20 18 15 / 0.5) 0%, rgb(20 18 15 / 0) 20%), linear-gradient(0deg, rgb(20 18 15 / 0.94) 0%, rgb(20 18 15 / 0.74) 50%, rgb(20 18 15 / 0.22) 86%); }
 		.page-hero-inner { min-height: 600px; padding-block: 20px 40px; }
@@ -114,8 +110,5 @@
 		.page-hero-actions { flex-direction: column; align-items: stretch; margin-top: 26px; }
 		.page-hero-actions :global([data-slot='button']) { width: 100%; justify-content: center; }
 		.page-hero-aside { width: 100%; margin-top: 28px; }
-		.compact .page-hero-inner { min-height: 420px; padding-block: 18px 32px; }
-		.compact .page-hero-main { padding-top: 72px; }
-		.compact h1 { font-size: var(--text-title); }
 	}
 </style>

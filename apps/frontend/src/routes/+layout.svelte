@@ -1,6 +1,7 @@
 <script lang="ts">
 	import './layout.css';
 	import { onMount } from 'svelte';
+	import { initCurrency } from '$lib/currency';
 	import { afterNavigate, onNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { setupSiteMotion } from '$lib/motion/site-motion';
@@ -25,6 +26,8 @@
 		// Google tags, campaign attribution and click tracking: public pages only,
 		// and the live site only (each module checks the host itself).
 		if (isAdminPath(window.location.pathname)) return motion;
+		// Pages render in US dollars; the visitor's currency takes over once hydrated.
+		void initCurrency();
 		initTags();
 		trackSession();
 		const stopLinks = installLinkTracking();

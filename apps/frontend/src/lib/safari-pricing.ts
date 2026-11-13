@@ -3,6 +3,8 @@
  * level. One tour has pricing seasons (tour_pricing_seasons), each tagged with
  * a safari_style; each season holds its group-size rows (tour_group_prices).
  */
+import { convertedPrice } from './currency';
+
 export type SafariStyle = 'budget' | 'midrange' | 'luxury';
 
 /** Icons are mapped in the selector component, so this file stays plain TS (and testable). */
@@ -103,7 +105,10 @@ export function tiersForStyle(seasons: PricingSeason[], style: SafariStyle, toda
 export const stylesWithPrices = (seasons: PricingSeason[], today?: string): SafariStyle[] =>
 	SAFARI_STYLES.map((style) => style.id).filter((id) => tiersForStyle(seasons, id, today).length > 0);
 
+/** A price for display: in the visitor's chosen currency when it is a dollar price and a rate is known. */
 export const formatPrice = (amount: number, currency = 'USD') => {
+	const shown = convertedPrice(amount, currency);
+	if (shown) return shown.text;
 	try {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
 	} catch {
