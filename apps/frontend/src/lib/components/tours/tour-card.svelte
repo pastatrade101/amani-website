@@ -77,7 +77,7 @@
 	.compare-button:disabled { cursor: not-allowed; opacity: 0.7; }
 	.compare-button:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
 	.card-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--border); padding: 0.75rem 0; }
-	.card-row dt { display: flex; align-items: center; gap: 0.6rem; font-size: var(--text-xs); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-foreground); }
+	.card-row dt { display: flex; align-items: center; gap: 0.6rem; font-size: var(--text-xs); font-weight: 500; color: var(--muted-foreground); }
 	.card-row dd { min-width: 0; text-align: right; font-size: var(--text-sm); color: var(--navy); }
 	/* Solid sun from the start; it deepens a touch when the card is hovered. */
 	.tour-cta { display: flex; align-items: center; justify-content: center; gap: 8px; height: 3rem; margin-top: 0.5rem; border-radius: var(--radius-control); background: var(--sun); color: var(--sun-foreground); font-size: var(--text-sm); font-weight: 700; transition: background-color 180ms ease-out; }

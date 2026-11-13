@@ -44,7 +44,7 @@
 </script>
 
 {#snippet crumbs(light: boolean)}
-	<nav aria-label="Breadcrumb" class={`text-xs ${light ? 'text-white/75' : 'text-muted-foreground'}`}>
+	<nav aria-label="Breadcrumb" class={`text-xs ${light ? 'text-white/85 [text-shadow:0_1px_2px_rgb(0_0_0/.35)]' : 'text-muted-foreground'}`}>
 		<ol class="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
 			<li><a href="/" class={`underline-offset-4 hover:underline ${light ? 'hover:text-white' : 'hover:text-navy'}`}>Home</a></li>
 			<li aria-hidden="true"><ChevronRight class="size-3" /></li>
@@ -75,6 +75,8 @@
 			<img src={cover.src} alt={cover.alt} width="1920" height="1080" loading="eager" fetchpriority="high" decoding="async" data-motion="hero-image" data-active="true" class="absolute inset-0 -z-20 size-full object-cover" />
 		</picture>
 		<div class="absolute inset-0 -z-10 bg-linear-to-t from-black/80 via-black/35 to-black/10" aria-hidden="true"></div>
+		<!-- A bright sky behind the breadcrumb still leaves it readable. -->
+		<div class="absolute inset-x-0 top-0 -z-10 h-36 bg-linear-to-b from-black/45 to-transparent" aria-hidden="true"></div>
 		<div class="page-container flex flex-1 flex-col pt-5 pb-10 md:pt-7 md:pb-16">
 			{@render crumbs(true)}
 			<div class="mt-auto flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between lg:gap-12">

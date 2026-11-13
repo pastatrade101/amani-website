@@ -21,6 +21,8 @@
 	let kind = $derived([stayTypeLabel(stay.lodge_type), stay.park_area?.trim() || stay.region?.trim()].filter(Boolean).join(' · '));
 	let excerpt = $derived(textContent(stay.short_description));
 	let place = $derived(destination?.name?.trim() || stay.destinations?.name?.trim() || '');
+	// The type line under the name often names the park already: say it once.
+	let showPlace = $derived(Boolean(place) && !kind.includes(place));
 	let nights = $derived(nightsLabel(stay.recommended_nights));
 	let tours = $derived(Math.max(0, Math.floor(Number(stay.tour_count) || 0)));
 	let toursLabel = $derived(tours ? `On ${tours} ${tours === 1 ? 'safari' : 'safaris'}` : '');
@@ -38,15 +40,15 @@
 		{#if stay.is_featured}<span class="stay-featured">Featured</span>{/if}
 	</div>
 	<div class="stay-copy">
-		{#if kind}<p class="stay-kind">{kind}</p>{/if}
 		<svelte:element this={`h${headingLevel}`} class="stay-name"><a {href} class="stay-link">{stay.name}</a></svelte:element>
+		{#if kind}<p class="stay-kind">{kind}</p>{/if}
 		<!-- Phones, compact: the style rides under the name instead of on the photo. -->
 		<p class="stay-meta" aria-hidden="true"><span class="dot"></span>{styleLabel}{#if toursLabel}<span class="sep">·</span>{toursLabel}{/if}</p>
 		{#if excerpt}<p class="stay-excerpt">{excerpt}</p>{/if}
 		<div class="stay-foot">
-		{#if place || nights || toursLabel}
+		{#if showPlace || nights || toursLabel}
 			<dl class="stay-facts">
-				{#if place}<div><dt><MapPin aria-hidden="true" />Location</dt><dd>{place}</dd></div>{/if}
+				{#if showPlace}<div><dt><MapPin aria-hidden="true" />Location</dt><dd>{place}</dd></div>{/if}
 				{#if nights}<div><dt><Moon aria-hidden="true" />Suggested stay</dt><dd>{nights}</dd></div>{/if}
 				{#if toursLabel}<div><dt><Route aria-hidden="true" />Our safaris</dt><dd>{toursLabel}</dd></div>{/if}
 			</dl>
@@ -66,7 +68,7 @@
 	.stay-featured { right: 12px; background: var(--sun); color: var(--navy); }
 	.dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--style-color); }
 	.stay-copy { display: flex; flex: 1; flex-direction: column; padding: 18px 20px 20px; }
-	.stay-kind { margin: 0 0 5px; overflow: hidden; color: var(--muted-foreground); font-size: var(--text-xs); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+	.stay-kind { margin: 5px 0 0; overflow: hidden; color: var(--muted-foreground); font-size: var(--text-xs); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 	.stay-name { display: -webkit-box; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; font-size: var(--text-lg); font-weight: 600; line-height: 1.35; letter-spacing: -0.015em; color: var(--navy); text-wrap: balance; }
 	.stay-meta { display: none; }
 	.stay-excerpt { display: -webkit-box; margin: 8px 0 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; color: var(--muted-foreground); font-size: var(--text-sm); line-height: 1.6; }
@@ -86,16 +88,16 @@
 	.stay-link::after { content: ''; position: absolute; inset: 0; z-index: 2; }
 	.stay-link:focus-visible { outline: none; }
 	.stay-card:has(.stay-link:focus-visible) { outline: 3px solid var(--sun); outline-offset: 4px; }
-	@media (hover: hover) {
+	@media (hover: hover) and (pointer: fine) {
 		.stay-card:hover { box-shadow: 0 0 0 1px rgb(43 39 34 / 0.1), 0 8px 20px -14px rgb(39 36 31 / 0.22); }
-		.stay-card:hover .stay-media { scale: 1.04; }
+		.stay-card:hover .stay-media { scale: 1.03; }
 		.stay-card:hover .stay-cta { background: var(--sun); }
 		.stay-card:hover .stay-cta :global(svg) { translate: 3px 0; }
 	}
 
 	/* Phones, compact: one row per stay. */
 	@media (max-width: 639px) {
-		.compact { flex-direction: row; align-items: center; gap: 14px; height: auto; padding: 10px 40px 10px 10px; transition: scale 0.18s ease; }
+		.compact { flex-direction: row; align-items: center; gap: 14px; height: auto; padding: 10px 40px 10px 10px; transition: scale 160ms cubic-bezier(0.23, 1, 0.32, 1); }
 		.compact:active { scale: 0.985; }
 		.compact .stay-photo { flex: none; width: 104px; aspect-ratio: 1; border-radius: var(--radius-control); }
 		.compact .stay-style, .compact .stay-featured { display: none; }
@@ -105,7 +107,7 @@
 		.compact :global(.placeholder-text) { display: none; }
 		.compact :global(.placeholder-mark) { width: 40px; height: 40px; }
 		.compact .stay-copy { min-width: 0; padding: 0; }
-		.compact .stay-kind { margin-bottom: 4px; }
+		.compact .stay-kind { margin-top: 4px; }
 		.compact .stay-name { font-size: var(--text-base); line-height: 1.25; }
 		.compact .stay-meta { display: flex; align-items: center; gap: 6px; margin: 7px 0 0; color: var(--muted-foreground); font-size: var(--text-xs); font-weight: 500; white-space: nowrap; }
 		.compact .stay-meta .sep { color: #c9c2b4; }

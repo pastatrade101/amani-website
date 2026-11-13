@@ -53,8 +53,10 @@
 	// Skip the short description when the full one already contains it (often under its own heading).
 	let showLead = $derived(Boolean(lead) && !textContent(stay.description).includes(lead.slice(0, 80)));
 	let hasStory = $derived(Boolean(textContent(stay.description)));
-	// A drop cap only suits a real opening paragraph, not a one-line or bold mini-heading.
+	// A drop cap only suits a real opening paragraph, not a one-line or bold mini-heading,
+	// and only when the story opens the section: after the lead it would mark the start twice.
 	let dropCap = $derived.by(() => {
+		if (photos.length && showLead) return false;
 		const first = /^\s*<p[^>]*>([\s\S]*?)<\/p>/i.exec(stay.description ?? '')?.[1] ?? '';
 		return !/^\s*<(strong|b)\b/i.test(first) && textContent(first).length > 160;
 	});
@@ -275,7 +277,8 @@
 	/* One step above the body (20px over 16px), not a second headline. */
 	.stay-lead { max-width: 60ch; font-family: var(--font-display); font-size: var(--text-lg); line-height: 1.6; letter-spacing: -0.01em; color: color-mix(in oklch, var(--navy) 92%, transparent); text-wrap: pretty; }
 	@media (min-width: 640px) { .stay-lead { font-size: var(--text-xl); } }
-	div.story :global(.rich-text) { max-width: 64ch; font-size: var(--text-base); line-height: 1.8; color: color-mix(in oklch, var(--navy) 80%, transparent); }
+	/* About 70 characters a line: this face's ch runs wide, so the measure is set in rem. */
+	div.story :global(.rich-text) { max-width: 40rem; font-size: var(--text-base); line-height: 1.75; text-wrap: pretty; color: color-mix(in oklch, var(--navy) 80%, transparent); }
 	/* Two lines tall, so it opens the paragraph rather than outweighing it. */
 	div.drop-cap :global(.rich-text > p:first-child::first-letter) { float: left; margin: 0.06em 0.1em 0 0; font-family: var(--font-display); font-size: 3.3em; font-weight: 500; line-height: 0.92; color: var(--navy); }
 	div.story :global(.rich-text h2), div.story :global(.rich-text h3) { margin: 1.6em 0 0.5em; font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 500; line-height: 1.2; color: var(--navy); }

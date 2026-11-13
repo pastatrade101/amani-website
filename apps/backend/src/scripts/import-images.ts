@@ -40,14 +40,16 @@ const run = async () => {
   const manifest: Record<string, Entry> = manifestPath ? JSON.parse(await readFile(manifestPath, 'utf8')) : {};
   const files = (await readdir(dir)).filter((file) => MIME[path.extname(file).slice(1).toLowerCase()]).sort();
 
-  // Which target names are already in the library (one query, not one per file).
+  // Which target names are already in the library (a few queries, not one per file).
+  // Batches stay small: the API echoes the query back in a response header, and
+  // 200 long file names overflow Node's header limit once any of them match.
   const targets = files.map((file) => manifest[file]?.name ?? file);
   const existing = new Map<string, { id: string; alt_text: string | null; caption: string | null }>();
-  for (let i = 0; i < targets.length; i += 200) {
+  for (let i = 0; i < targets.length; i += 50) {
     const { data, error } = await supabase
       .from('media_library')
       .select('id,file_name,alt_text,caption')
-      .in('file_name', targets.slice(i, i + 200))
+      .in('file_name', targets.slice(i, i + 50))
       .is('deleted_at', null);
     if (error) throw new Error(`Unable to read the media library: ${error.message}`);
     for (const row of data ?? []) existing.set(String(row.file_name), { id: String(row.id), alt_text: row.alt_text, caption: row.caption });

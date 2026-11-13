@@ -16,8 +16,7 @@
 </script>
 
 <aside aria-labelledby="plan-title" class="h-fit rounded-[12px] bg-white p-6 sm:p-7 shadow-[0_30px_60px_-40px_rgb(39_36_31/.45)] ring-1 ring-navy/10 lg:sticky lg:top-[calc(var(--site-header-height)+5rem)]">
-	<h3 id="plan-title" class="text-sm font-semibold text-muted-foreground">Plan your stay</h3>
-	<p class="mt-2 font-display text-xl leading-tight font-semibold tracking-[-.02em] text-navy">{stay.name}</p>
+	<h3 id="plan-title" class="font-display text-xl leading-tight font-semibold tracking-[-.02em] text-balance text-navy"><span class="sr-only">Plan your stay at </span>{stay.name}</h3>
 	<p class="mt-1 text-sm text-muted-foreground">{kind}</p>
 	{#if rate}<p class="mt-5 text-sm font-semibold text-navy">{rate}</p>{/if}
 	{#if destination || coordinates}

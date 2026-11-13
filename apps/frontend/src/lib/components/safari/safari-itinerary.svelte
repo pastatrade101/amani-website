@@ -48,7 +48,7 @@
 		while (first > 0 && same(first - 1)) first--;
 		while (last < days.length - 1 && same(last + 1)) last++;
 		const count = last - first + 1;
-		return { count, when: count > 1 ? `Days ${days[first].day_number}–${days[last].day_number}` : `Day ${days[i].day_number}` };
+		return { count, index: i - first + 1, when: count > 1 ? `Days ${days[first].day_number}–${days[last].day_number}` : `Day ${days[i].day_number}` };
 	}
 
 	/** The day's stay in each offered style; a day without per-style stays shows its one overnight. */
@@ -82,20 +82,31 @@
 			{@const activities = activityList(day.activities)}
 			{@const meals = mealsLabel(day.meals)}
 			{@const long = textContent(day.description).length > 360}
+			{@const place = day.destination?.name?.trim() ?? ''}
+			<!-- The same stays as the night before: one line, not the same card again. -->
+			{@const continuing = i > 0 && stays.length > 0 && stays.every((card) => stayFor(days[i - 1], card.style)?.name === card.stay!.name)}
 			<article aria-labelledby={`day-${day.day_number}-title`}>
-				<p class="day-label">{[`Day ${day.day_number}`, day.destination?.name].filter(Boolean).join(' · ')}</p>
-				<h3 id={`day-${day.day_number}-title`}>{day.title}</h3>
+				<span class="day-no" aria-hidden="true">{day.day_number}</span>
+				<h3 id={`day-${day.day_number}-title`}><span class="sr-only">Day {day.day_number}: </span>{day.title}</h3>
 				{#if textContent(day.summary)}<p class="summary">{textContent(day.summary)}</p>{/if}
 				<div class="description" class:long class:open={opened[day.id]} id={`day-${day.day_number}-story`}><RichText value={day.description} class="sp-rich" /></div>
 				{#if long}<button type="button" class="read-day" aria-expanded={Boolean(opened[day.id])} aria-controls={`day-${day.day_number}-story`} onclick={() => (opened[day.id] = !opened[day.id])}>{opened[day.id] ? 'Show less' : 'Read the full day'}</button>{/if}
-				{#if mode || activities.length || meals}
+				{#if place || mode || activities.length || meals}
 					<ul class="day-meta">
+						{#if place}<li><MapPin aria-hidden="true" /><span class="sr-only">Where: </span>{place}</li>{/if}
 						{#if mode && ModeIcon}<li><ModeIcon aria-hidden="true" />{mode}</li>{/if}
 						{#if activities.length}<li><Binoculars aria-hidden="true" />{activities.join(' · ')}</li>{/if}
 						{#if meals}<li><UtensilsCrossed aria-hidden="true" /><span class="sr-only">Meals: </span>{meals}</li>{/if}
 					</ul>
 				{/if}
-				{#if stays.length}
+				{#if continuing}
+					<ul class="stay-again">
+						{#each stays as card (card.style)}
+							{@const n = nightsAt(i, card.style, card.stay!.name)}
+							<li><Moon aria-hidden="true" /><span>{stays.length > 1 ? `${card.label}: n` : 'N'}ight {n.index} of {n.count} at {#if card.href}<a href={card.href}>{card.stay!.name}<ArrowUpRight aria-hidden="true" /></a>{:else}<strong>{card.stay!.name}</strong>{/if}</span></li>
+						{/each}
+					</ul>
+				{:else if stays.length}
 					<!-- Every stay is the same card: photos (or an honest stand-in), the comfort,
 					     the name and place, a short read, the facts and the ways in. One stay
 					     takes the whole row, words beside its photos; several share the row. -->
@@ -126,9 +137,8 @@
 									{/if}
 								</div>
 								<div class="stay-body">
-									<span class="style-tag">{card.label}</span>
 									<strong class="stay-name">{#if card.href}<a href={card.href}>{name}</a>{:else}{name}{/if}</strong>
-									{#if area}<p class="area"><MapPin aria-hidden="true" />{area}</p>{/if}
+									<p class="stay-sub"><span class="style-tag">{card.label}</span>{#if area}<span class="area"><MapPin aria-hidden="true" />{area}</span>{/if}</p>
 									{#if blurb}<p class="blurb">{blurb}</p>{/if}
 									<dl class="stay-facts">
 										{#if kind}<div><dt><BedDouble aria-hidden="true" />Type</dt><dd>{kind}</dd></div>{/if}
@@ -158,11 +168,13 @@
 	.timeline { margin-left: 8px; padding-left: 36px; border-left: 1px solid #ddd6c6; }
 	article { position: relative; padding-bottom: 48px; }
 	article:last-child { padding-bottom: 0; }
-	article::before { content: ''; position: absolute; top: 4px; left: -44px; width: 15px; height: 15px; border: 3px solid var(--sp-cream); border-radius: 50%; background: var(--sp-sun); box-shadow: 0 0 0 1px #b5a98a; }
-	.day-label { margin: 0 0 10px; font-size: var(--text-sm); font-weight: 600; color: #98723c; }
-	h3 { max-width: 860px; margin: 0 0 14px; font-size: var(--text-h4); font-weight: 650; line-height: 1.3; letter-spacing: -0.015em; color: var(--sp-ink); }
-	.summary { max-width: 860px; margin: 0 0 12px; font-size: var(--text-base); font-weight: 500; line-height: 1.75; color: var(--sp-ink); }
-	.description { max-width: 860px; margin: 0 0 18px; }
+	/* The day's number sits on the line, level with its title: no label over the heading. */
+	.day-no { position: absolute; top: 1px; left: -51px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--sp-sun); box-shadow: 0 0 0 4px var(--sp-cream); font-size: var(--text-sm); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: var(--sp-ink); }
+	h3 { max-width: 860px; margin: 0 0 14px; font-size: var(--text-h4); font-weight: 650; line-height: 1.3; letter-spacing: -0.015em; color: var(--sp-ink); text-wrap: balance; }
+	/* The day reads in one column of about 70 characters (this face's ch runs wide, so rem). */
+	.summary { max-width: 40rem; margin: 0 0 12px; font-size: var(--text-base); font-weight: 500; line-height: 1.7; color: var(--sp-ink); text-wrap: pretty; }
+	.description { max-width: 40rem; margin: 0 0 18px; }
+	.description :global(.sp-rich.rich-text) { line-height: 1.7; text-wrap: pretty; }
 	.read-day { display: none; }
 	.day-meta { display: flex; flex-wrap: wrap; gap: 10px 24px; margin: 0 0 24px; padding: 0; list-style: none; }
 	.day-meta li { display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); color: var(--sp-muted); }
@@ -177,10 +189,10 @@
 	.stand-in { position: absolute; inset: 0; }
 	.stay-body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; min-width: 0; padding: 20px 22px 22px; }
 	.style-tag { padding: 5px 10px; border-radius: 6px; background: #faf3d6; font-size: var(--text-sm); font-weight: 700; color: #7a5a12; }
-	.stay-name { display: block; margin-top: 12px; overflow-wrap: anywhere; font-size: var(--text-xl); font-weight: 650; line-height: 1.25; letter-spacing: -0.02em; color: var(--sp-ink); text-wrap: balance; }
+	.stay-name { display: block; overflow-wrap: anywhere; font-size: var(--text-xl); font-weight: 650; line-height: 1.25; letter-spacing: -0.02em; color: var(--sp-ink); text-wrap: balance; }
 	.stay-name a { color: inherit; text-decoration: none; }
-	.stay-name a:hover { color: #7b6500; }
-	.area { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-size: var(--text-sm); color: var(--sp-muted); }
+	.stay-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 12px 0 0; }
+	.area { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); color: var(--sp-muted); }
 	.area :global(svg) { flex: none; width: 15px; height: 15px; color: #98723c; }
 	.blurb { display: -webkit-box; margin: 12px 0 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; font-size: var(--text-sm); line-height: 1.7; color: var(--sp-muted); }
 	/* The facts in the tour cards' row style, settled at the foot so cards in a row line up. */
@@ -192,24 +204,29 @@
 	.stay-facts dd { margin: 0; text-align: right; font-size: var(--text-sm); font-weight: 600; color: var(--sp-ink); }
 	.stay-facts dd span { font-weight: 500; color: var(--sp-muted); }
 	.stay-actions { display: flex; flex-wrap: wrap; align-self: stretch; gap: 10px; margin-top: 18px; }
-	.stay-btn { display: inline-flex; flex: 1 1 auto; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 10px 18px; border: 1.5px solid var(--sp-ink); border-radius: var(--radius-control); background: #fff; font: 600 14px var(--sp-sans); color: var(--sp-ink); text-decoration: none; cursor: pointer; transition: background-color 0.18s ease, border-color 0.18s ease; }
-	.stay-btn:hover { border-color: var(--sp-sun); background: var(--sp-sun); }
+	.stay-btn { display: inline-flex; flex: 1 1 auto; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 10px 18px; border: 1.5px solid var(--sp-ink); border-radius: var(--radius-control); background: #fff; font: 600 14px var(--sp-sans); color: var(--sp-ink); text-decoration: none; cursor: pointer; transition: background-color 180ms ease, border-color 180ms ease, scale 160ms cubic-bezier(0.23, 1, 0.32, 1); }
+	.stay-btn:active { scale: 0.97; }
 	.stay-btn.quiet { border: 1px solid var(--sp-line); }
-	.stay-btn.quiet:hover { border-color: #cfc6b2; background: var(--sp-cream); }
 	.stay-btn :global(svg) { width: 16px; height: 16px; }
 	.mosaic { position: absolute; inset: 0; display: grid; gap: 4px; }
 	.mosaic[data-count='3'] { grid-template-columns: 1.6fr 1fr; grid-template-rows: 1fr 1fr; }
 	.mosaic[data-count='3'] button:first-child { grid-row: span 2; }
 	.mosaic[data-count='2'] { grid-template-columns: 1fr 1fr; }
 	.mosaic button { position: relative; min-height: 0; padding: 0; overflow: hidden; border: 0; background: #ece8dd; cursor: zoom-in; }
-	.mosaic img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
-	.mosaic button:hover img { transform: scale(1.04); }
+	.mosaic img { display: block; width: 100%; height: 100%; object-fit: cover; transition: scale 450ms cubic-bezier(0.22, 1, 0.36, 1); }
+	/* Hover only where there is a pointer that hovers: a tap must not leave a card lit. */
+	@media (hover: hover) and (pointer: fine) {
+		.stay-name a:hover { color: #7b6500; }
+		.stay-btn:hover { border-color: var(--sp-sun); background: var(--sp-sun); }
+		.stay-btn.quiet:hover { border-color: #cfc6b2; background: var(--sp-cream); }
+		.mosaic button:hover img { scale: 1.03; }
+		.stay-again a:hover { color: #7b6500; }
+	}
 	.mosaic button:focus-visible { outline: 2px solid var(--sp-sun); outline-offset: -2px; }
 	.mosaic .more { position: absolute; inset: 0; display: grid; place-items: center; background: rgb(20 18 15 / 0.45); font-size: var(--text-xl); font-weight: 600; color: #fff; }
 	/* One stay takes the row: photos over words while the row is narrow, then the
 	   words on the left and its photos (or the stand-in) on the right. */
 	.single .stay-media { aspect-ratio: 16 / 9; }
-	.single .stay-name { margin-top: 14px; }
 	.single .blurb { margin-top: 16px; -webkit-line-clamp: 3; line-clamp: 3; }
 	.single .stay-facts { margin-top: 0; padding-top: 22px; }
 	.single .mosaic button { border-radius: 0; }
@@ -232,13 +249,18 @@
 		.stays[data-count='3'] .stay-card:nth-child(3) { grid-column: auto; display: flex; }
 		.stays[data-count='3'] .stay-card:nth-child(3) .stay-media { aspect-ratio: 16 / 10; min-height: 0; }
 	}
-	@container stays (min-width: 920px) { .single .stay-name { font-size: var(--text-2xl); } }
-	.ending { display: flex; align-items: center; gap: 10px; max-width: 860px; margin: 24px 0 0; padding: 15px 18px; border-radius: var(--radius-control); background: #fff1b8; color: #5c4b00; font-size: var(--text-base); font-weight: 500; }
+	.stay-again { display: grid; gap: 8px; max-width: 40rem; margin: 0; padding: 0; list-style: none; }
+	.stay-again li { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border: 1px solid var(--sp-line); border-radius: var(--radius-control); background: #fff; font-size: var(--text-sm); line-height: 1.5; color: var(--sp-muted); }
+	.stay-again li > :global(svg) { flex: none; width: 17px; height: 17px; color: #98723c; }
+	.stay-again a, .stay-again strong { font-weight: 600; color: var(--sp-ink); }
+	.stay-again a { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; transition: color 180ms ease; }
+	.stay-again a :global(svg) { width: 14px; height: 14px; }
+	.ending { display: flex; align-items: center; gap: 10px; max-width: 40rem; margin: 24px 0 0; padding: 15px 18px; border-radius: var(--radius-control); background: #fff1b8; color: #5c4b00; font-size: var(--text-base); font-weight: 500; }
 	.ending :global(svg) { width: 18px; height: 18px; }
-	.stay-note { margin: 32px 0 0; padding-left: 44px; font-size: var(--text-sm); line-height: 1.7; color: var(--sp-muted); }
-	@media (prefers-reduced-motion: reduce) { .mosaic img { transition: none; } }
+	.stay-note { max-width: 40rem; margin: 32px 0 0; padding-left: 44px; font-size: var(--text-sm); line-height: 1.7; color: var(--sp-muted); }
+	@media (prefers-reduced-motion: reduce) { .mosaic img, .stay-btn, .read-day::after { transition: none; } .stay-btn:active { scale: none; } }
 	@media (max-width: 767px) {
-		.timeline { margin-left: 6px; padding-left: 24px; } article { padding-bottom: 40px; } article::before { left: -32px; } .summary { font-size: var(--text-base); } .stay-note { padding-left: 0; }
+		.timeline { margin-left: 13px; padding-left: 26px; } article { padding-bottom: 40px; } .day-no { top: 0; left: -40px; width: 26px; height: 26px; font-size: var(--text-xs); } .summary { font-size: var(--text-base); } .stay-note { padding-left: 0; }
 		/* A long day shows its first lines, fading out, until it is opened. */
 		.description.long:not(.open) { max-height: 9.2em; overflow: hidden; -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent); }
 		.description.long { margin-bottom: 4px; }

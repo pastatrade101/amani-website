@@ -26,8 +26,8 @@
 		{:else}<LocatorMap lat={place.lat} lng={place.lng} {others} name={place.name} country={place.country} />{/if}
 	</div>
 	<div class="place-body">
-		{#if where}<p class="place-where">{where}</p>{/if}
 		<svelte:element this={`h${level}`} class="place-title"><a href={destinationHref(place)} class="place-link">{place.name}</a></svelte:element>
+		{#if where}<p class="place-where">{where}</p>{/if}
 		{#if place.summary}<p class="place-summary">{place.summary}</p>{/if}
 		<div class="place-foot">
 			{#if trait && value !== null}
@@ -48,10 +48,10 @@
 	.place { position: relative; display: grid; grid-template-columns: 184px minmax(0, 1fr); gap: 20px; padding: 14px; border-radius: var(--radius-surface); background: #fff; box-shadow: 0 0 0 1px rgb(43 39 34 / 0.07), 0 14px 30px -28px rgb(39 36 31 / 0.5); transition: box-shadow 0.2s ease, translate 0.2s ease; }
 	.place.active { box-shadow: 0 0 0 2px var(--navy), 0 18px 36px -28px rgb(39 36 31 / 0.55); }
 	.place-media { position: relative; overflow: hidden; aspect-ratio: 4 / 3; border-radius: var(--radius-control); background: #f1eee4; }
-	.place-media img { display: block; width: 100%; height: 100%; object-fit: cover; transition: scale 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+	.place-media img { display: block; width: 100%; height: 100%; object-fit: cover; transition: scale 450ms cubic-bezier(0.22, 1, 0.36, 1); }
 	.place-body { display: flex; min-width: 0; flex-direction: column; padding-block: 2px; }
-	.place-where { margin: 0; overflow: hidden; color: var(--muted-foreground); font-size: var(--text-xs); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
-	.place-title { margin: 4px 0 0; font-size: var(--text-lg); font-weight: 600; line-height: 1.25; letter-spacing: -0.015em; color: var(--navy); }
+	.place-where { margin: 3px 0 0; overflow: hidden; color: var(--muted-foreground); font-size: var(--text-xs); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+	.place-title { margin: 0; font-size: var(--text-lg); font-weight: 600; line-height: 1.25; letter-spacing: -0.015em; color: var(--navy); }
 	/* The whole card opens the place; the safaris link sits above that. */
 	.place-link { color: inherit; text-decoration: none; }
 	.place-link::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
@@ -66,10 +66,10 @@
 	.place-safaris :global(svg) { width: 15px; height: 15px; transition: translate 0.2s ease; }
 	.place-safaris:hover :global(svg) { translate: 3px 0; }
 	.place-safaris:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; border-radius: 4px; }
-	@media (hover: hover) {
+	@media (hover: hover) and (pointer: fine) {
 		.place:hover { translate: 0 -2px; box-shadow: 0 0 0 1px rgb(43 39 34 / 0.1), 0 22px 40px -28px rgb(39 36 31 / 0.55); }
 		.place.active:hover { box-shadow: 0 0 0 2px var(--navy), 0 22px 40px -28px rgb(39 36 31 / 0.55); }
-		.place:hover .place-media img { scale: 1.04; }
+		.place:hover .place-media img { scale: 1.03; }
 	}
 	@media (max-width: 639px) {
 		.place { grid-template-columns: 104px minmax(0, 1fr); gap: 14px; padding: 10px; }
