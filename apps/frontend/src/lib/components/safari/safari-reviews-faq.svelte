@@ -111,14 +111,14 @@
 <style>
 	.review-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin: 0 0 48px; padding: 0; list-style: none; }
 	.review { display: flex; flex-direction: column; min-width: 0; padding: 26px; border: 1px solid var(--sp-line); border-radius: var(--radius-surface); background: #fff; }
-	.stars { margin: 0 0 16px; font-size: 17px; letter-spacing: 3px; color: var(--sp-green); }
-	blockquote { flex: 1; margin: 0 0 14px; font-size: 15px; line-height: 1.8; color: var(--sp-muted); overflow-wrap: anywhere; }
+	.stars { margin: 0 0 16px; font-size: var(--text-lg); letter-spacing: 3px; color: var(--sp-green); }
+	blockquote { flex: 1; margin: 0 0 14px; font-size: var(--text-base); line-height: 1.8; color: var(--sp-muted); overflow-wrap: anywhere; }
 	.read { align-self: flex-start; margin: 0 0 18px; padding: 4px 0; border: 0; background: none; color: var(--sp-ink); font: 600 14px var(--sp-sans); cursor: pointer; }
 	.read:hover, .faq-intro a:hover { color: #7b6500; }
 	.reviewer { display: flex; align-items: center; gap: 12px; margin-top: auto; padding-top: 18px; border-top: 1px solid var(--sp-line-soft); }
-	.avatar { display: grid; flex-shrink: 0; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: #f3edce; color: #6a5a1c; font-size: 16px; font-weight: 600; }
-	.reviewer strong { display: block; font-size: 15px; font-weight: 600; color: var(--sp-ink); }
-	.reviewer small { display: block; margin-top: 3px; font-size: 13px; color: var(--sp-muted); }
+	.avatar { display: grid; flex-shrink: 0; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: #f3edce; color: #6a5a1c; font-size: var(--text-base); font-weight: 600; }
+	.reviewer strong { display: block; font-size: var(--text-base); font-weight: 600; color: var(--sp-ink); }
+	.reviewer small { display: block; margin-top: 3px; font-size: var(--text-sm); color: var(--sp-muted); }
 
 	/* The plan card: the full width of the page, words on the left on the
 	   dark of the hero, one of the tour's photos fading in on the right. */
@@ -149,38 +149,38 @@
 	}
 	
 	
-	.booking h2 { margin: 0 0 14px; max-width: 16ch; font-size: clamp(32px, 3.4vw, 48px); font-weight: 600; line-height: 1.08; letter-spacing: -0.03em; color: #fff; text-wrap: balance; }
+	.booking h2 { margin: 0 0 14px; max-width: 16ch; font-size: var(--text-h2); font-weight: 600; line-height: 1.08; letter-spacing: -0.03em; color: #fff; text-wrap: balance; }
 	.nowrap { white-space: nowrap; }
-	.booking-intro { margin: 0; max-width: 46ch; font-size: 16px; line-height: 1.7; color: rgb(255 255 255 / 0.78); }
+	.booking-intro { margin: 0; max-width: 46ch; font-size: var(--text-base); line-height: 1.7; color: rgb(255 255 255 / 0.78); }
 	.expert { display: flex; align-items: center; gap: 14px; max-width: 48ch; }
 	.expert img, .expert-mark { flex: none; width: 56px; height: 56px; border: 2px solid var(--sp-sun); border-radius: 50%; object-fit: cover; object-position: 50% 30%; }
 	.expert-mark { display: grid; place-items: center; color: var(--sp-sun); }
 	.expert-mark :global(svg) { width: 24px; height: 24px; }
-	.expert p { margin: 0; font-size: 16px; line-height: 1.6; color: rgb(255 255 255 / 0.78); }
+	.expert p { margin: 0; font-size: var(--text-base); line-height: 1.6; color: rgb(255 255 255 / 0.78); }
 	.expert strong { font-weight: 600; color: #fff; }
 	.facts { display: flex; flex-wrap: wrap; gap: 12px 28px; margin: 28px 0 0; padding: 20px 0 0; border-top: 1px solid rgb(255 255 255 / 0.14); list-style: none; }
 	.facts li { display: flex; align-items: flex-start; gap: 10px; }
 	.facts li :global(svg) { flex: none; width: 18px; height: 18px; margin-top: 2px; color: var(--sp-sun); }
-	.facts span { font-size: 15px; font-weight: 600; line-height: 1.35; color: #fff; }
-	.facts small { display: block; margin-bottom: 2px; font-size: 13px; font-weight: 600; color: rgb(255 255 255 / 0.55); }
+	.facts span { font-size: var(--text-base); font-weight: 600; line-height: 1.35; color: #fff; }
+	.facts small { display: block; margin-bottom: 2px; font-size: var(--text-sm); font-weight: 600; color: rgb(255 255 255 / 0.55); }
 	.booking-action { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 30px; }
 	.booking-chat { border: 1px solid rgb(255 255 255 / 0.4); background: transparent; color: #fff; }
 	.booking-chat:hover { border-color: #fff; background: rgb(255 255 255 / 0.08); }
 	.booking-chat :global(svg) { width: 18px; height: 18px; color: #4ade80; }
-	.booking-note { margin: 14px 0 0; font-size: 13px; color: rgb(255 255 255 / 0.6); }
+	.booking-note { margin: 14px 0 0; font-size: var(--text-sm); color: rgb(255 255 255 / 0.6); }
 
 	.faq-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr); gap: 64px; }
-	.faq-intro p { margin: 0 0 20px; font-size: 15px; line-height: 1.85; color: var(--sp-muted); }
-	.faq-intro a { display: inline-flex; align-items: center; gap: 8px; color: var(--sp-ink); font-size: 14px; font-weight: 600; text-decoration: none; }
+	.faq-intro p { margin: 0 0 20px; font-size: var(--text-base); line-height: 1.85; color: var(--sp-muted); }
+	.faq-intro a { display: inline-flex; align-items: center; gap: 8px; color: var(--sp-ink); font-size: var(--text-sm); font-weight: 600; text-decoration: none; }
 	.faq-intro a :global(svg) { width: 16px; height: 16px; }
 	details { border-bottom: 1px solid var(--sp-line); }
 	details:first-child { border-top: 1px solid var(--sp-line); }
-	summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 22px 0; list-style: none; cursor: pointer; font-size: 16px; font-weight: 600; line-height: 1.5; color: var(--sp-ink); }
+	summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 22px 0; list-style: none; cursor: pointer; font-size: var(--text-base); font-weight: 600; line-height: 1.5; color: var(--sp-ink); }
 	summary::-webkit-details-marker { display: none; }
-	summary::after { content: '+'; flex-shrink: 0; font-size: 24px; font-weight: 400; line-height: 1; color: var(--sp-muted); }
+	summary::after { content: '+'; flex-shrink: 0; font-size: var(--text-2xl); font-weight: 400; line-height: 1; color: var(--sp-muted); }
 	details[open] summary::after { content: '−'; color: #98723c; }
 	.answer { padding: 0 32px 22px 0; }
-	.answer :global(.sp-rich.rich-text) { font-size: 15px; }
+	.answer :global(.sp-rich.rich-text) { font-size: var(--text-base); }
 	@media (max-width: 960px) {
 		.review-grid { grid-template-columns: 1fr; gap: 16px; }
 		.faq-layout { grid-template-columns: 1fr; gap: 26px; }
@@ -197,7 +197,7 @@
 		.booking-photo { aspect-ratio: 4 / 3; }
 		.booking-copy, .booking.no-photo .booking-copy { padding: 4px 22px 28px; }
 		.booking.no-photo .booking-copy { padding-top: 28px; }
-		.booking h2 { font-size: clamp(30px, 8.5vw, 36px); }
+		.booking h2 { font-size: var(--text-h2); }
 		.facts { flex-direction: column; gap: 14px; }
 		.booking-action { flex-direction: column; align-items: stretch; }
 		.booking-action .sp-btn { width: 100%; }

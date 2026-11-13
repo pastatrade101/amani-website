@@ -23,7 +23,7 @@
 			<span class="pm-burst absolute inset-0 rounded-full" aria-hidden="true"></span>
 			<span class="relative grid size-14 place-items-center rounded-full bg-sun/25 text-navy"><Check class="pm-tick size-7" strokeWidth={2.4} /></span>
 		</span>
-		<h2 bind:this={heading} tabindex="-1" class="lux-heading mt-5 !text-3xl outline-none md:!text-4xl">Thank you, your plan is on its way</h2>
+		<h2 bind:this={heading} tabindex="-1" class="lux-heading mt-5 outline-none">Thank you, your plan is on its way</h2>
 		<p class="mt-3 text-sm leading-7 text-muted-foreground">Our team will read your answers and come back to you with ideas and a personalised proposal.</p>
 		<p class="mt-2 text-sm text-muted-foreground">Your reference is <b class="text-navy">{reference}</b>.</p>
 		{#if recap.length}

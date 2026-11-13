@@ -72,17 +72,17 @@
 	.tools :global(.tool svg) { width: 16px; height: 16px; }
 	.tools :global(.tool[aria-pressed='true'] svg) { color: var(--sp-sun); }
 	.content { max-width: calc(900px + var(--sp-gutter)); padding: 0 var(--sp-gutter) 56px; }
-	h1 { max-width: 18ch; margin: 0; font-family: var(--sp-display); font-size: clamp(36px, 4.4vw, 60px); line-height: 1.06; text-wrap: balance; }
+	h1 { max-width: 18ch; margin: 0; font-family: var(--sp-display); font-size: var(--text-title); line-height: 1.06; text-wrap: balance; }
 	.facts { display: flex; flex-wrap: wrap; align-items: center; gap: 24px 44px; margin: 30px 0 0; }
 	.facts dd { margin: 0; }
-	.label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: #ffffffb8; }
-	.value { font-size: 20px; font-weight: 600; }
+	.label { display: block; margin-bottom: 8px; font-size: var(--text-sm); font-weight: 600; color: #ffffffb8; }
+	.value { font-size: var(--text-xl); font-weight: 600; }
 	.price { padding-left: 44px; border-left: 1px solid #ffffff45; }
-	.price .currency { margin-right: 8px; font-size: 13px; font-weight: 600; }
-	.price .amount { font-size: 36px; font-weight: 650; line-height: 1; letter-spacing: -0.02em; color: var(--sp-sun); }
-	.price .amount.on-request { font-size: 26px; }
-	.price small { display: block; margin-top: 8px; font-size: 12px; color: #ffffffb8; }
-	.scroll { position: absolute; right: var(--sp-gutter); bottom: 60px; display: flex; align-items: center; gap: 10px; color: #ffffffd9; font-size: 13px; font-weight: 600; text-decoration: none; }
+	.price .currency { margin-right: 8px; font-size: var(--text-sm); font-weight: 600; }
+	.price .amount { font-size: var(--text-3xl); font-weight: 650; line-height: 1; letter-spacing: -0.02em; color: var(--sp-sun); }
+	.price .amount.on-request { font-size: var(--text-2xl); }
+	.price small { display: block; margin-top: 8px; font-size: var(--text-xs); color: #ffffffb8; }
+	.scroll { position: absolute; right: var(--sp-gutter); bottom: 60px; display: flex; align-items: center; gap: 10px; color: #ffffffd9; font-size: var(--text-sm); font-weight: 600; text-decoration: none; }
 	.scroll :global(svg) { width: 16px; height: 16px; }
 	@media (max-width: 900px) { .scroll { display: none; } }
 	@media (max-width: 767px) {
@@ -92,8 +92,8 @@
 		.tools { top: 16px; }
 		.content { padding-bottom: 40px; }
 		.facts { gap: 18px 28px; }
-		.value { font-size: 18px; }
+		.value { font-size: var(--text-lg); }
 		.price { padding-left: 0; border: 0; }
-		.price .amount { font-size: 32px; }
+		.price .amount { font-size: var(--text-3xl); }
 	}
 </style>

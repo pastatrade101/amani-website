@@ -94,6 +94,13 @@ export type Tour = {
 	start_location?: string | null;
 	end_location?: string | null;
 	is_featured?: boolean;
+	is_popular?: boolean;
+	destination_id?: string | null;
+	category_id?: string | null;
+	experience_type?: string | null;
+	persona_tags?: string[] | null;
+	difficulty_level?: string | null;
+	minimum_age?: number | null;
 	destinations?: { name: string; slug: string; country?: string } | null;
 	tour_destinations?: TourDestinationLink[] | null;
 	tour_categories?: { name: string; slug: string } | null;

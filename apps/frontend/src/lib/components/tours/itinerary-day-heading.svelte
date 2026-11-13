@@ -24,9 +24,9 @@
 </span>
 
 <style>
-	.day-pill { display: inline-flex; margin-bottom: 0.45rem; border-radius: var(--radius-control); background: var(--sun); padding: 0.2rem 0.6rem; font-size: 12px; font-weight: 700; line-height: 1.3; color: var(--navy); }
+	.day-pill { display: inline-flex; margin-bottom: 0.45rem; border-radius: var(--radius-control); background: var(--sun); padding: 0.2rem 0.6rem; font-size: var(--text-xs); font-weight: 700; line-height: 1.3; color: var(--navy); }
 	/* A long unbroken word (a pasted URL, a typo) wraps instead of pushing the card wider. */
-	.day-title { display: block; font-size: 15px; font-weight: 700; line-height: 1.35; letter-spacing: -0.02em; color: var(--navy); overflow-wrap: anywhere; }
-	.day-summary { display: block; margin-top: 0.3rem; font-size: 13px; font-weight: 400; line-height: 1.6; color: var(--muted-foreground); overflow-wrap: anywhere; }
-	.mode-chip { display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.55rem; border-radius: var(--radius-control); background: var(--secondary); padding: 0.2rem 0.6rem; font-size: 12px; font-weight: 500; color: var(--muted-foreground); }
+	.day-title { display: block; font-size: var(--text-base); font-weight: 700; line-height: 1.35; letter-spacing: -0.02em; color: var(--navy); overflow-wrap: anywhere; }
+	.day-summary { display: block; margin-top: 0.3rem; font-size: var(--text-sm); font-weight: 400; line-height: 1.6; color: var(--muted-foreground); overflow-wrap: anywhere; }
+	.mode-chip { display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.55rem; border-radius: var(--radius-control); background: var(--secondary); padding: 0.2rem 0.6rem; font-size: var(--text-xs); font-weight: 500; color: var(--muted-foreground); }
 </style>

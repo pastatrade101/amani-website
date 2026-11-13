@@ -29,7 +29,7 @@
 		onStyleChange,
 		styles,
 		showSelector = true,
-		headingClass = 'text-base leading-tight md:text-[28px]',
+		headingClass = 'text-base leading-tight md:text-2xl',
 		empty
 	}: {
 		seasons: PricingSeason[];
@@ -84,7 +84,7 @@
 		<h2 class={`text-center font-bold tracking-tight text-primary ${headingClass}`}>Safari Price by Group Size</h2>
 		{#if showSelector && tabs.length > 1}
 			<div class="mt-5 md:mt-6">
-				<p class="mb-2 text-center text-[13px] leading-relaxed text-[#867c69] md:mb-3 md:text-sm">Explore the safari style that best matches the way you want to experience Tanzania.</p>
+				<p class="mb-2 text-center text-sm leading-relaxed text-[#867c69] md:mb-3 md:text-sm">Explore the safari style that best matches the way you want to experience Tanzania.</p>
 				<SafariStyleSelector value={selected} onChange={choose} styles={tabs} label="Safari style for prices" />
 			</div>
 		{/if}
@@ -96,12 +96,12 @@
 					<div class="mx-auto grid w-full grid-cols-3 gap-px overflow-hidden rounded-xl border sm:grid-cols-6 md:w-[90%]" style={`border-color:${theme.primary};background-color:${theme.light}`}>
 						{#each tiers as tier (tier.key)}
 							<div class="flex flex-col items-center justify-center bg-white px-1 py-3 text-center md:px-4 md:py-5">
-								<span class="text-[13px] font-semibold text-primary/80 md:text-sm">{tier.label}</span>
+								<span class="text-sm font-semibold text-primary/80 md:text-sm">{tier.label}</span>
 								{#if tier.price != null}
-									<span class="mt-1 text-[15px] font-bold leading-none transition-colors duration-200 md:mt-2 md:text-3xl" style={`color:${theme.priceColor}`}>{formatPrice(tier.price, currency)}</span>
-									<span class="mt-0.5 text-[12px] text-muted-foreground md:text-xs">per person</span>
+									<span class="mt-1 text-base font-bold leading-none transition-colors duration-200 md:mt-2 md:text-3xl" style={`color:${theme.priceColor}`}>{formatPrice(tier.price, currency)}</span>
+									<span class="mt-0.5 text-xs text-muted-foreground md:text-xs">per person</span>
 								{:else}
-									<span class="mt-1 text-[13px] font-semibold leading-none text-primary/70 md:mt-2 md:text-base">On request</span>
+									<span class="mt-1 text-sm font-semibold leading-none text-primary/70 md:mt-2 md:text-base">On request</span>
 								{/if}
 							</div>
 						{/each}

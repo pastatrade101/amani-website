@@ -57,7 +57,7 @@
 		a {
 			display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
 			min-height: 54px; border-radius: var(--radius-control);
-			color: #6f675c; font-size: 11px; font-weight: 600; line-height: 1.1; letter-spacing: 0.01em; text-decoration: none;
+			color: #6f675c; font-size: var(--text-xs); font-weight: 600; line-height: 1.1; letter-spacing: 0.01em; text-decoration: none;
 			-webkit-tap-highlight-color: transparent; transition: color 0.18s ease;
 		}
 		.tab-icon { display: grid; place-items: center; width: 48px; height: 30px; border-radius: 9px; transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }

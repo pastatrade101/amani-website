@@ -143,17 +143,17 @@
 
 <style>
 	.pricing-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
-	.currency { padding: 10px 16px; border: 1px solid var(--sp-line); border-radius: var(--radius-control); font-size: 13px; font-weight: 600; white-space: nowrap; }
+	.currency { padding: 10px 16px; border: 1px solid var(--sp-line); border-radius: var(--radius-control); font-size: var(--text-sm); font-weight: 600; white-space: nowrap; }
 	/* Season switch: one track, the chosen season lifts out of it. */
 	.seasons { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; margin: -6px 0 26px; }
 	.season-switch { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--sp-line); border-radius: 10px; background: var(--sp-cream); }
 	.season-switch button { min-height: 40px; padding: 8px 20px; border: 0; border-radius: 7px; background: transparent; color: var(--sp-muted); font: 600 14px var(--sp-sans); cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }
 	.season-switch button:hover { color: var(--sp-ink); }
 	.season-switch button[aria-pressed='true'] { background: #fff; color: var(--sp-ink); box-shadow: 0 1px 2px rgb(43 39 34 / 0.08), 0 4px 12px -4px rgb(43 39 34 / 0.12); }
-	.season-dates { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--sp-muted); }
+	.season-dates { display: inline-flex; align-items: center; gap: 8px; font-size: var(--text-sm); color: var(--sp-muted); }
 	.season-dates :global(svg) { width: 16px; height: 16px; color: #98723c; }
-	.from-price { margin: -8px 0 22px; font-size: 15px; color: var(--sp-muted); }
-	.from-price strong { font-size: 26px; font-weight: 650; color: var(--sp-ink); font-variant-numeric: tabular-nums; }
+	.from-price { margin: -8px 0 22px; font-size: var(--text-base); color: var(--sp-muted); }
+	.from-price strong { font-size: var(--text-2xl); font-weight: 650; color: var(--sp-ink); font-variant-numeric: tabular-nums; }
 
 	.pricing-grid { display: grid; gap: 20px; }
 	.package { overflow: hidden; border: 1px solid var(--sp-line); border-radius: var(--radius-surface); background: #fff; box-shadow: 0 1px 2px rgb(43 39 34 / 0.03), 0 18px 40px -28px rgb(43 39 34 / 0.18); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
@@ -165,12 +165,12 @@
 	.package-icon { display: grid; flex: none; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: #faf3d6; color: #8a6a2f; }
 	.package.is-selected .package-icon { background: var(--sp-sun); color: #2b2722; }
 	.package-icon :global(svg) { width: 24px; height: 24px; }
-	h3 { margin: 0; font-size: 22px; font-weight: 650; line-height: 1.2; letter-spacing: -0.02em; color: var(--sp-ink); }
-	.package-id p { margin: 4px 0 0; font-size: 14px; line-height: 1.5; color: var(--sp-muted); }
+	h3 { margin: 0; font-size: var(--text-xl); font-weight: 650; line-height: 1.2; letter-spacing: -0.02em; color: var(--sp-ink); }
+	.package-id p { margin: 4px 0 0; font-size: var(--text-sm); line-height: 1.5; color: var(--sp-muted); }
 	.package-from { margin-left: auto; text-align: right; }
-	.from-line { margin: 0; font-size: 13px; color: var(--sp-muted); }
-	.from-line strong { margin-inline: 2px; font-size: 26px; font-weight: 650; letter-spacing: -0.02em; color: var(--sp-ink); font-variant-numeric: tabular-nums; }
-	.saving { display: inline-flex; align-items: center; gap: 6px; margin: 6px 0 0; padding: 4px 10px; border-radius: 6px; background: #edf6ef; font-size: 12.5px; font-weight: 600; color: #146c3e; }
+	.from-line { margin: 0; font-size: var(--text-sm); color: var(--sp-muted); }
+	.from-line strong { margin-inline: 2px; font-size: var(--text-2xl); font-weight: 650; letter-spacing: -0.02em; color: var(--sp-ink); font-variant-numeric: tabular-nums; }
+	.saving { display: inline-flex; align-items: center; gap: 6px; margin: 6px 0 0; padding: 4px 10px; border-radius: 6px; background: #edf6ef; font-size: var(--text-xs); font-weight: 600; color: #146c3e; }
 	.saving :global(svg) { width: 14px; height: 14px; }
 
 	/* Group sizes: one tile each, the price falls as the dots grow. */
@@ -178,27 +178,27 @@
 	.tier { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; padding: 16px 16px 15px; border: 1px solid transparent; border-radius: 12px; background: #faf8f3; transition: background-color 0.2s ease, border-color 0.2s ease; }
 	.tier:hover { border-color: var(--sp-line); background: #fff; }
 	.tier.best { border-color: #ead27a; background: #fffaeb; }
-	.who { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--sp-muted); }
+	.who { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; font-size: var(--text-sm); font-weight: 500; color: var(--sp-muted); }
 	.dots { display: flex; align-items: center; gap: 3px; height: 8px; }
 	.dots i { width: 7px; height: 7px; border-radius: 50%; background: #c9b58a; }
 	.tier.best .dots i { background: #c79a00; }
-	.dots b { margin-left: 1px; font-size: 11px; font-weight: 700; line-height: 1; color: #a8946a; }
-	.amount { font-size: 22px; font-weight: 650; line-height: 1.15; letter-spacing: -0.02em; color: var(--sp-ink); font-variant-numeric: tabular-nums; }
-	.pp { font-size: 12px; color: var(--sp-muted); }
-	.best-tag { position: absolute; top: 12px; right: 12px; padding: 3px 8px; border-radius: 5px; background: var(--sp-sun); font-size: 13px; font-weight: 700; color: #2b2722; }
+	.dots b { margin-left: 1px; font-size: var(--text-xs); font-weight: 700; line-height: 1; color: #a8946a; }
+	.amount { font-size: var(--text-xl); font-weight: 650; line-height: 1.15; letter-spacing: -0.02em; color: var(--sp-ink); font-variant-numeric: tabular-nums; }
+	.pp { font-size: var(--text-xs); color: var(--sp-muted); }
+	.best-tag { position: absolute; top: 12px; right: 12px; padding: 3px 8px; border-radius: 5px; background: var(--sp-sun); font-size: var(--text-sm); font-weight: 700; color: #2b2722; }
 
 	.select-package { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 46px; padding: 11px 20px; border: 1px solid var(--sp-line); border-radius: var(--radius-control); background: #fff; color: var(--sp-ink); font: 700 14px var(--sp-sans); cursor: pointer; transition: background-color 0.2s ease, border-color 0.2s ease; }
 	.select-package:hover { border-color: #cfc6b2; }
 	.select-package :global(svg) { width: 16px; height: 16px; }
 	.select-package[aria-pressed='true'] { border-color: var(--sp-sun); background: var(--sp-sun); color: #2b2722; }
 
-	.selection { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; margin-top: 20px; padding: 14px 14px 14px 22px; border: 1px solid var(--sp-line); border-radius: var(--radius-surface); background: var(--sp-cream); font-size: 15px; color: var(--sp-ink); }
+	.selection { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; margin-top: 20px; padding: 14px 14px 14px 22px; border: 1px solid var(--sp-line); border-radius: var(--radius-surface); background: var(--sp-cream); font-size: var(--text-base); color: var(--sp-ink); }
 	.selection p { display: flex; align-items: center; gap: 12px; margin: 0; }
 	.selection p :global(svg) { flex: none; width: 30px; height: 30px; padding: 6px; border-radius: 8px; background: #fff; color: #146c3e; }
 	.selection p :global(svg.ask) { color: #8a6a2f; }
 	.selection strong { font-weight: 650; }
 	.selection .sp-btn { flex: none; }
-	.pricing-note { max-width: 860px; margin: 22px 0 0; font-size: 13px; line-height: 1.8; color: var(--sp-muted); }
+	.pricing-note { max-width: 860px; margin: 22px 0 0; font-size: var(--text-sm); line-height: 1.8; color: var(--sp-muted); }
 	@media (max-width: 1080px) {
 		.ladder { grid-template-columns: repeat(min(var(--cols, 4), 3), minmax(0, 1fr)); }
 	}
@@ -211,12 +211,12 @@
 		.package-top { padding: 20px 18px; }
 		.package-icon { width: 44px; height: 44px; border-radius: 12px; }
 		.package-icon :global(svg) { width: 20px; height: 20px; }
-		h3 { font-size: 19px; }
+		h3 { font-size: var(--text-lg); }
 		.package-from { flex-basis: 100%; margin-left: 0; text-align: left; }
 		.select-package { flex-basis: 100%; }
 		.ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 16px 18px 20px; }
 		.tier { padding: 14px 14px 13px; }
-		.amount { font-size: 20px; }
+		.amount { font-size: var(--text-xl); }
 		/* Narrow tiles: the tag drops to the bottom corner, clear of the dots. */
 		.best-tag { top: auto; right: 10px; bottom: 12px; }
 	}

@@ -392,8 +392,8 @@
 					{#key step}
 						<div in:fly={{ x: 40 * dir, duration: ms(420), easing: cubicOut }}>
 							{#if step === 0}
-								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 !text-[1.9rem] outline-none md:!text-[2.3rem]">What kind of trip are you dreaming of?</h2>
-								<p class="mt-2 text-[13px] text-muted-foreground">Choose up to {MAX_TYPES}. Each shows how many of our published trips it has.</p>
+								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 outline-none">What kind of trip are you dreaming of?</h2>
+								<p class="mt-2 text-sm text-muted-foreground">Choose up to {MAX_TYPES}. Each shows how many of our published trips it has.</p>
 								{#if errors.types}<p class="mt-3 text-sm font-medium text-destructive" role="alert">{errors.types}</p>{/if}
 								<div class="mt-5 grid gap-3 sm:grid-cols-2" role="group" aria-label="Trip type" data-invalid={errors.types ? '' : undefined}>
 									{#each typeOptions as option, i (option.slug)}
@@ -402,7 +402,7 @@
 									{/each}
 								</div>
 							{:else if step === 1}
-								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 !text-[1.9rem] outline-none md:!text-[2.3rem]">Who’s travelling?</h2>
+								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 outline-none">Who’s travelling?</h2>
 								{#if errors.party}<p class="mt-3 text-sm font-medium text-destructive" role="alert">{errors.party}</p>{/if}
 								<div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4" role="group" aria-label="Travellers" data-invalid={errors.party ? '' : undefined}>
 									{#each PARTIES as option, i (option.id)}
@@ -434,8 +434,8 @@
 									</div>
 								{/if}
 							{:else if step === 2}
-								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 !text-[1.9rem] outline-none md:!text-[2.3rem]">When would you like to travel?</h2>
-								<p class="mt-2 text-[13px] text-muted-foreground">A rough month is plenty. Each month shows its season.</p>
+								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 outline-none">When would you like to travel?</h2>
+								<p class="mt-2 text-sm text-muted-foreground">A rough month is plenty. Each month shows its season.</p>
 								<div class="mt-5 inline-grid grid-cols-2 rounded-xl bg-secondary p-1" role="group" aria-label="Date type">
 									{#each [{ id: 'flexible', label: 'Flexible' }, { id: 'exact', label: 'Exact dates' }] as mode (mode.id)}
 										<button type="button" aria-pressed={a.dateMode === mode.id} class={`h-11 rounded-lg px-4 text-sm font-semibold transition-colors ${a.dateMode === mode.id ? 'bg-white text-navy shadow-sm' : 'text-muted-foreground hover:text-navy'}`} onclick={() => setDateMode(mode.id === 'exact' ? 'exact' : 'flexible')}>{mode.label}</button>
@@ -456,7 +456,7 @@
 												{@const covering = seasonFor(data.seasons, i)}
 												<button type="button" disabled={past} aria-pressed={on} aria-label={`${MONTH_NAMES[i]} ${a.year}${covering ? `, ${covering.name}` : ''}`} style={`--i: ${i * 0.45}`} class={`pm-rise min-h-14 rounded-xl border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${on ? 'border-sun bg-sun/15' : 'border-border bg-white hover:border-sun'}`} onclick={() => pickMonth(i)}>
 													<span class="block text-sm font-semibold text-navy">{label}</span>
-													{#if covering}<span class="mt-1 block truncate text-[13px] font-semibold text-muted-foreground">{covering.name}</span>{/if}
+													{#if covering}<span class="mt-1 block truncate text-sm font-semibold text-muted-foreground">{covering.name}</span>{/if}
 												</button>
 											{/each}
 										</div>
@@ -484,19 +484,19 @@
 									{/key}
 								{/if}
 							{:else if step === 3}
-								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 !text-[1.9rem] outline-none md:!text-[2.3rem]">How long, and at what pace?</h2>
-								<p class="mt-2 text-[13px] text-muted-foreground">The whole trip, from arrival to departure.</p>
+								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 outline-none">How long, and at what pace?</h2>
+								<p class="mt-2 text-sm text-muted-foreground">The whole trip, from arrival to departure.</p>
 								{#if errors.length}<p class="mt-3 text-sm font-medium text-destructive" role="alert">{errors.length}</p>{/if}
 								<div class="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap" role="group" aria-label="Trip length" data-invalid={errors.length ? '' : undefined}>
 									{#each [...LENGTHS.map((band) => ({ id: band.id as string, label: band.label })), { id: NOT_SURE, label: NOT_SURE_LABEL }] as band, i (band.id)}
 										<button type="button" class={pill(a.length === band.id)} style={`--i: ${i}`} aria-pressed={a.length === band.id} onclick={() => pick('length', band.id as PlanAnswers['length'])}>
 											{band.label}
-											{#if popular === band.id}<span class="rounded bg-navy px-1.5 py-0.5 text-[13px] font-semibold text-white">Popular</span>{/if}
+											{#if popular === band.id}<span class="rounded bg-navy px-1.5 py-0.5 text-sm font-semibold text-white">Popular</span>{/if}
 										</button>
 									{/each}
 								</div>
 								<div class="mt-6 border-t border-border pt-6">
-									<h3 class="text-[15px] font-semibold text-navy">Your pace</h3>
+									<h3 class="text-base font-semibold text-navy">Your pace</h3>
 									{#if errors.pace}<p class="mt-2 text-sm font-medium text-destructive" role="alert">{errors.pace}</p>{/if}
 									<div class="mt-3 grid gap-3 sm:grid-cols-2" role="group" aria-label="Pace" data-invalid={errors.pace ? '' : undefined}>
 										{#each [...PACES, { id: NOT_SURE, label: NOT_SURE_LABEL, desc: 'We’ll suggest a pace that suits your route.' }] as option, i (option.id)}
@@ -505,9 +505,9 @@
 									</div>
 								</div>
 							{:else if step === 4}
-								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 !text-[1.9rem] outline-none md:!text-[2.3rem]">What matters most to you?</h2>
-								<p class="mt-2 text-[13px] text-muted-foreground">So we can suggest the right places, stays and price range.</p>
-								<h3 class="mt-5 text-[15px] font-semibold text-navy">Your priorities <span class="font-normal text-muted-foreground">(optional, up to {MAX_PRIORITIES})</span> <span class="ml-1 font-normal text-muted-foreground" aria-live="polite">{pickedPriorities}/{MAX_PRIORITIES}</span></h3>
+								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 outline-none">What matters most to you?</h2>
+								<p class="mt-2 text-sm text-muted-foreground">So we can suggest the right places, stays and price range.</p>
+								<h3 class="mt-5 text-base font-semibold text-navy">Your priorities <span class="font-normal text-muted-foreground">(optional, up to {MAX_PRIORITIES})</span> <span class="ml-1 font-normal text-muted-foreground" aria-live="polite">{pickedPriorities}/{MAX_PRIORITIES}</span></h3>
 								<div class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Priorities">
 									{#each priorityOptions as option, i (option.slug)}
 										{@const on = a.priorities.some((p) => p.slug === option.slug)}
@@ -516,7 +516,7 @@
 								</div>
 
 								<div class="mt-6 border-t border-border pt-6">
-									<h3 class="text-[15px] font-semibold text-navy">Comfort level</h3>
+									<h3 class="text-base font-semibold text-navy">Comfort level</h3>
 									{#if errors.comfort}<p class="mt-2 text-sm font-medium text-destructive" role="alert">{errors.comfort}</p>{/if}
 									<div class="mt-3 grid gap-3 sm:grid-cols-2" role="group" aria-label="Comfort level" data-invalid={errors.comfort ? '' : undefined}>
 										{#each comfortChoices as option, i (option.id)}
@@ -530,7 +530,7 @@
 
 								{#if scale}
 									<div class="mt-6 border-t border-border pt-6">
-										<h3 class="text-[15px] font-semibold text-navy">Budget per person <span class="font-normal text-muted-foreground">(optional)</span></h3>
+										<h3 class="text-base font-semibold text-navy">Budget per person <span class="font-normal text-muted-foreground">(optional)</span></h3>
 										<p class="mt-1 text-sm text-muted-foreground">Drag to the most you’d like to spend per person, before international flights.</p>
 										<div class={`mt-4 rounded-xl border border-border bg-white px-4 py-5 transition-opacity sm:px-6 ${a.budgetUnsure ? 'opacity-45' : ''}`}>
 											<p class="text-center text-2xl font-bold text-navy" aria-live="polite">{a.budgetUnsure ? NOT_SURE_LABEL : `Up to ${usd(sliderValue)} per person`}</p>
@@ -548,7 +548,7 @@
 									</div>
 								{/if}
 							{:else if step === 5}
-								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 !text-[1.9rem] outline-none md:!text-[2.3rem]">Where are you with your plans?</h2>
+								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 outline-none">Where are you with your plans?</h2>
 								{#if errors.stage}<p class="mt-3 text-sm font-medium text-destructive" role="alert">{errors.stage}</p>{/if}
 								<div class="mt-5 grid gap-3" role="group" aria-label="Planning stage" data-invalid={errors.stage ? '' : undefined}>
 									{#each STAGES as option, i (option.id)}
@@ -556,12 +556,12 @@
 									{/each}
 								</div>
 							{:else}
-								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 !text-[1.9rem] outline-none md:!text-[2.3rem]">Your trip, and how to reach you</h2>
+								<h2 data-step-heading tabindex="-1" class="lux-heading mt-3 outline-none">Your trip, and how to reach you</h2>
 								<dl class="mt-5 divide-y divide-border rounded-xl border border-border">
 									{#each review as row, i (row.at)}
 										<div class="pm-rise flex items-start justify-between gap-3 px-4 py-3" style={`--i: ${i * 0.7}`}>
 											<div class="min-w-0">
-												<dt class="text-[13px] font-semibold text-muted-foreground">{row.label}</dt>
+												<dt class="text-sm font-semibold text-muted-foreground">{row.label}</dt>
 												<dd class="mt-0.5 text-sm break-words text-navy">{row.value || NOT_SURE_LABEL}</dd>
 											</div>
 											<button type="button" class="inline-flex min-h-11 shrink-0 items-center gap-1 px-1 text-xs font-semibold text-navy hover:underline" aria-label={`Edit ${row.label.toLowerCase()}`} onclick={() => edit(row.at)}><Pencil class="size-3" />Edit</button>
@@ -644,7 +644,7 @@
 <SiteFooter visible={data.visible} destinations={data.destinations} onInterest={() => {}} onPage={['top']} />
 
 <style>
-	.plan-form :global([data-slot='label']) { font-size: 12px; font-weight: 500; }
+	.plan-form :global([data-slot='label']) { font-size: var(--text-xs); font-weight: 500; }
 
 	/* Choices rise into place one after another when a step opens. */
 	:global(.pm-rise) { animation: pm-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards; animation-delay: calc(var(--i, 0) * 45ms + 80ms); }

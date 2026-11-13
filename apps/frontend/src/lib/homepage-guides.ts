@@ -2,7 +2,7 @@ import type { HomepageSection } from './types/api';
 import { PHOTO } from './media-photos';
 
 export type GuideRow = { label: string; title: string; text: string };
-export type GuestReview = { id: string; author_name: string; country?: string; message: string; rating: number; platform?: string; source_url?: string; status?: string };
+export type GuestReview = { id: string; author_name: string; country?: string; message: string; rating: number; platform?: string; source_url?: string; status?: string; tour_id?: string | null; is_featured?: boolean | null };
 export const guideKeys = ['why_tanzania', 'safari_duration', 'safari_inclusions', 'safari_day'];
 
 /** Shared defaults for the public page and the Homepage CMS's friendly editors. */

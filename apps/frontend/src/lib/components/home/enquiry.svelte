@@ -40,7 +40,7 @@
 </script>
 <section id="request-quote" class="bg-secondary/70 py-16 md:py-24">
 	<div class="page-container grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:gap-20">
-		<div data-motion="reveal" class="lg:pt-5"><h2 class="section-heading max-w-md text-3xl md:text-4xl">{section.title}</h2><p class="mt-5 max-w-md text-sm leading-7 text-muted-foreground">{textContent(section.content)}</p>
+		<div data-motion="reveal" class="lg:pt-5"><h2 class="section-heading max-w-md">{section.title}</h2><p class="mt-5 max-w-md text-sm leading-7 text-muted-foreground">{textContent(section.content)}</p>
 			<div class="mt-8 grid gap-5 text-sm"><p class="flex items-center gap-3"><MapPin class="size-5" /> Local knowledge, personal attention</p><p class="flex items-center gap-3"><Compass class="size-5" /> A journey shaped around your interests</p><p class="flex items-center gap-3"><Check class="size-5" /> An enquiry, with no obligation to book</p></div>
 			<img src={PHOTO.popUpRoofView} alt="A safari vehicle on a Tanzania game drive" loading="lazy" class="mt-9 h-44 w-full max-w-md rounded-2xl object-cover" />
 		</div>
@@ -59,7 +59,7 @@
              {#each optionalActivities as item (item.activity.id)}
              <label class="flex cursor-pointer items-start gap-3 rounded-lg bg-white p-3">
               <Checkbox checked={selectedIds.includes(item.activity.id)} onCheckedChange={(checked) => selectActivity(item.activity.id,checked === true)} aria-label={`Include ${item.activity.name} in my safari`} />
-              <span class="grid gap-1"><span class="text-sm font-semibold">{item.activity.name}</span><span class="text-xs text-muted-foreground">Optional Activity · {activityCost(item)}</span><span class="text-[12px] text-navy">Include This Activity in My Safari</span></span>
+              <span class="grid gap-1"><span class="text-sm font-semibold">{item.activity.name}</span><span class="text-xs text-muted-foreground">Optional Activity · {activityCost(item)}</span><span class="text-xs text-navy">Include This Activity in My Safari</span></span>
              </label>
              {/each}
             </fieldset>
@@ -67,13 +67,13 @@
             {#each selectedIds as id (id)}<input type="hidden" name="optional_activity_ids" value={id} />{/each}
             <div class="grid gap-2"><Label for="message">Tell us about your trip</Label><Textarea id="message" name="message" required minlength={10} maxlength={5000} value={form?.values?.message ?? ''} placeholder="Your interests, ideal trip length, budget, or anything you would like us to know." class="min-h-28" /></div>
 			<div class="hidden" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
-			<Button variant="safari" type="submit" disabled={sending} class="h-12 rounded-lg px-6 font-bold w-full">{sending ? 'Sending your enquiry…' : 'Send My Safari Enquiry'} <ArrowRight class="ml-2" /></Button><p class="text-center text-[12px] leading-5 text-muted-foreground">We’ll use your details to respond to this enquiry.</p>
+			<Button variant="safari" type="submit" disabled={sending} class="h-12 rounded-lg px-6 font-bold w-full">{sending ? 'Sending your enquiry…' : 'Send My Safari Enquiry'} <ArrowRight class="ml-2" /></Button><p class="text-center text-xs leading-5 text-muted-foreground">We’ll use your details to respond to this enquiry.</p>
 		</form>
 	</div>
 </section>
 
 <style>
-	.enquiry-form :global([data-slot="label"]) { font-size: 12px; font-weight: 500; }
-	.enquiry-form :global([data-slot="input"]), .enquiry-form :global([data-slot="select-trigger"]), .enquiry-form :global([data-slot="popover-trigger"]) { height: 46px; min-height: 46px; border-radius: var(--radius-control); font-size: 13px; background: white; }
-	.enquiry-form :global(textarea) { border-radius: var(--radius-control); font-size: 13px; line-height: 1.8; }
+	.enquiry-form :global([data-slot="label"]) { font-size: var(--text-xs); font-weight: 500; }
+	.enquiry-form :global([data-slot="input"]), .enquiry-form :global([data-slot="select-trigger"]), .enquiry-form :global([data-slot="popover-trigger"]) { height: 46px; min-height: 46px; border-radius: var(--radius-control); font-size: var(--text-sm); background: white; }
+	.enquiry-form :global(textarea) { border-radius: var(--radius-control); font-size: var(--text-sm); line-height: 1.8; }
 </style>

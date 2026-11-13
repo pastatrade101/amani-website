@@ -40,9 +40,9 @@
 	.panel { overflow: hidden; border-radius: 12px; background: white; box-shadow: 0 0 0 1px rgb(43 39 34 / 0.09), 0 20px 40px -36px rgb(39 36 31 / 0.5); }
 	.glance { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 -1px -1px 0; }
 	.fact { min-width: 0; padding: 16px 16px 17px; box-shadow: inset -1px 0 0 rgb(43 39 34 / 0.09), inset 0 -1px 0 rgb(43 39 34 / 0.09); }
-	dt { display: flex; align-items: center; gap: 7px; color: var(--muted-foreground); font-size: 12.5px; font-weight: 500; }
+	dt { display: flex; align-items: center; gap: 7px; color: var(--muted-foreground); font-size: var(--text-xs); font-weight: 500; }
 	dt :global(svg) { flex: none; color: #b08a1e; }
-	dd { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; color: var(--navy); font-family: var(--font-display); font-size: 16.5px; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
+	dd { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; color: var(--navy); font-family: var(--font-display); font-size: var(--text-base); font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
 	.dot { width: 8px; height: 8px; flex: none; border-radius: 50%; }
 	/* An odd tile out on phones spans the row rather than leaving a hole. */
 	.fact:last-child:nth-child(odd) { grid-column: 1 / -1; }
@@ -50,7 +50,7 @@
 		.glance { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 		.fact:last-child:nth-child(odd) { grid-column: auto; }
 		.fact { padding: 20px 22px 22px; }
-		dd { font-size: 18px; }
+		dd { font-size: var(--text-lg); }
 	}
 	@media (min-width: 1024px) { .glance { grid-template-columns: repeat(var(--wide), minmax(0, 1fr)); } }
 </style>

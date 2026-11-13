@@ -32,13 +32,13 @@
 
 <style>
 	.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 28px 0 0; padding: 0; list-style: none; }
-	li { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 56px; padding: 10px 12px; border-radius: 10px; background: white; color: var(--navy); font-size: 14px; font-weight: 500; line-height: 1.3; box-shadow: 0 0 0 1px rgb(43 39 34 / 0.06); }
+	li { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 56px; padding: 10px 12px; border-radius: 10px; background: white; color: var(--navy); font-size: var(--text-sm); font-weight: 500; line-height: 1.3; box-shadow: 0 0 0 1px rgb(43 39 34 / 0.06); }
 	.icon { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 8px; background: #f6f1e4; color: #a7811a; }
-	.more { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 14px; color: var(--navy); font-size: 14px; font-weight: 600; }
+	.more { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 14px; color: var(--navy); font-size: var(--text-sm); font-weight: 600; }
 	.more:hover { color: color-mix(in oklch, var(--navy) 75%, transparent); }
 	@media (min-width: 768px) {
 		.tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 40px; }
-		li { min-height: 64px; padding: 12px 16px; font-size: 15px; }
+		li { min-height: 64px; padding: 12px 16px; font-size: var(--text-base); }
 		.more { margin-top: 20px; }
 	}
 	@media (min-width: 1100px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

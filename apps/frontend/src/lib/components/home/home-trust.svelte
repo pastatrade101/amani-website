@@ -44,7 +44,7 @@
 <style>
 	.trust-top { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 32px 80px; align-items: start; }
 	.trust-top .home-heading { max-width: 13ch; }
-	.trust-lede { margin: 6px 0 0; font-size: 16px; line-height: 1.8; color: #574f45; }
+	.trust-lede { margin: 6px 0 0; font-size: var(--text-base); line-height: 1.8; color: #574f45; }
 	.trust-link { margin-top: 14px; }
 	.trust-link :global(svg) { transform: none; }
 	.trust-link:hover :global(svg) { transform: translateY(2px); }
@@ -55,8 +55,8 @@
 	.trust-points { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: -88px 32px 0; padding: 0; list-style: none; border-radius: var(--radius-surface); background: white; box-shadow: 0 30px 60px -40px rgb(31 27 22 / 0.5), 0 2px 8px -4px rgb(31 27 22 / 0.12); }
 	.trust-points li { padding: 30px 28px 32px; }
 	.trust-points li + li { box-shadow: inset 1px 0 #ebe6da; }
-	h3 { margin: 0; font-size: 17px; font-weight: 650; line-height: 1.3; color: var(--navy); }
-	.trust-points p { margin: 8px 0 0; font-size: 14px; line-height: 1.65; color: var(--muted-foreground); }
+	h3 { margin: 0; font-size: var(--text-lg); font-weight: 650; line-height: 1.3; color: var(--navy); }
+	.trust-points p { margin: 8px 0 0; font-size: var(--text-sm); line-height: 1.65; color: var(--muted-foreground); }
 	@media (max-width: 1023px) {
 		.trust-top { grid-template-columns: 1fr; }
 		.trust-photo { aspect-ratio: 16 / 9; }

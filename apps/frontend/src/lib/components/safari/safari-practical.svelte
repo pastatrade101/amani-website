@@ -44,11 +44,11 @@
 
 <style>
 	.practical-heading { margin-bottom: 30px; }
-	.practical .sp-h2 { margin: 0; font-size: clamp(22px, 2vw, 28px); }
+	.practical .sp-h2 { margin: 0; font-size: var(--text-h3); }
 	.practical-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
 	.practical-item { display: flex; align-items: flex-start; gap: 14px; }
 	.practical-item :global(svg) { flex-shrink: 0; width: 22px; height: 22px; margin-top: 2px; color: #98723c; }
-	h3 { margin: 0 0 8px; font-size: 16px; font-weight: 600; color: var(--sp-ink); }
-	p { margin: 0; font-size: 14px; line-height: 1.8; color: var(--sp-muted); }
+	h3 { margin: 0 0 8px; font-size: var(--text-base); font-weight: 600; color: var(--sp-ink); }
+	p { margin: 0; font-size: var(--text-sm); line-height: 1.8; color: var(--sp-muted); }
 	@media (max-width: 767px) { .practical-grid { grid-template-columns: 1fr; gap: 22px; } }
 </style>

@@ -140,9 +140,9 @@
 				<div data-motion="reveal">
 					<h2 id="overview-title" class="lux-heading">About {stay.name}</h2>
 				</div>
-				{#if photos.length && showLead}<p class="mt-7 max-w-[40ch] font-display text-[22px] leading-[1.45] text-navy/90 sm:text-[26px]">{lead}</p>{/if}
+				{#if photos.length && showLead}<p class="mt-7 max-w-[40ch] font-display text-xl leading-[1.45] text-navy/90 sm:text-2xl">{lead}</p>{/if}
 				{#if perfectFor.length}
-					<h3 id="perfect-for" class="mt-9 text-[14px] font-semibold text-navy">Perfect for</h3>
+					<h3 id="perfect-for" class="mt-9 text-sm font-semibold text-navy">Perfect for</h3>
 					<ul aria-labelledby="perfect-for" class="mt-3 flex flex-wrap gap-2">
 						{#each perfectFor as item (item.label)}
 							{@const Icon = bestForIcon(item.code)}
@@ -155,10 +155,10 @@
 					<p class="mt-5 max-w-xl text-sm leading-7 text-muted-foreground">We’re still writing this stay’s full story.{canEnquire ? ' Ask us anything about staying here and our team will answer from first-hand knowledge.' : ''}</p>
 				{/if}
 				{#if highlights.length && highlights.length < 3}
-					<h3 class="mt-10 text-[14px] font-semibold text-navy">Highlights</h3>
+					<h3 class="mt-10 text-sm font-semibold text-navy">Highlights</h3>
 					<ul class="mt-4 grid gap-3">
 						{#each highlights as highlight, i (i)}
-							<li class="flex items-start gap-3 text-[15px] leading-7 text-navy"><span class="mt-[11px] size-1.5 shrink-0 rotate-45 bg-sun" aria-hidden="true"></span>{highlight}</li>
+							<li class="flex items-start gap-3 text-base leading-7 text-navy"><span class="mt-[11px] size-1.5 shrink-0 rotate-45 bg-sun" aria-hidden="true"></span>{highlight}</li>
 						{/each}
 					</ul>
 				{/if}
@@ -272,20 +272,20 @@
 
 <style>
 	/* The story in long-form type, opening on a drop cap when the first paragraph is a real one. */
-	div.story :global(.rich-text) { max-width: 64ch; font-size: 15px; line-height: 1.9; color: color-mix(in oklch, var(--navy) 80%, transparent); }
+	div.story :global(.rich-text) { max-width: 64ch; font-size: var(--text-base); line-height: 1.9; color: color-mix(in oklch, var(--navy) 80%, transparent); }
 	div.drop-cap :global(.rich-text > p:first-child::first-letter) { float: left; padding: 0.08em 0.12em 0 0; font-family: var(--font-display); font-size: 4.4em; line-height: 0.8; color: var(--navy); }
-	div.story :global(.rich-text h2), div.story :global(.rich-text h3) { margin: 1.6em 0 0.5em; font-family: var(--font-display); font-size: 26px; font-weight: 500; line-height: 1.2; color: var(--navy); }
+	div.story :global(.rich-text h2), div.story :global(.rich-text h3) { margin: 1.6em 0 0.5em; font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 500; line-height: 1.2; color: var(--navy); }
 	div.story :global(.rich-text > :first-child) { margin-top: 0; }
 	div.story :global(.rich-text h2 strong), div.story :global(.rich-text h3 strong) { font-weight: 500; }
-	.overnight-note { display: flex; align-items: flex-start; gap: 0.55rem; border-radius: var(--radius-control); background: white; padding: 0.7rem 0.9rem; color: var(--muted-foreground); font-size: 13px; line-height: 1.5; box-shadow: inset 0 0 0 1px var(--border); }
+	.overnight-note { display: flex; align-items: flex-start; gap: 0.55rem; border-radius: var(--radius-control); background: white; padding: 0.7rem 0.9rem; color: var(--muted-foreground); font-size: var(--text-sm); line-height: 1.5; box-shadow: inset 0 0 0 1px var(--border); }
 	.overnight-note :global(svg) { margin-top: 0.1rem; color: #D9A900; }
 	.overnight-note strong { color: var(--navy); font-weight: 600; }
-	.explore-title { display: flex; align-items: center; gap: 0.5rem; padding-bottom: 0.75rem; font-size: 14px; font-weight: 600; color: var(--navy); }
+	.explore-title { display: flex; align-items: center; gap: 0.5rem; padding-bottom: 0.75rem; font-size: var(--text-sm); font-weight: 600; color: var(--navy); }
 	.explore-title :global(svg) { color: #D9A900; }
 	.explore-links { display: grid; border-bottom: 1px solid color-mix(in oklch, var(--navy) 10%, transparent); }
-	.explore-links a { display: flex; min-height: 3.25rem; align-items: center; justify-content: space-between; gap: 0.75rem; border-top: 1px solid color-mix(in oklch, var(--navy) 10%, transparent); padding: 0.6rem 0; color: var(--navy); font-size: 15px; line-height: 1.45; }
+	.explore-links a { display: flex; min-height: 3.25rem; align-items: center; justify-content: space-between; gap: 0.75rem; border-top: 1px solid color-mix(in oklch, var(--navy) 10%, transparent); padding: 0.6rem 0; color: var(--navy); font-size: var(--text-base); line-height: 1.45; }
 	.explore-links a :global(svg) { flex-shrink: 0; color: var(--muted-foreground); transition: translate 160ms ease-out; }
 	.explore-links a:hover :global(svg) { translate: 3px 0; color: var(--navy); }
-	@media (min-width: 768px) { div.story :global(.rich-text) { font-size: 16px; } }
+	@media (min-width: 768px) { div.story :global(.rich-text) { font-size: var(--text-base); } }
 	@media (prefers-reduced-motion: reduce) { .explore-links a :global(svg) { transition: none; } .explore-links a:hover :global(svg) { translate: none; } }
 </style>

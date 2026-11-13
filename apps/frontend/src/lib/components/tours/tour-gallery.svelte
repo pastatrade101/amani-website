@@ -36,7 +36,7 @@
 			<figure class="group relative h-full overflow-hidden rounded-xl bg-secondary">
 				<img src={photo.src} alt={photo.alt} loading={index === 0 ? 'eager' : 'lazy'} decoding="async" class="aspect-square size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none" />
 				{#if photo.caption}
-					<figcaption class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/75 to-transparent px-3 pt-8 pb-2.5 text-[12px] leading-snug text-white md:text-xs">{photo.caption}</figcaption>
+					<figcaption class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/75 to-transparent px-3 pt-8 pb-2.5 text-xs leading-snug text-white md:text-xs">{photo.caption}</figcaption>
 				{/if}
 			</figure>
 		</li>

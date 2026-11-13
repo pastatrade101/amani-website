@@ -45,16 +45,16 @@
 	.mark { color: #9a6a2f; }
 	.reviews-aside .home-heading { max-width: 11ch; }
 	.score { display: flex; align-items: center; gap: 16px; margin-top: 28px; }
-	.score-value { font-family: var(--font-display); font-size: 56px; font-weight: 600; line-height: 1; letter-spacing: -0.04em; color: var(--navy); font-variant-numeric: tabular-nums; }
-	.score-meta { display: grid; gap: 6px; font-size: 14px; color: var(--muted-foreground); }
+	.score-value { font-family: var(--font-display); font-size: var(--text-5xl); font-weight: 600; line-height: 1; letter-spacing: -0.04em; color: var(--navy); font-variant-numeric: tabular-nums; }
+	.score-meta { display: grid; gap: 6px; font-size: var(--text-sm); color: var(--muted-foreground); }
 	.stars { display: inline-flex; gap: 3px; color: #22a352; }
 	.reviews-aside .home-see-all { margin-top: 18px; }
 	@media (max-width: 900px) {
 		.reviews-aside { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 20px; }
 		.reviews-aside .home-heading { grid-column: 1 / -1; max-width: none; }
 		.score { margin-top: 20px; }
-		.score-value { font-size: 44px; }
-		.reviews-aside .home-see-all { margin-top: 0; font-size: 13px; }
+		.score-value { font-size: var(--text-4xl); }
+		.reviews-aside .home-see-all { margin-top: 0; font-size: var(--text-sm); }
 	}
 	/* Phones: the score above the link, so neither squeezes the other. */
 	@media (max-width: 480px) {

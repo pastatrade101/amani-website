@@ -43,7 +43,7 @@
 	   An odd last tab ("More Places") spans the full row. */
 	.circuit-tabs-scroll { padding: 4px 0 8px; }
 	:global(.circuit-tabs) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; max-width: 440px; height: auto; margin-inline: auto; gap: 4px; border: 1px solid var(--border); border-radius: var(--radius-surface); background: var(--secondary); padding: 5px; }
-	:global(.circuit-tab) { height: 44px; min-width: 0; gap: 8px; border: 0; border-radius: var(--radius-control); padding: 0 12px; background: transparent; color: var(--muted-foreground); font-size: 13px; font-weight: 500; line-height: 1.4; white-space: nowrap; box-shadow: none; transition: color 160ms ease-out, background 160ms ease-out, box-shadow 160ms ease-out; }
+	:global(.circuit-tab) { height: 44px; min-width: 0; gap: 8px; border: 0; border-radius: var(--radius-control); padding: 0 12px; background: transparent; color: var(--muted-foreground); font-size: var(--text-sm); font-weight: 500; line-height: 1.4; white-space: nowrap; box-shadow: none; transition: color 160ms ease-out, background 160ms ease-out, box-shadow 160ms ease-out; }
 	:global(.circuit-tab:last-child:nth-child(odd)) { grid-column: 1 / -1; }
 	:global(.circuit-tab::after) { display: none; }
 	:global(.circuit-tab[data-state="active"]), :global(.circuit-tab[data-active]) { background: var(--navy); color: white; box-shadow: 0 3px 8px rgb(39 36 31 / .13); }
@@ -74,9 +74,9 @@
 	/* The region field holds the circuit, which the tab already names, so a gold rule leads instead. */
 	.dest-rule { display: block; width: 32px; height: 2px; border-radius: 2px; background: var(--sun); transition: width 0.4s cubic-bezier(0.2, 0.7, 0.2, 1); }
 	.destination-cell:hover .dest-rule { width: 48px; }
-	.destination-cell h3 { margin: 12px 0 0; font-size: clamp(20px, 1.7vw, 25px); font-weight: 600; line-height: 1.15; letter-spacing: -0.025em; color: #fff; text-wrap: balance; }
+	.destination-cell h3 { margin: 12px 0 0; font-size: var(--text-h4); font-weight: 600; line-height: 1.15; letter-spacing: -0.025em; color: #fff; text-wrap: balance; }
 	.dest-reveal { display: grid; grid-template-rows: 1fr; margin-top: 10px; }
-	.dest-reveal p { min-height: 0; margin: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; max-width: 46ch; font-size: 13.5px; line-height: 1.6; color: rgb(255 255 255 / 0.84); }
+	.dest-reveal p { min-height: 0; margin: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; max-width: 46ch; font-size: var(--text-sm); line-height: 1.6; color: rgb(255 255 255 / 0.84); }
 	.dest-go { position: absolute; top: 18px; right: 18px; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: rgb(255 255 255 / 0.94); color: var(--navy); box-shadow: 0 6px 16px -8px rgb(20 18 15 / 0.5); transition: background-color 0.3s ease, transform 0.3s ease; }
 	.dest-go :global(svg) { width: 18px; height: 18px; transition: transform 0.3s ease; }
 	.destination-cell:hover .dest-photo { transform: scale(1.05); }

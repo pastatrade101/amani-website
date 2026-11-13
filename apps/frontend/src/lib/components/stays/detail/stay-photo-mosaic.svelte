@@ -71,7 +71,7 @@
 	.chips { display: flex; gap: 8px; margin: 26px -1rem 0; padding: 2px 1rem; overflow-x: auto; scrollbar-width: none; }
 	.chips::-webkit-scrollbar { display: none; }
 	.chips :global(.glide-mark) { border-radius: 9px; background: var(--navy); }
-	.chips button { position: relative; display: inline-flex; flex: none; align-items: center; gap: 6px; min-height: 42px; padding: 0 16px; border-radius: 9px; color: #5f584e; font-size: 14px; font-weight: 600; white-space: nowrap; -webkit-tap-highlight-color: transparent; transition: color 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+	.chips button { position: relative; display: inline-flex; flex: none; align-items: center; gap: 6px; min-height: 42px; padding: 0 16px; border-radius: 9px; color: #5f584e; font-size: var(--text-sm); font-weight: 600; white-space: nowrap; -webkit-tap-highlight-color: transparent; transition: color 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
 	.chips button::before { content: ''; position: absolute; inset: 0; z-index: -2; border-radius: inherit; background: #f1ede4; }
 	.chips button:hover { color: var(--navy); }
 	.chips button[aria-pressed='true'] { color: white; }
@@ -86,7 +86,7 @@
 	.mosaic img { width: 100%; height: 100%; object-fit: cover; transition: scale 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
 	.mosaic button:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
 	.more { display: none; }
-	.count { margin: 14px 0 0; color: var(--muted-foreground); font-size: 13px; font-variant-numeric: tabular-nums; text-align: center; }
+	.count { margin: 14px 0 0; color: var(--muted-foreground); font-size: var(--text-sm); font-variant-numeric: tabular-nums; text-align: center; }
 	.count span { color: var(--navy); font-weight: 600; }
 	.all { display: none; }
 
@@ -102,7 +102,7 @@
 		.mosaic.rows li:first-child { grid-column: span 2; grid-row: span 2; }
 		.mosaic.rows li:nth-child(6) { grid-column: 3 / span 2; grid-row: span 2; }
 		.mosaic button { border-radius: 10px; }
-		.more { position: absolute; inset: 0; display: grid; place-items: center; background: rgb(34 30 25 / 0.6); color: white; font-family: var(--font-display); font-size: 26px; }
+		.more { position: absolute; inset: 0; display: grid; place-items: center; background: rgb(34 30 25 / 0.6); color: white; font-family: var(--font-display); font-size: var(--text-2xl); }
 		.count { display: none; }
 		.all { display: flex; justify-content: center; margin-top: 32px; }
 	}

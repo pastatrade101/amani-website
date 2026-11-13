@@ -43,7 +43,7 @@
 		<!-- `head` replaces the default heading, for a page with its own heading style. -->
 		{#if head}{@render head()}{:else if !list}<header class="mx-auto max-w-2xl text-center">
 			<h2 class="faq-title">{title}</h2>
-			{#if intro}<p class="mt-3 text-sm leading-6 text-muted-foreground md:text-[15px]">{intro}</p>{/if}
+			{#if intro}<p class="mt-3 text-sm leading-6 text-muted-foreground md:text-base">{intro}</p>{/if}
 		</header>{/if}
 		<Accordion.Root type="single" value={open} onValueChange={(value) => (open = value)} class={`faq-grid ${columns.length > 1 ? 'two' : ''}`}>
 			{#each columns as column, c (c)}
@@ -69,11 +69,11 @@
 {/if}
 
 <style>
-	.faq-title { font-size: 26px; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; color: var(--navy); }
+	.faq-title { font-size: var(--text-2xl); font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; color: var(--navy); }
 	.faq-block :global(.faq-grid) { display: grid; gap: 16px; margin-top: 32px; }
 	.faq-block :global(.faq-card) { border: 1px solid var(--border); border-radius: var(--radius-surface); background: white; padding-inline: 20px; transition: box-shadow 0.2s ease; }
 	.faq-block :global(.faq-card[data-state='open']) { box-shadow: 0 10px 30px -22px color-mix(in oklch, var(--navy) 55%, transparent); }
-	.faq-block :global(.faq-trigger) { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; text-align: left; font-size: 15px; font-weight: 600; line-height: 1.45; color: var(--navy); }
+	.faq-block :global(.faq-trigger) { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; text-align: left; font-size: var(--text-base); font-weight: 600; line-height: 1.45; color: var(--navy); }
 	.faq-block :global(.faq-trigger:focus-visible) { outline: 2px solid var(--sun); outline-offset: 4px; border-radius: 6px; }
 	.faq-icon { display: grid; flex: none; place-items: center; width: 26px; height: 26px; border-radius: 999px; background: var(--secondary); color: var(--navy); transition: background-color 0.2s ease; }
 	.faq-block :global(.faq-trigger[aria-expanded='true'] .faq-icon) { background: var(--sun); }
@@ -82,10 +82,10 @@
 	.faq-block.list :global(.faq-grid > div) { gap: 0; }
 	.faq-block.list :global(.faq-card) { border: 0; border-bottom: 1px solid #e3ddcf; border-radius: 0; background: transparent; padding-inline: 0; box-shadow: none; }
 	.faq-block.list :global(.faq-card:first-child) { border-top: 1px solid #e3ddcf; }
-	.faq-block.list :global(.faq-trigger) { padding-block: 22px; font-size: 16px; }
+	.faq-block.list :global(.faq-trigger) { padding-block: 22px; font-size: var(--text-base); }
 	.faq-block.list .faq-icon { background: #f1ede3; }
 	@media (min-width: 768px) {
-		.faq-title { font-size: 32px; }
+		.faq-title { font-size: var(--text-3xl); }
 		.faq-block :global(.faq-grid.two) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 	}
 </style>

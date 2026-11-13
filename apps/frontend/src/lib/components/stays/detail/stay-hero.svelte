@@ -40,7 +40,7 @@
 	let type = $derived(stayTypeLabel(stay.lodge_type));
 	let location = $derived(stayLocation(stay));
 	let standIn = $derived(cover ? null : stayPhoto(stay, destination));
-	const tag = 'inline-flex h-7 items-center gap-2 rounded-[6px] px-2.5 text-[12.5px] font-semibold ring-1';
+	const tag = 'inline-flex h-7 items-center gap-2 rounded-[6px] px-2.5 text-xs font-semibold ring-1';
 </script>
 
 {#snippet crumbs(light: boolean)}
@@ -80,7 +80,7 @@
 			<div class="mt-auto flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
 				<div class="min-w-0 max-w-4xl">
 					{@render badges(true)}
-					<h1 id="stay-title" data-motion="hero-title" class="mt-5 font-display text-[36px] leading-[1.06] font-semibold tracking-[-.03em] text-balance sm:text-[52px] lg:text-[68px]">{stay.name}</h1>
+					<h1 id="stay-title" data-motion="hero-title" class="mt-5 font-display text-(length:--text-display) leading-[1.06] font-semibold tracking-[-.03em] text-balance">{stay.name}</h1>
 					{#if location}<p data-motion="hero" data-motion-delay="0.15" class="mt-5 flex items-start gap-2 text-sm text-white/85 md:text-base"><MapPin class="mt-0.5 size-4 shrink-0 text-sun" aria-hidden="true" />{location}</p>{/if}
 				</div>
 				{#if photos.length > 1 || canEnquire}
@@ -100,9 +100,9 @@
 			{@render crumbs(false)}
 			<div class="mx-auto max-w-4xl pt-8 text-center md:pt-12">
 				{@render badges(false)}
-				<h1 id="stay-title" data-motion="hero-title" class="mt-6 font-display text-[36px] leading-[1.06] font-semibold tracking-[-.03em] text-balance text-navy sm:text-[52px] lg:text-[68px]">{stay.name}</h1>
+				<h1 id="stay-title" data-motion="hero-title" class="mt-6 font-display text-(length:--text-display) leading-[1.06] font-semibold tracking-[-.03em] text-balance text-navy">{stay.name}</h1>
 				{#if location}<p data-motion="hero" data-motion-delay="0.1" class="mt-5 inline-flex items-start gap-2 text-sm text-muted-foreground md:text-base"><MapPin class="mt-0.5 size-4 shrink-0 text-[#D9A900]" aria-hidden="true" />{location}</p>{/if}
-				{#if lead}<p data-motion="hero" data-motion-delay="0.15" class="mx-auto mt-7 max-w-[46ch] font-display text-[18px] leading-[1.6] text-navy/85 sm:text-[20px]">{lead}</p>{/if}
+				{#if lead}<p data-motion="hero" data-motion-delay="0.15" class="mx-auto mt-7 max-w-[46ch] font-display text-lg leading-[1.6] text-navy/85 sm:text-xl">{lead}</p>{/if}
 				{#if canEnquire}<div data-motion="hero" data-motion-delay="0.2" class="mt-8"><Button variant="safari" href={planHref({ stay: stay.slug, from: 'stay_page' })} data-cta="plan_my_trip" data-cta-location="stay_page" onclick={onEnquire} class="h-12 px-6 text-sm">Enquire about this stay <ArrowRight class="size-4" /></Button></div>{/if}
 			</div>
 			{#if standIn?.kind === 'place'}

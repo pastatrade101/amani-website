@@ -209,14 +209,14 @@
 
 <style>
 	.route-map { margin: 0; padding: 20px; overflow: hidden; border: 1px solid var(--sp-line); border-radius: var(--radius-surface); background: #f4f1e8; }
-	.map-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; font-size: 14px; font-weight: 600; }
-	.map-top span:last-child { font-size: 13px; font-weight: 600; color: var(--sp-kicker); }
+	.map-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; font-size: var(--text-sm); font-weight: 600; }
+	.map-top span:last-child { font-size: var(--text-sm); font-weight: 600; color: var(--sp-kicker); }
 	.map-frame { position: relative; overflow: hidden; aspect-ratio: 4 / 3.4; min-height: 320px; max-height: 480px; border-radius: var(--radius-control); background: #ebe7da; }
 	.gl { position: absolute; inset: 0; }
 	.map-sketch { position: absolute; inset: 0; width: 100%; height: 100%; background: #f4f1e8; transition: opacity 0.5s ease; }
 	.map-sketch.hidden { opacity: 0; pointer-events: none; }
-	.country { fill: #8a8270; font-size: 11px; font-weight: 600; letter-spacing: 2px; text-anchor: middle; font-family: var(--sp-sans); }
-	.stop { fill: #2b2722; font-size: 10px; font-weight: 500; font-family: var(--sp-sans); paint-order: stroke; stroke: #f4f1e8d9; stroke-width: 3px; stroke-linejoin: round; }
+	.country { fill: #8a8270; font-size: var(--text-xs); font-weight: 600; letter-spacing: 2px; text-anchor: middle; font-family: var(--sp-sans); }
+	.stop { fill: #2b2722; font-size: var(--text-xs); font-weight: 500; font-family: var(--sp-sans); paint-order: stroke; stroke: #f4f1e8d9; stroke-width: 3px; stroke-linejoin: round; }
 	.leg { stroke-linecap: round; }
 	.leg.fly { stroke: #9b8000; stroke-width: 1.8; stroke-dasharray: 4 4; }
 	.leg.drive { stroke: #4a443a; stroke-width: 2.5; }
@@ -227,12 +227,12 @@
 	.whole-route:hover, .whole-route.moved { background: #2b2722; color: #fff; }
 	.whole-route:focus-visible { outline: 2px solid var(--sp-sun, #f6d21b); outline-offset: 2px; }
 	.map-frame :global(.maplibregl-ctrl-group) { border-radius: var(--radius-control); box-shadow: 0 1px 6px rgb(20 18 15 / 0.16); }
-	.map-frame :global(.maplibregl-ctrl-attrib) { font-size: 11px; }
-	.map-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; margin-top: 14px; font-size: 12px; color: var(--sp-muted); }
+	.map-frame :global(.maplibregl-ctrl-attrib) { font-size: var(--text-xs); }
+	.map-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; margin-top: 14px; font-size: var(--text-xs); color: var(--sp-muted); }
 	.map-legend span { display: flex; align-items: center; gap: 7px; }
 	.map-legend i { width: 22px; border-top: 2px solid #4a443a; }
 	.map-legend .dash { border-top: 2px dashed #a8860b; }
 	.map-legend .boat { border-top: 2px dashed #3d6f86; }
 	.map-legend .dotted { border-top: 2px dotted #9a927f; }
-	.map-source { display: block; margin-top: 10px; font-size: 12px; color: var(--sp-muted); }
+	.map-source { display: block; margin-top: 10px; font-size: var(--text-xs); color: var(--sp-muted); }
 </style>

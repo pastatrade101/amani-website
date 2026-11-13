@@ -63,7 +63,7 @@
 		<div class="flex items-center gap-4 px-4 py-3 md:px-6">
 			<Dialog.Title class="sr-only">{title} photos</Dialog.Title>
 			<p aria-live="polite" aria-atomic="true" class="text-sm tabular-nums text-white/85"><span class="sr-only">Photo </span>{current + 1}<span aria-hidden="true"> / </span><span class="sr-only"> of </span>{count}</p>
-			{#if group}<p class="text-[13px] font-medium text-white/65">{group}</p>{/if}
+			{#if group}<p class="text-sm font-medium text-white/65">{group}</p>{/if}
 			<Dialog.Close>
 				{#snippet child({ props })}
 					<Button variant="ghost" size="icon" class="ml-auto size-11 text-white hover:bg-white/10 hover:text-white" {...props}><X class="size-5" /><span class="sr-only">Close photos</span></Button>
@@ -84,7 +84,7 @@
 		<div class="grid gap-3 px-4 pt-3 pb-4 md:px-6 md:pb-5">
 			<div class="flex items-center gap-3">
 				{#if count > 1}{@render arrow(-1, 'md:hidden')}{/if}
-				<Dialog.Description class="min-w-0 flex-1 text-center text-[13px] leading-5 text-white/75 md:text-left">{photo?.caption || photo?.alt}</Dialog.Description>
+				<Dialog.Description class="min-w-0 flex-1 text-center text-sm leading-5 text-white/75 md:text-left">{photo?.caption || photo?.alt}</Dialog.Description>
 				{#if count > 1}{@render arrow(1, 'md:hidden')}{/if}
 			</div>
 			{#if count > 1}

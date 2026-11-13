@@ -54,10 +54,10 @@
 <style>
 	.stay-search-card { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; align-items: end; gap: 18px 14px; border-radius: 12px; background: white; padding: 20px; box-shadow: 0 0 0 1px rgb(43 39 34 / .08), 0 14px 32px -26px rgb(39 36 31 / .4); }
 	.stay-search-group { display: grid; min-width: 0; gap: 9px; }
-	:global(.stay-search-label) { font-size: 12px; font-weight: 600; line-height: 1.3; color: #3c3730; }
-	:global(.stay-search-field) { width: 100%; height: 48px; min-height: 48px; border: 1px solid var(--border); border-radius: var(--radius-control); padding: 0 13px; background: white; font-size: 13px; line-height: 1.4; box-shadow: none; }
+	:global(.stay-search-label) { font-size: var(--text-xs); font-weight: 600; line-height: 1.3; color: #3c3730; }
+	:global(.stay-search-field) { width: 100%; height: 48px; min-height: 48px; border: 1px solid var(--border); border-radius: var(--radius-control); padding: 0 13px; background: white; font-size: var(--text-sm); line-height: 1.4; box-shadow: none; }
 	:global(.stay-search-field:focus-visible) { outline: 2px solid var(--sun); outline-offset: 2px; }
-	:global(.stay-search-submit) { height: 48px; min-height: 48px; align-self: end; border-radius: var(--radius-control); padding: 0 22px; font-size: 13px; line-height: 1.4; gap: 10px; }
+	:global(.stay-search-submit) { height: 48px; min-height: 48px; align-self: end; border-radius: var(--radius-control); padding: 0 22px; font-size: var(--text-sm); line-height: 1.4; gap: 10px; }
 	@media (max-width: 1023px) { .stay-search-card { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 14px; padding: 20px; } :global(.stay-search-submit) { grid-column: 1 / -1; width: 100%; padding-inline: 12px; } }
-	@media (max-width: 479px) { .stay-search-card { grid-template-columns: minmax(0, 1fr); padding: 16px; } :global(.stay-search-field) { font-size: 16px; } }
+	@media (max-width: 479px) { .stay-search-card { grid-template-columns: minmax(0, 1fr); padding: 16px; } :global(.stay-search-field) { font-size: var(--text-base); } }
 </style>

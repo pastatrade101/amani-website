@@ -10,7 +10,7 @@
 				<span class="block h-1.5 overflow-hidden rounded-full bg-navy/10">
 					<span class="pm-fill block h-full rounded-full bg-sun" style={`transform: scaleX(${i <= step ? 1 : 0})`}></span>
 				</span>
-				<span class={`mt-1.5 hidden text-[12px] leading-tight lg:block ${i === step ? 'font-semibold text-navy' : i < step ? 'text-navy hover:underline' : 'text-muted-foreground'}`}>{i + 1}. {label}</span>
+				<span class={`mt-1.5 hidden text-xs leading-tight lg:block ${i === step ? 'font-semibold text-navy' : i < step ? 'text-navy hover:underline' : 'text-muted-foreground'}`}>{i + 1}. {label}</span>
 			</button>
 		</li>
 	{/each}

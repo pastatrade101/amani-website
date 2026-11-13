@@ -34,12 +34,12 @@
 
 <style>
 	/* Sits above the photo so nobody mistakes a park landscape for the rooms. */
-	.place-label { position: absolute; left: 0.75rem; bottom: 0.75rem; z-index: 1; display: inline-flex; max-width: calc(100% - 1.5rem); align-items: flex-start; gap: 0.35rem; border-radius: var(--radius-surface); background: rgb(26 23 20 / 0.72); padding: 0.3rem 0.7rem; color: white; font-size: 12px; font-weight: 500; line-height: 1.3; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+	.place-label { position: absolute; left: 0.75rem; bottom: 0.75rem; z-index: 1; display: inline-flex; max-width: calc(100% - 1.5rem); align-items: flex-start; gap: 0.35rem; border-radius: var(--radius-surface); background: rgb(26 23 20 / 0.72); padding: 0.3rem 0.7rem; color: white; font-size: var(--text-xs); font-weight: 500; line-height: 1.3; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 	.place-label :global(svg) { margin-top: 0.05rem; color: var(--sun); }
 	.place-note { color: rgb(255 255 255 / 0.75); font-weight: 400; }
 	.stay-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.85rem; overflow: hidden; background: radial-gradient(120% 90% at 50% 0%, oklch(0.38 0.015 75) 0%, var(--navy) 55%, oklch(0.22 0.015 75) 100%); color: white; }
 	/* Faint contour rings, like a map of the plains. */
 	.stay-placeholder::before { content: ''; position: absolute; inset: -40%; background: repeating-radial-gradient(circle at 70% 120%, transparent 0 22px, rgb(255 255 255 / 0.045) 22px 23px); }
 	.placeholder-mark { position: relative; display: grid; width: 3.5rem; height: 3.5rem; place-items: center; border: 1.5px solid var(--sun); border-radius: 999px; color: var(--sun); }
-	.placeholder-text { position: relative; font-size: 13px; font-weight: 600; color: rgb(255 255 255 / 0.8); }
+	.placeholder-text { position: relative; font-size: var(--text-sm); font-weight: 600; color: rgb(255 255 255 / 0.8); }
 </style>

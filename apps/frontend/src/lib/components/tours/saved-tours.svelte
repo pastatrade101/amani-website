@@ -18,9 +18,9 @@
 			{#each savedTours.items as item (item.slug)}
 				<li class="relative flex w-64 shrink-0 snap-start items-center gap-3 rounded-xl border border-border p-2 pr-10">
 					<img src={safeUrl(item.image, PHOTO.vehiclesAcacia)} alt="" loading="lazy" class="size-14 shrink-0 rounded-lg object-cover" />
-					<a href={`/tours/${encodeURIComponent(item.slug)}`} class="min-w-0 text-[13px] leading-snug font-semibold text-navy hover:underline">
+					<a href={`/tours/${encodeURIComponent(item.slug)}`} class="min-w-0 text-sm leading-snug font-semibold text-navy hover:underline">
 						<span class="line-clamp-2">{item.title}</span>
-						{#if item.duration}<span class="mt-0.5 block text-[12px] font-normal text-muted-foreground">{item.duration}</span>{/if}
+						{#if item.duration}<span class="mt-0.5 block text-xs font-normal text-muted-foreground">{item.duration}</span>{/if}
 					</a>
 					<button type="button" onclick={() => savedTours.toggle(item)} aria-label={`Remove ${item.title} from saved safaris`} class="absolute top-1/2 right-2 grid size-8 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-navy"><X class="size-4" /></button>
 				</li>

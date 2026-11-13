@@ -6,6 +6,7 @@
 	import { setupSiteMotion } from '$lib/motion/site-motion';
 	import { safeUrl } from '$lib/home-content';
 	import ConsentBanner from '$lib/components/consent-banner.svelte';
+	import CompareTray from '$lib/components/tours/compare-tray.svelte';
 	import { consent } from '$lib/admin/consent';
 	import { trackPageView, trackSession } from '$lib/admin/analytics';
 	import { rememberFirstTouch } from '$lib/tracking/attribution';
@@ -64,4 +65,4 @@
 </svelte:head>
 
 {@render children()}
-{#if isPublic}<ConsentBanner />{/if}
+{#if isPublic}<CompareTray /><ConsentBanner />{/if}

@@ -85,7 +85,7 @@
 {/if}
 
 <style>
-	:global(.activity-tab) { display: inline-flex; flex: none; align-items: center; gap: 6px; min-height: 40px; border: 1px solid var(--border); border-radius: var(--radius-control); background: white; padding: 0 16px; font-size: 13px; font-weight: 600; color: var(--navy); white-space: nowrap; transition: background-color 0.2s ease, border-color 0.2s ease; }
+	:global(.activity-tab) { display: inline-flex; flex: none; align-items: center; gap: 6px; min-height: 40px; border: 1px solid var(--border); border-radius: var(--radius-control); background: white; padding: 0 16px; font-size: var(--text-sm); font-weight: 600; color: var(--navy); white-space: nowrap; transition: background-color 0.2s ease, border-color 0.2s ease; }
 	:global(.activity-tab:hover) { border-color: color-mix(in oklch, var(--navy) 30%, transparent); }
 	:global(.activity-tab[data-state='active']) { border-color: var(--sun); background: var(--sun); }
 	:global(.activity-tab:focus-visible) { outline: 2px solid var(--navy); outline-offset: 2px; }

@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { ArrowRight, ArrowUp, Compass, MapPin } from '@lucide/svelte';
+	import { ArrowRight, ArrowUp, ChevronDown, Compass, MapPin, MessageCircle, Star } from '@lucide/svelte';
 	import { destinationHref } from '$lib/destination-content';
 	import { siteInfo } from '$lib/site-info';
 	import { GUIDE_PAGE_KEYS, GUIDE_PATH, safeUrl } from '$lib/home-content';
+	import { TRIPADVISOR_URL, WHATSAPP_URL } from '$lib/homepage-refresh';
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { planHref } from '$lib/planner/plan-href';
@@ -10,7 +11,8 @@
 	import { tagMode } from '$lib/tracking/tags';
 	import { onMount } from 'svelte';
 	import AppTabBar from './app-tab-bar.svelte';
-	import type { Destination } from '$lib/types/api';
+	import type { Category, Destination } from '$lib/types/api';
+
 	let { visible, destinations, onInterest, onPage }: { visible: string[]; destinations: Destination[]; onInterest: (name: string) => void; onPage?: string[] } = $props();
 	let canEnquire = $derived(visible.includes('enquiry'));
 	// The CMS logo (Settings → branding); empty keeps the built-in mark.
@@ -19,46 +21,166 @@
 	const anchor = (id: string) => (!onPage || onPage.includes(id) ? `#${id}` : `/#${id}`);
 	// The planning guides live on their own page.
 	const guide = (id: string) => (onPage?.includes(id) ? `#${id}` : `${GUIDE_PATH}#${id}`);
+	// "+255 743 900 014", read from the one WhatsApp link the site uses.
+	const whatsappDigits = WHATSAPP_URL.replace(/\D/g, '');
+	const whatsappNumber = `+${whatsappDigits.slice(0, 3)} ${whatsappDigits.slice(3, 6)} ${whatsappDigits.slice(6, 9)} ${whatsappDigits.slice(9)}`;
+	// Pages pass the site chrome either spread into their data or under `chrome`.
+	let categories = $derived(((page.data.categories ?? page.data.chrome?.categories ?? []) as Category[]).slice(0, 5));
+
+	type FooterLink = { label: string; href: string; onclick?: () => void };
+	let groups = $derived.by(() => {
+		const safaris: FooterLink[] = [
+			{ label: 'All safari tours', href: '/tours' },
+			...categories.map((category) => ({ label: category.name, href: `/tours?category_id=${encodeURIComponent(category.id)}` })),
+			...(visible.includes('experiences') ? [{ label: 'Safari experiences', href: anchor('experiences') }] : []),
+			{ label: 'Where to stay', href: '/stays' }
+		];
+		const places: FooterLink[] = [
+			...(visible.includes('destinations') ? destinations.slice(0, 6).map((destination) => ({ label: destination.name, href: destinationHref(destination) })) : []),
+			{ label: 'All destinations', href: '/destinations' }
+		];
+		const plan: FooterLink[] = [
+			...(GUIDE_PAGE_KEYS.some((key) => visible.includes(key)) ? [{ label: 'Safari guide', href: GUIDE_PATH }] : []),
+			...(visible.includes('cost_ranges') ? [{ label: 'Safari costs', href: guide('cost-ranges') }] : []),
+			...(visible.includes('safari_duration') ? [{ label: 'How long to stay', href: guide('safari-duration') }] : []),
+			...(visible.includes('safari_day') ? [{ label: 'A day on safari', href: guide('safari-day') }] : []),
+			...(visible.includes('when_to_go') ? [{ label: 'Best time to visit', href: anchor('when-to-go') }] : []),
+			...(visible.includes('faq') ? [{ label: 'Your questions answered', href: guide('safari-questions') }] : []),
+			...(visible.includes('why_us') ? [{ label: 'Why Key2africa', href: guide('why-key2africa') }] : []),
+			...(canEnquire ? [{ label: 'Contact our team', href: anchor('request-quote'), onclick: () => onInterest('') }] : [])
+		];
+		return [
+			{ id: 'safaris', title: 'Safaris', links: safaris },
+			{ id: 'places', title: 'Destinations', links: places },
+			{ id: 'plan', title: 'Plan your trip', links: plan }
+		].filter((group) => group.links.length);
+	});
+
+	// Phones fold the link groups so the footer stays short; wider screens show them all.
+	let folded = $state(false);
+	let open = $state<Record<string, boolean>>({});
 	// "Cookie settings" reopens the banner, so it only appears when Google tags are configured.
 	let hasTags = $state(false);
-	onMount(() => (hasTags = tagMode() !== null));
+	onMount(() => {
+		hasTags = tagMode() !== null;
+		const phones = matchMedia('(max-width: 767px)');
+		const sync = () => (folded = phones.matches);
+		sync();
+		phones.addEventListener('change', sync);
+		return () => phones.removeEventListener('change', sync);
+	});
 </script>
+
 <footer class="site-footer">
 	<div class="page-container">
-		{#if canEnquire}<div data-motion="reveal" class="footer-invitation"><div><h2>Start planning your Tanzania trip</h2><p>Tell us your dates and interests, and our team in Arusha will send a free quote.</p></div><Button variant="safari" href={planHref({ from: 'footer' })} data-cta="plan_my_trip" data-cta-location="footer" class="h-12 shrink-0 px-7">Plan my safari <ArrowRight class="size-4" /></Button></div>{/if}
-		<div class="footer-grid">
-			<div data-motion="reveal" class="footer-brand"><a href="/" aria-label={`${siteInfo.brand} home`} class="inline-flex items-center gap-3">{#if logo}<span class="footer-logo"><img src={logo} alt={siteInfo.brand} width="305" height="176" loading="lazy" /></span>{:else}<span class="grid size-11 place-items-center rounded-full border-2 border-sun"><Compass class="size-6" strokeWidth={1.5} /></span><span><strong class="block text-2xl leading-none">Key2africa</strong><span class="mt-1.5 block text-[12px] uppercase tracking-[.2em] text-white/60">Safaris</span></span>{/if}</a><p class="footer-company">{siteInfo.company}</p><p>Thoughtfully planned journeys through Tanzania, from the wild heart of the savannah to the shores of the Indian Ocean.</p><span class="footer-location"><MapPin class="size-4" /> Tanzania, East Africa</span></div>
-			<nav data-motion="reveal" aria-label="Explore in footer"><h3>Explore</h3><a href="/tours">Safari tours</a><a href="/stays">Where to stay</a>{#if visible.includes('experiences')}<a href={anchor('experiences')}>Safari experiences</a>{/if}<a href="/destinations">Destinations</a>{#if visible.includes('safari_packages')}<a href={anchor('tanzania-safari-packages')}>Safari packages</a>{/if}{#if canEnquire}<a href={anchor('request-quote')} onclick={() => onInterest('Safari + Zanzibar')}>Safari & Zanzibar</a>{/if}</nav>
-			<nav data-motion="reveal" aria-label="Plan your trip in footer"><h3>Plan your trip</h3>{#if GUIDE_PAGE_KEYS.some((key) => visible.includes(key))}<a href={GUIDE_PATH}>Safari guide</a>{/if}{#if visible.includes('cost_ranges')}<a href={guide('cost-ranges')}>Safari costs</a>{/if}{#if visible.includes('safari_duration')}<a href={guide('safari-duration')}>How long to stay</a>{/if}{#if visible.includes('safari_day')}<a href={guide('safari-day')}>A day on safari</a>{/if}{#if visible.includes('when_to_go')}<a href={anchor('when-to-go')}>Best time to visit</a>{/if}{#if visible.includes('how_it_works')}<a href={anchor('how-it-works')}>How it works</a>{/if}{#if visible.includes('faq')}<a href={guide('safari-questions')}>Your questions answered</a>{/if}{#if canEnquire}<a href={anchor('request-quote')}>Contact our team</a>{/if}</nav>
-			<nav data-motion="reveal" aria-label="Safari inspiration in footer"><h3>Find your inspiration</h3>{#if visible.includes('destinations')}{#each destinations.slice(0,4) as destination}<a href={destinationHref(destination)}>{destination.name}</a>{/each}{/if}{#if visible.includes('why_us')}<a href={guide('why-key2africa')}>The Key2africa approach</a>{/if}</nav>
+		{#if canEnquire}
+			<div data-motion="reveal" class="invite">
+				<div>
+					<h2>Start planning your Tanzania trip</h2>
+					<p>Tell us your dates and interests, and our team in Arusha will send a free quote.</p>
+				</div>
+				<div class="invite-actions">
+					<Button variant="safari" href={planHref({ from: 'footer' })} data-cta="plan_my_trip" data-cta-location="footer" class="h-12 px-6">Plan my safari <ArrowRight class="size-4" /></Button>
+					<a class="chat" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" data-cta="whatsapp" data-cta-location="footer"><MessageCircle class="size-4" aria-hidden="true" />WhatsApp us</a>
+				</div>
+			</div>
+		{/if}
+
+		<div class="grid">
+			<div class="brand" data-motion="reveal">
+				<a href="/" aria-label={`${siteInfo.brand} home`} class="brand-mark">
+					{#if logo}<span class="logo"><img src={logo} alt={siteInfo.brand} width="305" height="176" loading="lazy" /></span>
+					{:else}<span class="grid size-11 place-items-center rounded-full border-2 border-sun"><Compass class="size-6" strokeWidth={1.5} /></span><strong class="text-xl">Key2africa</strong>{/if}
+				</a>
+				<p class="about">Thoughtfully planned journeys through Tanzania, from the wild heart of the savannah to the shores of the Indian Ocean.</p>
+				<ul class="contact">
+					<li><MessageCircle class="size-4" aria-hidden="true" /><a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">{whatsappNumber}<span>WhatsApp</span></a></li>
+					<li><MapPin class="size-4" aria-hidden="true" /><span>Arusha, Tanzania</span></li>
+					<li><Star class="size-4" aria-hidden="true" /><a href={TRIPADVISOR_URL} target="_blank" rel="noopener noreferrer">Our reviews on Tripadvisor</a></li>
+				</ul>
+			</div>
+
+			{#each groups as group (group.id)}
+				{@const shut = folded && !open[group.id]}
+				<nav class="group" aria-labelledby={`footer-${group.id}`} data-motion="reveal">
+					{#if folded}
+						<h3 id={`footer-${group.id}`}><button type="button" aria-expanded={!shut} aria-controls={`footer-${group.id}-links`} onclick={() => (open = { ...open, [group.id]: !open[group.id] })}>{group.title}<ChevronDown class={`size-4 transition-transform ${shut ? '' : 'rotate-180'}`} aria-hidden="true" /></button></h3>
+					{:else}
+						<h3 id={`footer-${group.id}`}>{group.title}</h3>
+					{/if}
+					<ul id={`footer-${group.id}-links`} hidden={shut}>
+						{#each group.links as link (link.href + link.label)}<li><a href={link.href} onclick={link.onclick}>{link.label}</a></li>{/each}
+					</ul>
+				</nav>
+			{/each}
 		</div>
-		<div class="footer-bottom"><p>© {new Date().getFullYear()} {siteInfo.company}. All rights reserved.</p><p class="footer-motto">DISCOVER. EXPLORE. BELONG.</p><div class="footer-actions">{#if hasTags}<button type="button" class="cookie-settings" onclick={resetConsent}>Cookie settings</button>{/if}<a href="#top" class="back-to-top">Back to top <ArrowUp class="size-3.5" /></a></div></div>
+
+		<div class="bottom">
+			<p>© {new Date().getFullYear()} {siteInfo.company}</p>
+			<div class="bottom-actions">
+				{#if hasTags}<button type="button" onclick={resetConsent}>Cookie settings</button>{/if}
+				<a href="#top">Back to top <ArrowUp class="size-3.5" aria-hidden="true" /></a>
+			</div>
+		</div>
 	</div>
 </footer>
 <AppTabBar {canEnquire} />
+
 <style>
-	.site-footer { position: relative; overflow: hidden; background: var(--navy); color: white; }
-	.footer-invitation { display: flex; align-items: center; justify-content: space-between; gap: 35px; padding: 58px 0 48px; border-bottom: 1px solid rgb(255 255 255 / .14); }
-	.footer-invitation h2 { font-size: clamp(26px,3vw,36px); font-weight: 500; line-height: 1.2; letter-spacing: -.035em; }
-	.footer-invitation p:last-child { margin-top: 10px; color: rgb(255 255 255 / .7); font-size: 14px; line-height: 1.7; }
-	.footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.1fr; gap: 60px; padding: 54px 0; }
-	/* The logo's dark lettering needs a light ground on the navy footer. */
-	.footer-logo { display: inline-flex; border-radius: var(--radius-surface); background: white; padding: 10px 14px; box-shadow: 0 10px 24px -18px rgb(0 0 0 / .6); }
-	.footer-logo img { display: block; width: auto; height: 60px; }
-	.footer-brand > p { max-width: 270px; margin-top: 23px; font-size: 12px; line-height: 1.9; color: rgb(255 255 255 / .6); }
-	.footer-brand > .footer-company { margin-top: 20px; color: white; font-size: 12px; font-weight: 500; }
-	.footer-company + p { margin-top: 10px; }
-	.footer-location { display: flex; align-items: center; gap: 8px; margin-top: 20px; font-size: 12px; color: rgb(255 255 255 / .8); }
-	nav { display: flex; flex-direction: column; align-items: start; gap: 15px; }
-	nav h3 { margin-bottom: 7px; font-size: 12px; font-weight: 600; }
-	nav a { font-size: 12px; line-height: 1.65; color: rgb(255 255 255 / .65); transition: color 160ms ease-out; }
-	nav a:hover { color: var(--sun); }
-	.footer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; border-top: 1px solid rgb(255 255 255 / .14); padding: 24px 0; color: rgb(255 255 255 / .5); font-size: 12px; }
-	.footer-motto { letter-spacing: .16em; }
-	.back-to-top { display: flex; align-items: center; gap: 8px; color: white; }
-	.footer-actions { display: flex; align-items: center; gap: 20px; }
-	.cookie-settings { color: rgb(255 255 255 / .7); text-decoration: underline; text-underline-offset: 3px; }
-	.cookie-settings:hover { color: white; }
-	@media (max-width: 1023px) { .site-footer { padding-bottom: var(--tab-offset, 0px); } .footer-grid { gap: 30px; grid-template-columns: 1.25fr 1fr 1fr; } .footer-grid nav:last-child { display: none; } }
-	@media (max-width: 639px) { .footer-invitation { flex-direction: column; align-items: start; padding-block: 42px; gap: 24px; } .footer-grid { grid-template-columns: 1fr 1fr; gap: 35px 20px; padding-block: 40px; } .footer-brand { grid-column: 1 / -1; } .footer-brand > p { max-width: 100%; } .footer-bottom { gap: 16px; } .footer-motto { display: none; } }
+	.site-footer { position: relative; overflow: hidden; padding-bottom: var(--compare-offset, 0px); background: var(--navy); color: #fff; }
+
+	.invite { display: flex; align-items: center; justify-content: space-between; gap: 32px; padding: 56px 0 44px; border-bottom: 1px solid rgb(255 255 255 / 0.12); }
+	.invite h2 { margin: 0; color: #fff; font-size: var(--text-h3); line-height: 1.15; }
+	.invite p { margin: 10px 0 0; max-width: 52ch; color: rgb(255 255 255 / 0.7); font-size: var(--text-base); line-height: 1.6; }
+	.invite-actions { display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
+	.chat { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: #fff; font-size: var(--text-sm); font-weight: 600; text-decoration: none; transition: color 160ms ease-out; }
+	.chat:hover { color: var(--sun); }
+
+	.grid { display: grid; grid-template-columns: minmax(0, 1.35fr) repeat(3, minmax(0, 1fr)); gap: 48px; padding: 52px 0 48px; }
+	.brand-mark { display: inline-flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; }
+	/* The logo's dark lettering needs a light ground on the dark footer. */
+	.logo { display: inline-flex; border-radius: 10px; background: #fff; padding: 8px 12px; }
+	.logo img { display: block; width: auto; height: 50px; }
+	.about { max-width: 36ch; margin: 20px 0 0; color: rgb(255 255 255 / 0.62); font-size: var(--text-sm); line-height: 1.7; }
+	.contact { display: grid; gap: 12px; margin: 22px 0 0; padding: 0; list-style: none; }
+	.contact li { display: flex; align-items: flex-start; gap: 10px; color: rgb(255 255 255 / 0.85); font-size: var(--text-sm); line-height: 1.45; }
+	.contact li > :global(svg) { flex: none; margin-top: 2px; color: var(--sun); }
+	.contact a { color: inherit; text-decoration: none; transition: color 160ms ease-out; }
+	.contact a:hover { color: #fff; }
+	.contact a span { margin-left: 8px; color: rgb(255 255 255 / 0.5); font-size: var(--text-xs); }
+
+	.group h3 { margin: 0; color: #fff; font-size: var(--text-sm); font-weight: 600; }
+	.group ul { display: grid; gap: 11px; margin: 16px 0 0; padding: 0; list-style: none; }
+	.group a { color: rgb(255 255 255 / 0.64); font-size: var(--text-sm); line-height: 1.5; text-decoration: none; transition: color 160ms ease-out; }
+	.group a:hover { color: #fff; }
+
+	.bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 22px 0 26px; border-top: 1px solid rgb(255 255 255 / 0.12); color: rgb(255 255 255 / 0.5); font-size: var(--text-xs); }
+	.bottom p { margin: 0; }
+	.bottom-actions { display: flex; align-items: center; gap: 22px; }
+	.bottom-actions button, .bottom-actions a { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; color: rgb(255 255 255 / 0.75); text-decoration: none; transition: color 160ms ease-out; }
+	.bottom-actions button:hover, .bottom-actions a:hover { color: #fff; }
+
+	@media (max-width: 1023px) {
+		.site-footer { padding-bottom: calc(var(--tab-offset, 0px) + var(--compare-offset, 0px)); }
+		.grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px 32px; }
+		.brand { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 32px; align-items: start; }
+		.brand .about { margin-top: 0; }
+		.brand .contact { grid-column: 2; margin-top: 16px; }
+		.brand-mark { grid-row: span 2; }
+	}
+	@media (max-width: 767px) {
+		.invite { flex-direction: column; align-items: stretch; gap: 22px; padding: 40px 0 32px; }
+		.invite-actions :global([data-slot='button']) { flex: 1; }
+		.grid { display: block; padding: 32px 0 20px; }
+		.brand { display: block; padding-bottom: 26px; }
+		.brand .about { margin-top: 18px; }
+		.brand .contact { margin-top: 18px; }
+		.group { border-top: 1px solid rgb(255 255 255 / 0.12); }
+		.group h3 button { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 54px; color: #fff; font: inherit; font-weight: 600; }
+		.group ul { gap: 4px; margin: 0; padding-bottom: 16px; }
+		.group a { display: flex; align-items: center; min-height: 40px; font-size: var(--text-base); }
+		.group h3:not(:has(button)) { padding-top: 18px; }
+		.bottom { flex-direction: column; align-items: flex-start; gap: 4px; }
+	}
+	@media (prefers-reduced-motion: reduce) { .chat, .contact a, .group a, .bottom-actions a, .bottom-actions button { transition: none; } }
 </style>

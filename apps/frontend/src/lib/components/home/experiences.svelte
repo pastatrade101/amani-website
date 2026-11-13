@@ -36,9 +36,9 @@
 	/* A soft light wash at the top for the title, easing out by mid-card. */
 	.experience-veil { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(255 255 255 / 0.94) 0%, rgb(255 255 255 / 0.84) 14%, rgb(255 255 255 / 0.6) 26%, rgb(255 255 255 / 0.32) 38%, rgb(255 255 255 / 0.12) 48%, rgb(255 255 255 / 0) 58%), linear-gradient(0deg, rgb(20 18 15 / 0.28) 0%, rgb(20 18 15 / 0) 30%); }
 	.experience-heading { padding: 24px 22px 0; }
-	.experience-heading p { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; font-size: 13px; font-weight: 600; color: #7a5a26; }
-	.experience-heading h3 { margin-top: 6px; font-size: 20px; font-weight: 650; line-height: 1.3; letter-spacing: -0.01em; color: var(--navy); text-wrap: balance; }
-	.experience-cta { display: inline-flex; align-self: flex-start; align-items: center; gap: 10px; margin: 0 22px 22px; padding: 11px 18px; border-radius: var(--radius-control); background: var(--sun); color: var(--navy); font-size: 13px; font-weight: 700; transition: gap 0.2s ease, background-color 0.2s ease; }
+	.experience-heading p { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; font-size: var(--text-sm); font-weight: 600; color: #7a5a26; }
+	.experience-heading h3 { margin-top: 6px; font-size: var(--text-xl); font-weight: 650; line-height: 1.3; letter-spacing: -0.01em; color: var(--navy); text-wrap: balance; }
+	.experience-cta { display: inline-flex; align-self: flex-start; align-items: center; gap: 10px; margin: 0 22px 22px; padding: 11px 18px; border-radius: var(--radius-control); background: var(--sun); color: var(--navy); font-size: var(--text-sm); font-weight: 700; transition: gap 0.2s ease, background-color 0.2s ease; }
 	.experience-card:hover > img { transform: scale(1.05); }
 	.experience-card:hover .experience-cta { gap: 14px; background: color-mix(in oklab, var(--sun) 92%, black); }
 	.experience-card:focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; }

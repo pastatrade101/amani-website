@@ -37,10 +37,10 @@
 	/* The heading and the way to ask stay in view while the questions scroll. */
 	.faq-side { position: sticky; top: calc(var(--site-header-height) + 40px); }
 	.faq-help { margin-top: 36px; padding: 26px 26px 28px; border-radius: var(--radius-surface); background: #f7f5ef; }
-	.faq-help h3 { margin: 0; font-size: 18px; font-weight: 650; color: var(--navy); }
-	.faq-help p { margin: 6px 0 0; font-size: 14px; line-height: 1.6; color: var(--muted-foreground); }
+	.faq-help h3 { margin: 0; font-size: var(--text-lg); font-weight: 650; color: var(--navy); }
+	.faq-help p { margin: 6px 0 0; font-size: var(--text-sm); line-height: 1.6; color: var(--muted-foreground); }
 	.faq-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
-	.faq-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 10px 18px; border-radius: var(--radius-control); font-size: 14px; font-weight: 700; text-decoration: none; transition: background-color 0.2s ease, border-color 0.2s ease; }
+	.faq-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 10px 18px; border-radius: var(--radius-control); font-size: var(--text-sm); font-weight: 700; text-decoration: none; transition: background-color 0.2s ease, border-color 0.2s ease; }
 	.faq-btn :global(svg) { width: 17px; height: 17px; }
 	.faq-btn.chat { border: 1px solid #cfe5d5; background: #fff; color: #128345; }
 	.faq-btn.chat:hover { background: #f3faf5; }

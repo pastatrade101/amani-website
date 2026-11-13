@@ -22,7 +22,9 @@
 		intro = '',
 		media,
 		actions,
-		aside
+		aside,
+		// Listing pages: a shorter photo, so the list starts near the top.
+		compact = false
 	}: {
 		id?: string;
 		titleId: string;
@@ -36,10 +38,11 @@
 		media?: Snippet;
 		actions?: Snippet;
 		aside?: Snippet;
+		compact?: boolean;
 	} = $props();
 </script>
 
-<section {id} class="page-hero" aria-labelledby={titleId}>
+<section {id} class="page-hero" class:compact aria-labelledby={titleId}>
 	{#if media}
 		<div class="page-hero-media">{@render media()}</div>
 	{:else if image}
@@ -81,30 +84,38 @@
 			linear-gradient(90deg, rgb(20 18 15 / 0.5) 0%, rgb(20 18 15 / 0) 60%);
 	}
 	.page-hero-inner { display: flex; flex-direction: column; min-height: clamp(560px, 78svh, 760px); padding-block: 26px 64px; }
-	.page-hero-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; color: rgb(255 255 255 / 0.8); }
+	.page-hero-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: var(--text-xs); color: rgb(255 255 255 / 0.8); }
 	.page-hero-crumbs a { transition: color 0.2s; }
 	.page-hero-crumbs a:hover { color: var(--sun); }
 	.page-hero-crumbs [aria-current] { font-weight: 600; color: #fff; }
 	.page-hero-crumbs :global(svg) { width: 12px; height: 12px; }
 	.page-hero-main { display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; margin-top: auto; padding-top: 96px; }
 	.page-hero-copy { min-width: 0; max-width: 780px; }
-	.page-hero h1 { margin: 0; max-width: 16ch; font-size: clamp(42px, 5vw, 72px); line-height: 1.04; text-wrap: balance; }
-	.page-hero-intro { margin: 22px 0 0; max-width: 54ch; font-size: clamp(15px, 1.2vw, 17px); line-height: 1.75; color: rgb(255 255 255 / 0.86); }
+	.page-hero h1 { margin: 0; max-width: 16ch; font-size: var(--text-display); line-height: 1.04; text-wrap: balance; }
+	.page-hero-intro { margin: 22px 0 0; max-width: 54ch; font-size: var(--text-lead); line-height: 1.75; color: rgb(255 255 255 / 0.86); }
 	.page-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 34px; }
-	.page-hero-actions :global([data-slot='button']) { min-height: 50px; padding-inline: 24px; font-size: 14px; }
+	.page-hero-actions :global([data-slot='button']) { min-height: 50px; padding-inline: 24px; font-size: var(--text-sm); }
 	/* The second button is always the quiet one: a white outline on the photo. */
 	.page-hero-actions :global([data-slot='button'] + [data-slot='button']) { border: 1px solid rgb(255 255 255 / 0.6); background: transparent; color: #fff; font-weight: 600; box-shadow: none; }
 	.page-hero-actions :global([data-slot='button'] + [data-slot='button']:hover) { border-color: #fff; background: rgb(255 255 255 / 0.1); color: #fff; }
 	.page-hero-aside { flex: none; width: min(280px, 100%); }
+	.compact .page-hero-inner { min-height: clamp(360px, 46svh, 440px); padding-block: 22px 44px; }
+	.compact .page-hero-main { padding-top: 56px; }
+	.compact h1 { font-size: var(--text-title); }
+	.compact .page-hero-intro { margin-top: 16px; }
+	.compact .page-hero-actions { margin-top: 26px; }
 	@media (max-width: 1023px) { .page-hero-main { gap: 28px; } .page-hero-aside { width: 220px; } }
 	@media (max-width: 639px) {
 		.page-hero-veil { background: linear-gradient(180deg, rgb(20 18 15 / 0.5) 0%, rgb(20 18 15 / 0) 20%), linear-gradient(0deg, rgb(20 18 15 / 0.94) 0%, rgb(20 18 15 / 0.74) 50%, rgb(20 18 15 / 0.22) 86%); }
 		.page-hero-inner { min-height: 600px; padding-block: 20px 40px; }
 		.page-hero-main { display: block; padding-top: 120px; }
-		.page-hero h1 { margin-top: 0; font-size: clamp(36px, 10.5vw, 44px); line-height: 1.06; }
-		.page-hero-intro { margin-top: 16px; font-size: 15px; line-height: 1.7; }
+		.page-hero h1 { margin-top: 0; font-size: var(--text-display); line-height: 1.06; }
+		.page-hero-intro { margin-top: 16px; font-size: var(--text-base); line-height: 1.7; }
 		.page-hero-actions { flex-direction: column; align-items: stretch; margin-top: 26px; }
 		.page-hero-actions :global([data-slot='button']) { width: 100%; justify-content: center; }
 		.page-hero-aside { width: 100%; margin-top: 28px; }
+		.compact .page-hero-inner { min-height: 420px; padding-block: 18px 32px; }
+		.compact .page-hero-main { padding-top: 72px; }
+		.compact h1 { font-size: var(--text-title); }
 	}
 </style>

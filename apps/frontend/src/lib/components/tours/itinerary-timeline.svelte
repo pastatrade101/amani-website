@@ -63,7 +63,7 @@
 
 <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
 	<div data-motion="reveal" class="min-w-0">
-		<h2 class="text-2xl font-bold tracking-tight text-primary md:text-[32px]">Your Safari Itinerary</h2>
+		<h2 class="text-2xl font-bold tracking-tight text-primary md:text-3xl">Your Safari Itinerary</h2>
 	</div>
 	{#if expandable.length > 1}
 		<button type="button" onclick={toggleAll} aria-expanded={allOpen} aria-controls={expandable.map((entry) => `${entry.key}-panel`).join(' ')} class="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-primary underline-offset-4 hover:underline md:text-base">
@@ -154,7 +154,7 @@
 	.timeline-marker { display: block; }
 	.day-head :global(.day-pill) { display: none; }
 	.timeline-day:not(:last-child)::before { content: ""; position: absolute; top: calc(var(--marker) + 6px); bottom: calc(6px - var(--row-gap)); left: calc(var(--marker) / 2 - 1px); border-left: 2px dashed var(--border); }
-	.timeline-marker > span { display: grid; place-items: center; width: var(--marker); height: var(--marker); border-radius: 999px; background: var(--sun); color: var(--navy); font-size: 12px; font-weight: 700; line-height: 1; letter-spacing: -0.01em; box-shadow: 0 10px 22px -14px oklch(0.55 0.14 90 / 0.8); }
+	.timeline-marker > span { display: grid; place-items: center; width: var(--marker); height: var(--marker); border-radius: 999px; background: var(--sun); color: var(--navy); font-size: var(--text-xs); font-weight: 700; line-height: 1; letter-spacing: -0.01em; box-shadow: 0 10px 22px -14px oklch(0.55 0.14 90 / 0.8); }
 	.day-card { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius-surface); background: var(--card); box-shadow: 0 14px 34px -28px rgb(39 36 31 / 0.4); }
 	.day-head { display: flex; width: 100%; align-items: flex-start; gap: 0.75rem; padding: 1rem; border-radius: var(--radius-surface); text-align: left; }
 	.day-chevron { display: grid; flex-shrink: 0; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 999px; background: color-mix(in oklch, var(--sun) 18%, white); color: var(--navy); transition: background 160ms ease-out; }
@@ -162,10 +162,10 @@
 	.day-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 320ms cubic-bezier(0.22, 1, 0.36, 1); }
 	.day-panel[data-open='true'] { grid-template-rows: 1fr; }
 	.day-body { padding: 0 1rem 1.1rem; }
-	.meta-label { font-size: 12px; font-weight: 600; color: var(--muted-foreground); }
-	.meta-value { margin-top: 0.2rem; font-size: 15px; font-weight: 700; color: var(--navy); overflow-wrap: anywhere; }
+	.meta-label { font-size: var(--text-xs); font-weight: 600; color: var(--muted-foreground); }
+	.meta-value { margin-top: 0.2rem; font-size: var(--text-base); font-weight: 700; color: var(--navy); overflow-wrap: anywhere; }
 	/* Long unbroken words wrap inside the chip instead of widening the card. */
-	.activity-chip { border-radius: var(--radius-control); border: 1px solid var(--border); padding: 0.2rem 0.65rem; font-size: 12px; color: var(--navy); overflow-wrap: anywhere; }
+	.activity-chip { border-radius: var(--radius-control); border: 1px solid var(--border); padding: 0.2rem 0.65rem; font-size: var(--text-xs); color: var(--navy); overflow-wrap: anywhere; }
 	/* Phones: a swipeable row that snaps photo by photo; from sm: one row of up to three. */
 	.day-photos { display: flex; gap: 0.75rem; margin-top: 1.25rem; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
 	.day-photos::-webkit-scrollbar { display: none; }
@@ -180,10 +180,10 @@
 		.timeline-marker { display: block; }
 		/* The circle carries "Day N" from here; the heading (itinerary-day-heading) is phone-sized. */
 		.day-head :global(.day-pill) { display: none; }
-		.timeline-marker > span { font-size: 13px; }
+		.timeline-marker > span { font-size: var(--text-sm); }
 		.day-head { gap: 1rem; padding: 1.35rem 1.5rem; }
-		.day-head :global(.day-title) { font-size: 18px; }
-		.day-head :global(.day-summary) { font-size: 14px; }
+		.day-head :global(.day-title) { font-size: var(--text-lg); }
+		.day-head :global(.day-summary) { font-size: var(--text-sm); }
 		.day-chevron { width: 2.5rem; height: 2.5rem; }
 		.day-body { padding: 0 1.5rem 1.5rem; }
 		.day-photos { display: grid; grid-template-columns: repeat(var(--count), minmax(0, 1fr)); overflow: visible; }
@@ -191,10 +191,10 @@
 	}
 	@media (min-width: 1024px) {
 		.timeline { --marker: 4rem; --col-gap: 1.5rem; --row-gap: 1.75rem; }
-		.timeline-marker > span { font-size: 15px; }
+		.timeline-marker > span { font-size: var(--text-base); }
 		.day-head { padding: 1.25rem 1.5rem; }
-		.day-head :global(.day-title) { font-size: 18px; }
-		.day-head :global(.day-summary) { font-size: 15px; }
+		.day-head :global(.day-title) { font-size: var(--text-lg); }
+		.day-head :global(.day-summary) { font-size: var(--text-base); }
 		.day-body { padding: 0 2rem 2rem; }
 		.day-photos { gap: 1rem; }
 	}

@@ -46,6 +46,8 @@
 }
 /* CMS layout and component tokens. Public landing-page styles stay independent. */
 /* The CMS keeps its original corner scale; the public site uses two fixed corners (layout.css). */
+/* The CMS keeps Tailwind's own type sizes; the public scale lives in routes/layout.css. */
+.key2africa-admin { --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem; --text-lg: 1.125rem; --text-xl: 1.25rem; --text-2xl: 1.5rem; --text-3xl: 1.875rem; --text-4xl: 2.25rem; --text-5xl: 3rem; --text-6xl: 3.75rem; }
 .key2africa-admin { --ui-radius-sm: calc(var(--radius) - 4px); --ui-radius-md: calc(var(--radius) - 2px); --ui-radius-lg: var(--radius); --ui-radius-xl: calc(var(--radius) + 4px); --ui-radius-2xl: calc(var(--radius) + 8px); --ui-radius-3xl: calc(var(--radius) + 12px); --ui-radius-4xl: calc(var(--radius) + 16px); }
 .key2africa-admin { --radius: .625rem; --primary: #38332c; --primary-foreground: #fff; --ring: #958b78; --border: #eceae6; --input: #e7e5e0; --muted: #f6f5f4; --muted-foreground: #928875; --accent: #f5f4f3; --accent-foreground: #38332c; --background: #fff; --foreground: #39342c; color-scheme: light; }
 .admin-shell { background: #f9f9f8; }

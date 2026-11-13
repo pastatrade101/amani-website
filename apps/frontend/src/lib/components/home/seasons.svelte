@@ -14,7 +14,7 @@
 	<div data-motion="reveal" class="mx-auto max-w-2xl text-center"><h2 class="section-heading">{section.title}</h2><p class="mt-4 text-sm leading-relaxed text-muted-foreground md:text-base">{textContent(section.content)}</p></div>
 	{#if seasons.length}
 		<ol aria-label="Seasons by month" class="mt-9 grid grid-cols-6 overflow-hidden rounded-xl md:grid-cols-12">
-			{#each strip as month}<li title={month.season?.name} class={`border-r border-white py-3 text-center text-[12px] font-semibold tracking-wider ${month.season ? seasonTone(month.season.tone).strip : UNASSIGNED_MONTH}`}>{month.label}</li>{/each}
+			{#each strip as month}<li title={month.season?.name} class={`border-r border-white py-3 text-center text-xs font-semibold tracking-wider ${month.season ? seasonTone(month.season.tone).strip : UNASSIGNED_MONTH}`}>{month.label}</li>{/each}
 		</ol>
 		<div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4 lg:gap-5">
 			{#each seasons as season (season.id ?? season.name)}<SeasonCard {season} />{/each}
@@ -23,5 +23,5 @@
 	{#if guide.items.length}
     <Card.Root data-motion="reveal" class="mt-8 gap-0 rounded-2xl border-black/5 bg-white p-5 shadow-sm md:p-7"><div class="text-center"><p class="text-xs font-semibold uppercase tracking-[.2em] text-[#111111]">{guide.eyebrow}</p><h3 class="mt-1 text-lg font-bold text-[#111111]">{guide.title}</h3></div><ul class="mt-6 grid grid-cols-2 gap-y-6 md:grid-cols-3 lg:grid-cols-6">{#each guide.items as item}{@const GuideIcon = guideIcon(item.icon)}<li class="flex flex-col items-center px-3 text-center lg:border-r lg:border-black/10 lg:last:border-r-0"><GuideIcon class="size-6 text-[#D9A900]" /><p class="mt-2 text-sm font-semibold text-[#111111]">{item.label}</p><p class="mt-1 text-xs leading-snug text-muted-foreground md:text-sm">{item.value}</p></li>{/each}</ul></Card.Root>
 	{/if}
-	<p class="mt-5 text-center text-[12px] leading-5 text-muted-foreground">{guide.footnote}</p>
+	<p class="mt-5 text-center text-xs leading-5 text-muted-foreground">{guide.footnote}</p>
 </section>

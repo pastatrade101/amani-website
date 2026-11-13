@@ -98,7 +98,7 @@
 				<img src={logo} alt={siteInfo.brand} class="site-logo" width="305" height="176" />
 			{:else}
 				<span class="grid size-10 place-items-center rounded-full border-2 border-sun"><Compass class="size-5" strokeWidth={1.5} /></span>
-				<span class="leading-none"><span class="block text-[17px] font-bold">Key2africa</span><span class="mt-1 block text-[12px] font-semibold uppercase tracking-wider text-primary/65">Safaris</span></span>
+				<span class="leading-none"><span class="block text-lg font-bold">Key2africa</span><span class="mt-1 block text-xs font-semibold uppercase tracking-wider text-primary/65">Safaris</span></span>
 			{/if}
 		</a>
 		<NavigationMenu.Root value={menu} onValueChange={(value) => menu = value} viewport={false} onpointerenter={keepMenuOpen} onpointerleave={leaveNavigation} class="desktop-navigation" aria-label="Main navigation">
@@ -199,14 +199,14 @@
 				{#if hasGuide}<NavigationMenu.Item value="guide" class="mega-menu-item"><div class="main-menu-control"><NavigationMenu.Link href={GUIDE_PATH} onclick={closeMenu} active={page.url.pathname === GUIDE_PATH} class="main-menu-link plain-menu-link">Safari guide</NavigationMenu.Link></div></NavigationMenu.Item>{/if}
 			</NavigationMenu.List>
 		</NavigationMenu.Root>
-		<div class="header-actions"><Button href={searchHref} variant="ghost" size="icon" aria-label="Search safaris" class=""><Search class="size-5" /></Button>{#if !onPlanner}<Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" class="h-11 px-5 text-[13px]">Plan my safari <ArrowRight class="size-4" /></Button>{/if}</div>
+		<div class="header-actions"><Button href={searchHref} variant="ghost" size="icon" aria-label="Search safaris" class=""><Search class="size-5" /></Button>{#if !onPlanner}<Button variant="safari" href={planHref({ from: 'header' })} data-cta="plan_my_trip" data-cta-location="header" class="h-11 px-5 text-sm">Plan my safari <ArrowRight class="size-4" /></Button>{/if}</div>
 		<div class="mobile-actions">
 		<a href={searchHref} class="mobile-search" aria-label="Search safaris"><Search class="size-[22px]" strokeWidth={1.9} /></a>
 		<Sheet.Root bind:open>
 			<Sheet.Trigger class="mobile-navigation" aria-label="Open navigation"><Menu class="size-6" strokeWidth={1.9} /></Sheet.Trigger>
             <Sheet.Content side="right" class="mobile-menu-panel">
                 <Sheet.Header class="mobile-menu-header">
-                    <div class="mobile-brand"><span>{#if emblem}<img src={emblem} alt="" class="size-7 object-contain" />{:else}<Compass class="size-5" strokeWidth={1.5} />{/if}</span><div><Sheet.Title class="text-base font-semibold">{siteInfo.brand}</Sheet.Title><Sheet.Description class="mt-1 text-[12px]">Your Tanzania. Your way.</Sheet.Description></div></div>
+                    <div class="mobile-brand"><span>{#if emblem}<img src={emblem} alt="" class="size-7 object-contain" />{:else}<Compass class="size-5" strokeWidth={1.5} />{/if}</span><div><Sheet.Title class="text-base font-semibold">{siteInfo.brand}</Sheet.Title><Sheet.Description class="mt-1 text-xs">Your Tanzania. Your way.</Sheet.Description></div></div>
                 </Sheet.Header>
                 <div class="mobile-menu-scroll">
                     <p class="mobile-menu-eyebrow">LET THE EXPLORING BEGIN</p>
@@ -256,7 +256,7 @@
 	:global(.mega-menu-item) { position: static; }
 	.main-menu-control { display: flex; align-items: center; border-radius: var(--radius-control); }
 	.main-menu-control:hover, .main-menu-control.menu-open { background: var(--secondary); }
-	:global(.main-menu-link) { height: 44px; padding: 0 3px 0 12px; border-radius: var(--radius-control) 0 0 var(--radius-control); color: var(--navy); font-size: 13px; font-weight: 500; text-decoration: none; background: transparent; }
+	:global(.main-menu-link) { height: 44px; padding: 0 3px 0 12px; border-radius: var(--radius-control) 0 0 var(--radius-control); color: var(--navy); font-size: var(--text-base); font-weight: 500; text-decoration: none; background: transparent; }
 	:global(.main-menu-link:hover), :global(.main-menu-link:focus), :global(.main-menu-link[data-active]) { background: transparent; }
 	:global(.main-menu-link:focus-visible), :global(.main-menu-trigger:focus-visible) { outline: 2px solid var(--sun); outline-offset: 2px; }
 	:global(.main-menu-link.plain-menu-link) { padding-right: 12px; border-radius: var(--radius-control); }
@@ -265,40 +265,40 @@
 	:global(.main-menu-trigger:hover), :global(.main-menu-trigger[data-state="open"]), :global(.main-menu-trigger[data-open]), :global(.main-menu-trigger[data-popup-open]) { background: transparent; }
 	:global(.mega-panel) { position: absolute; top: 100%; left: 0; right: 0; width: auto; margin: 0; max-height: calc(100dvh - 150px); overflow-y: auto; border: 1px solid var(--border); border-radius: 0 0 20px 20px; padding: 0; background: var(--background); box-shadow: 0 24px 50px -20px oklch(.3 0.015 75 / .28); transform: none; animation: menu-enter 180ms ease-out; }
 	@keyframes menu-enter { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-	.menu-eyebrow { display: block; font-size: 12px; font-weight: 600; line-height: 1.5; letter-spacing: .14em; }
+	.menu-eyebrow { display: block; font-size: var(--text-xs); font-weight: 600; line-height: 1.5; letter-spacing: .14em; }
 	.menu-heading { margin-bottom: 18px; }
 	.menu-heading .menu-eyebrow { color: var(--muted-foreground); }
-	.menu-heading h2 { margin-top: 5px; font-size: 20px; font-weight: 600; letter-spacing: -.04em; line-height: 1.4; }
+	.menu-heading h2 { margin-top: 5px; font-size: var(--text-xl); font-weight: 600; letter-spacing: -.04em; line-height: 1.4; }
 	.experience-menu { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 28px; padding: 26px; }
 	:global(.menu-feature) { position: relative; display: block; min-height: 285px; overflow: hidden; border-radius: var(--radius-surface); padding: 0; color: white; isolation: isolate; }
 	:global(.menu-feature)::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(18 17 15 / .03) 10%, rgb(18 17 15 / .85) 100%); }
 	:global(.menu-feature > img) { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform 240ms ease-out; }
 	:global(.menu-feature:hover > img) { transform: scale(1.035); }
 	.feature-copy { position: absolute; inset-inline: 22px; bottom: 24px; }
-	.feature-copy .menu-eyebrow { color: var(--sun); font-size: 8px; }
-	.feature-copy h2 { margin-top: 9px; font-size: 21px; font-weight: 600; line-height: 1.35; letter-spacing: -.035em; }
-	.feature-cta { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 13px; border-top: 1px solid rgb(255 255 255 / .3); font-size: 12px; font-weight: 600; }
+	.feature-copy .menu-eyebrow { color: var(--sun); font-size: var(--text-xs); }
+	.feature-copy h2 { margin-top: 9px; font-size: var(--text-xl); font-weight: 600; line-height: 1.35; letter-spacing: -.035em; }
+	.feature-cta { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 13px; border-top: 1px solid rgb(255 255 255 / .3); font-size: var(--text-xs); font-weight: 600; }
 	.experience-options { min-width: 0; padding-top: 3px; }
 	.experience-links { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
 	:global(.experience-link) { display: flex; align-items: center; gap: 13px; min-width: 0; padding: 10px; border: 1px solid transparent; border-radius: var(--radius-control); }
 	:global(.experience-link:hover) { border-color: var(--border); background: var(--secondary); }
 	:global(.experience-link > img) { width: 68px; height: 76px; flex-shrink: 0; border-radius: var(--radius-surface); object-fit: cover; }
-	:global(.experience-link strong) { display: block; font-size: 12px; font-weight: 600; line-height: 1.45; }
-	:global(.experience-link small) { display: block; margin-top: 5px; color: var(--muted-foreground); font-size: 12px; line-height: 1.6; }
+	:global(.experience-link strong) { display: block; font-size: var(--text-sm); font-weight: 600; line-height: 1.45; }
+	:global(.experience-link small) { display: block; margin-top: 5px; color: var(--muted-foreground); font-size: var(--text-xs); line-height: 1.6; }
 	:global(.menu-arrow) { margin-left: auto; flex-shrink: 0; color: var(--muted-foreground); }
-	.popular-experiences { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 15px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; }
+	.popular-experiences { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 15px; padding-top: 16px; border-top: 1px solid var(--border); font-size: var(--text-xs); }
 	.popular-experiences > span { margin-right: 3px; color: var(--muted-foreground); }
-	:global(.popular-link) { padding: 5px 9px; border-radius: var(--radius-control); background: var(--secondary); font-size: 12px; }
+	:global(.popular-link) { padding: 5px 9px; border-radius: var(--radius-control); background: var(--secondary); font-size: var(--text-xs); }
 	:global(.tour-menu-link strong) { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
-	.menu-empty { max-width: 420px; font-size: 12px; line-height: 1.8; color: var(--muted-foreground); }
+	.menu-empty { max-width: 420px; font-size: var(--text-xs); line-height: 1.8; color: var(--muted-foreground); }
 	/* Stays: the three styles in their own colours, then a few featured properties. */
 	.stay-style-links { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
 	:global(.stay-style-link) { gap: 12px; min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-control); }
 	:global(.stay-style-link:hover) { background: var(--style-light); }
-	:global(.stay-style-link strong) { display: block; font-size: 12px; font-weight: 600; line-height: 1.45; }
-	:global(.stay-style-link small) { display: block; margin-top: 3px; color: var(--muted-foreground); font-size: 12px; line-height: 1.5; }
+	:global(.stay-style-link strong) { display: block; font-size: var(--text-sm); font-weight: 600; line-height: 1.45; }
+	:global(.stay-style-link small) { display: block; margin-top: 3px; color: var(--muted-foreground); font-size: var(--text-xs); line-height: 1.5; }
 	.stay-style-icon { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--style-light); color: var(--style-ink); }
-	.stay-menu-subheading { margin: 18px 0 8px; font-size: 13px; font-weight: 600; color: var(--muted-foreground); }
+	.stay-menu-subheading { margin: 18px 0 8px; font-size: var(--text-sm); font-weight: 600; color: var(--muted-foreground); }
 	.stay-menu-mark { display: grid; place-items: center; flex-shrink: 0; width: 68px; height: 76px; border-radius: var(--radius-control); background: var(--navy); color: var(--sun); }
 	:global(.stay-menu-link) { padding-block: 6px; }
 	:global(.stay-menu-link > img) { height: 60px; }
@@ -309,16 +309,16 @@
 	:global(.destination-cover) { display: block; padding: 0; border-radius: var(--radius-surface); background: transparent; }
 	:global(.destination-cover > img) { display: block; width: 100%; height: 110px; object-fit: cover; border-radius: var(--radius-control); }
 	:global(.destination-cover > span) { display: block; margin-top: 12px; }
-	:global(.destination-cover strong) { display: block; font-size: 13px; font-weight: 600; }
-	:global(.destination-cover small) { display: block; margin-top: 4px; font-size: 12px; color: var(--muted-foreground); }
+	:global(.destination-cover strong) { display: block; font-size: var(--text-sm); font-weight: 600; }
+	:global(.destination-cover small) { display: block; margin-top: 4px; font-size: var(--text-xs); color: var(--muted-foreground); }
 	:global(.destination-cover > svg) { display: none; }
 	.destination-links { display: grid; gap: 1px; margin-top: 13px; }
-	:global(.destination-link) { display: flex; justify-content: space-between; gap: 6px; padding: 7px 6px; margin-left: -6px; font-size: 12px; border-radius: 6px; line-height: 1.5; }
+	:global(.destination-link) { display: flex; justify-content: space-between; gap: 6px; padding: 7px 6px; margin-left: -6px; font-size: var(--text-sm); border-radius: 6px; line-height: 1.5; }
 	:global(.destination-link > svg) { flex-shrink: 0; opacity: 0; transition: opacity 150ms ease-out; }
 	:global(.destination-link:hover > svg), :global(.destination-link:focus-visible > svg) { opacity: 1; }
 	.menu-footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 13px 26px; border-top: 1px solid var(--border); background: oklch(.985 0.003 75); }
-	.menu-footer > span { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted-foreground); }
-	:global(.menu-footer-link) { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 12px; font-weight: 600; background: transparent; }
+	.menu-footer > span { display: flex; align-items: center; gap: 8px; font-size: var(--text-xs); color: var(--muted-foreground); }
+	:global(.menu-footer-link) { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: var(--text-sm); font-weight: 600; background: transparent; }
 	.header-actions { display: flex; align-items: center; gap: 9px; }
     :global(.mobile-menu-panel) { display: flex; width: min(92vw,400px); flex-direction: column; gap: 0; padding: 0; overflow: hidden; background: white; }
     :global(.mobile-menu-header) { flex-shrink: 0; padding: 25px 22px; border-bottom: 1px solid var(--border); text-align: left; }
@@ -327,27 +327,27 @@
     @media (max-width: 1099px) { .site-logo { height: 54px; } }
     .mobile-brand > span { display: grid; place-items: center; width: 42px; height: 42px; border: 1.5px solid var(--sun); border-radius: 50%; }
     .mobile-menu-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 24px 16px; }
-    .mobile-menu-eyebrow { margin: 0 9px 16px; font-size: 12px; font-weight: 500; letter-spacing: .14em; color: var(--muted-foreground); }
+    .mobile-menu-eyebrow { margin: 0 9px 16px; font-size: var(--text-xs); font-weight: 500; letter-spacing: .14em; color: var(--muted-foreground); }
     :global(.mobile-menu-accordion) { display: grid; gap: 8px; }
     :global(.mobile-menu-section) { overflow: hidden; border: 0; border-radius: var(--radius-surface); background: var(--secondary); }
-    :global(.mobile-section-trigger) { min-height: 54px; padding: 16px; border: 0; font-size: 13px; font-weight: 500; text-decoration: none; }
+    :global(.mobile-section-trigger) { min-height: 54px; padding: 16px; border: 0; font-size: var(--text-base); font-weight: 500; text-decoration: none; }
     :global(.mobile-section-trigger:hover) { text-decoration: none; }
     .mobile-section-label { display: flex; align-items: center; gap: 11px; }
-    .mobile-guide-link { display: flex; align-items: center; justify-content: space-between; min-height: 54px; margin-top: 8px; padding: 16px; border-radius: var(--radius-control); background: var(--secondary); color: var(--navy); font-size: 13px; font-weight: 500; text-decoration: none; }
+    .mobile-guide-link { display: flex; align-items: center; justify-content: space-between; min-height: 54px; margin-top: 8px; padding: 16px; border-radius: var(--radius-control); background: var(--secondary); color: var(--navy); font-size: var(--text-base); font-weight: 500; text-decoration: none; }
     .mobile-guide-link:hover, .mobile-guide-link:focus-visible { background: color-mix(in oklch, var(--secondary) 80%, var(--navy) 8%); }
     :global(.mobile-section-content) { padding: 0 7px 8px; }
     .mobile-menu-links { display: grid; gap: 3px; }
-    .mobile-menu-link { display: flex; min-height: 46px; align-items: center; gap: 10px; padding: 8px; border-radius: var(--radius-control); color: var(--navy); text-decoration: none; font-size: 12px; line-height: 1.5; transition: background 160ms ease-out; }
+    .mobile-menu-link { display: flex; min-height: 46px; align-items: center; gap: 10px; padding: 8px; border-radius: var(--radius-control); color: var(--navy); text-decoration: none; font-size: var(--text-sm); line-height: 1.5; transition: background 160ms ease-out; }
     .mobile-menu-link:hover, .mobile-menu-link:focus-visible { background: white; text-decoration: none; }
     .mobile-menu-link img { width: 40px; height: 40px; flex-shrink: 0; object-fit: cover; border-radius: 7px; }
     .mobile-menu-link :global(svg) { flex-shrink: 0; margin-left: auto; color: var(--muted-foreground); }
-    .mobile-view-all { margin-top: 5px; padding: 12px 10px 8px; min-height: 42px; font-size: 12px; font-weight: 600; }
-    .mobile-tour-meta { display: block; margin-top: 4px; font-size: 12px; color: var(--muted-foreground); }
+    .mobile-view-all { margin-top: 5px; padding: 12px 10px 8px; min-height: 42px; font-size: var(--text-sm); font-weight: 600; }
+    .mobile-tour-meta { display: block; margin-top: 4px; font-size: var(--text-xs); color: var(--muted-foreground); }
     .mobile-menu-link .mobile-stay-mark { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; margin-left: 0; border-radius: 7px; background: var(--navy); color: var(--sun); }
     .mobile-menu-link .mobile-style-mark { border-radius: 50%; background: var(--style-light); color: var(--style-ink); }
     .mobile-stay-mark :global(svg) { margin-left: 0; color: inherit; }
     .mobile-menu-footer { flex-shrink: 0; padding: 18px 22px max(22px,env(safe-area-inset-bottom)); border-top: 1px solid var(--border); }
-    .mobile-menu-footer > p { margin-bottom: 12px; color: var(--muted-foreground); font-size: 12px; text-align: center; }
+    .mobile-menu-footer > p { margin-bottom: 12px; color: var(--muted-foreground); font-size: var(--text-xs); text-align: center; }
 
 	.mobile-actions { display: none; align-items: center; gap: 4px; margin-right: -10px; }
 	.mobile-search, :global(.mobile-navigation) { display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--radius-control); color: var(--navy); transition: background-color 0.16s ease; }

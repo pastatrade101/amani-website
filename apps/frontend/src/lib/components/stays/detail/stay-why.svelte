@@ -19,11 +19,11 @@
 			</button>
 		{/if}
 		<div data-motion="reveal" class={photo ? 'lg:col-span-7' : 'mx-auto max-w-3xl text-center'}>
-			<h2 id="why-title" class="font-display text-[20px] font-semibold tracking-[-.02em] text-white">Why we recommend it</h2>
+			<h2 id="why-title" class="font-display text-xl font-semibold tracking-[-.02em] text-white">Why we recommend it</h2>
 			<Quote class={`mt-6 size-10 text-sun ${photo ? '' : 'mx-auto'}`} aria-hidden="true" />
 			<figure>
-				<blockquote class={`quote mt-5 font-display font-medium tracking-[-.02em] ${long ? 'text-[17px] leading-[1.6] sm:text-[21px] lg:text-[24px]' : 'text-[20px] leading-[1.45] sm:text-[27px] lg:text-[32px]'}`}><RichText value={why} /></blockquote>
-				<figcaption class="mt-7 text-[13px] font-medium text-white/65">The {team} team</figcaption>
+				<blockquote class={`quote mt-5 font-display font-medium tracking-[-.02em] ${long ? 'text-lg leading-[1.6] sm:text-xl lg:text-2xl' : 'text-xl leading-[1.45] sm:text-2xl lg:text-3xl'}`}><RichText value={why} /></blockquote>
+				<figcaption class="mt-7 text-sm font-medium text-white/65">The {team} team</figcaption>
 			</figure>
 		</div>
 	</div>

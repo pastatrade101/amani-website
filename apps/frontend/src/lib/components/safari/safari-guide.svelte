@@ -125,27 +125,27 @@
 	.guide-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 56px; }
 	.guide-nav { position: sticky; top: calc(var(--site-header-height, 0px) + 96px); align-self: start; display: grid; gap: 2px; }
 	:global(html[data-header-hidden]) .guide-nav { top: 96px; }
-	.guide-nav a { display: flex; gap: 12px; padding: 10px 0; font-size: 14px; line-height: 1.5; color: var(--sp-muted); text-decoration: none; }
+	.guide-nav a { display: flex; gap: 12px; padding: 10px 0; font-size: var(--text-sm); line-height: 1.5; color: var(--sp-muted); text-decoration: none; }
 	.guide-nav a:hover { color: var(--sp-ink); }
-	.guide-nav span { min-width: 22px; font-size: 13px; font-weight: 600; color: #98723c; }
+	.guide-nav span { min-width: 22px; font-size: var(--text-sm); font-weight: 600; color: #98723c; }
 	.articles { max-width: 920px; }
 	article { margin: 0 0 32px; padding: 0 0 32px; border-bottom: 1px solid var(--sp-line); scroll-margin-top: 140px; }
 	article:last-child { margin-bottom: 0; border-bottom: 0; }
-	h3 { margin: 0 0 16px; font-size: clamp(20px, 1.8vw, 24px); font-weight: 650; line-height: 1.3; letter-spacing: -0.015em; color: var(--sp-ink); }
-	article p, article li { margin: 0 0 12px; font-size: 15px; line-height: 1.85; color: var(--sp-muted); }
+	h3 { margin: 0 0 16px; font-size: var(--text-h4); font-weight: 650; line-height: 1.3; letter-spacing: -0.015em; color: var(--sp-ink); }
+	article p, article li { margin: 0 0 12px; font-size: var(--text-base); line-height: 1.85; color: var(--sp-muted); }
 	article p:last-child { margin-bottom: 0; }
 	article strong { font-weight: 600; color: var(--sp-ink); }
 	article a { font-weight: 600; color: var(--sp-ink); text-decoration: none; }
 	article a:hover { color: #7b6500; }
 	article ul { margin: 0; padding-left: 1.2rem; list-style: disc; }
 	.compare-wrap { margin: 0 0 18px; overflow-x: auto; border: 1px solid var(--sp-line); border-radius: var(--radius-surface); background: #fff; }
-	table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 14px; line-height: 1.6; }
+	table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: var(--text-sm); line-height: 1.6; }
 	th { padding: 14px 16px; background: #efeadd; font-weight: 600; text-align: left; color: var(--sp-ink); }
 	td { padding: 14px 16px; border-top: 1px solid var(--sp-line-soft); vertical-align: top; color: var(--sp-muted); }
 	td:first-child { font-weight: 600; white-space: nowrap; color: var(--sp-ink); }
 	.guide-cta { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 36px; padding: 24px 28px; border-radius: var(--radius-surface); background: #fff; border: 1px solid var(--sp-line); }
-	.guide-cta p { margin: 0; font-size: 15px; line-height: 1.7; color: var(--sp-muted); }
-	.guide-cta a { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 12px 26px; border-radius: var(--radius-control); background: var(--sp-sun); color: #2b2722; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+	.guide-cta p { margin: 0; font-size: var(--text-base); line-height: 1.7; color: var(--sp-muted); }
+	.guide-cta a { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 12px 26px; border-radius: var(--radius-control); background: var(--sp-sun); color: #2b2722; font-size: var(--text-sm); font-weight: 700; text-decoration: none; white-space: nowrap; }
 	.guide-cta a :global(svg) { width: 16px; height: 16px; }
 	@media (max-width: 900px) {
 		.guide-layout { grid-template-columns: minmax(0, 1fr); gap: 28px; }

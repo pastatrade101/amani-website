@@ -63,17 +63,17 @@
 			linear-gradient(0deg, rgb(43 39 34 / 0.35) 0%, rgb(43 39 34 / 0) 40%);
 	}
 	.consultant-copy { display: flex; flex-direction: column; justify-content: center; padding: 56px 8px 56px 60px; }
-	h2 { max-width: 15ch; margin: 0; font-size: clamp(32px, 3.4vw, 48px); font-weight: 600; line-height: 1.08; letter-spacing: -0.03em; text-wrap: balance; }
+	h2 { max-width: 15ch; margin: 0; font-size: var(--text-h2); font-weight: 600; line-height: 1.08; letter-spacing: -0.03em; text-wrap: balance; }
 	.mark { color: var(--sun); }
-	.consultant-intro { max-width: 44ch; margin: 16px 0 0; font-size: 16px; line-height: 1.7; color: rgb(255 255 255 / 0.78); }
+	.consultant-intro { max-width: 44ch; margin: 16px 0 0; font-size: var(--text-base); line-height: 1.7; color: rgb(255 255 255 / 0.78); }
 	.consultant-team { display: flex; align-items: center; gap: 14px; max-width: 46ch; margin-top: 22px; }
 	.consultant-team img, .team-mark { flex: none; width: 52px; height: 52px; border: 2px solid var(--sun); border-radius: 50%; object-fit: cover; }
 	.team-mark { display: grid; place-items: center; color: var(--sun); }
 	.team-mark :global(svg) { width: 22px; height: 22px; }
-	.consultant-team p { margin: 0; font-size: 15px; line-height: 1.55; color: rgb(255 255 255 / 0.78); }
+	.consultant-team p { margin: 0; font-size: var(--text-base); line-height: 1.55; color: rgb(255 255 255 / 0.78); }
 	.consultant-team strong { font-weight: 600; color: #fff; }
 	.consultant-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 30px; }
-	.cta { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 50px; padding: 12px 24px; border-radius: var(--radius-control); font-size: 14px; font-weight: 700; line-height: 1.3; text-decoration: none; transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease; }
+	.cta { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 50px; padding: 12px 24px; border-radius: var(--radius-control); font-size: var(--text-sm); font-weight: 700; line-height: 1.3; text-decoration: none; transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease; }
 	.cta :global(svg) { width: 17px; height: 17px; flex: none; }
 	.cta-sun { background: var(--sun); color: #2b2722; }
 	.cta-sun:hover { background: color-mix(in oklab, var(--sun) 90%, black); }
@@ -83,7 +83,7 @@
 	.cta-chat:hover { border-color: #fff; background: rgb(255 255 255 / 0.08); }
 	.cta-chat :global(svg) { color: #4ade80; }
 	.cta:focus-visible { outline: 2px solid var(--sun); outline-offset: 3px; }
-	.consultant-note { margin: 14px 0 0; font-size: 13px; color: rgb(255 255 255 / 0.6); }
+	.consultant-note { margin: 14px 0 0; font-size: var(--text-sm); color: rgb(255 255 255 / 0.6); }
 	@media (max-width: 960px) {
 		/* The photo moves to the top and fades down into the words. */
 		.consultant { grid-template-columns: minmax(0, 1fr); min-height: 0; }

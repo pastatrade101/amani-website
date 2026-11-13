@@ -25,9 +25,9 @@
 	.steps article { padding: 28px; background: white; border: 1px solid var(--border); border-radius: var(--radius-surface); }
 	.step-top { display: flex; align-items: center; justify-content: space-between; }
 	.step-icon { display: grid; place-items: center; width: 50px; height: 50px; border-radius: var(--radius-control); background: var(--secondary); }
-	.step-number { font-size: 35px; font-weight: 500; letter-spacing: -.06em; color: oklch(.87 0.015 75); }
-	.steps h3 { margin-top: 27px; font-size: 17px; font-weight: 600; letter-spacing: -.025em; }
-	.steps p { margin-top: 12px; font-size: 13px; line-height: 1.85; color: var(--muted-foreground); }
-	.planning-cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 25px; margin-top: 36px; font-size: 13px; }
+	.step-number { font-size: var(--text-3xl); font-weight: 500; letter-spacing: -.06em; color: oklch(.87 0.015 75); }
+	.steps h3 { margin-top: 27px; font-size: var(--text-lg); font-weight: 600; letter-spacing: -.025em; }
+	.steps p { margin-top: 12px; font-size: var(--text-sm); line-height: 1.85; color: var(--muted-foreground); }
+	.planning-cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 25px; margin-top: 36px; font-size: var(--text-sm); }
 	@media (max-width: 767px) { .planning-section { padding: 60px 0; } .planning-heading { grid-template-columns: 1fr; gap: 20px; } .planning-heading .section-description { justify-self: start; } .steps { grid-template-columns: 1fr; gap: 14px; margin-top: 30px; } .steps article { padding: 24px; } .steps h3 { margin-top: 16px; } .planning-cta { text-align: center; gap: 16px; } }
 </style>

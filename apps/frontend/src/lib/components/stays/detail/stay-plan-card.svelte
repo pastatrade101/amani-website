@@ -16,8 +16,8 @@
 </script>
 
 <aside aria-labelledby="plan-title" class="h-fit rounded-[12px] bg-white p-6 sm:p-7 shadow-[0_30px_60px_-40px_rgb(39_36_31/.45)] ring-1 ring-navy/10 lg:sticky lg:top-[calc(var(--site-header-height)+5rem)]">
-	<h3 id="plan-title" class="text-[13px] font-semibold text-muted-foreground">Plan your stay</h3>
-	<p class="mt-2 font-display text-[22px] leading-tight font-semibold tracking-[-.02em] text-navy">{stay.name}</p>
+	<h3 id="plan-title" class="text-sm font-semibold text-muted-foreground">Plan your stay</h3>
+	<p class="mt-2 font-display text-xl leading-tight font-semibold tracking-[-.02em] text-navy">{stay.name}</p>
 	<p class="mt-1 text-sm text-muted-foreground">{kind}</p>
 	{#if rate}<p class="mt-5 text-sm font-semibold text-navy">{rate}</p>{/if}
 	{#if destination || coordinates}
@@ -32,7 +32,7 @@
 
 <style>
 	.plan-links { border-top: 1px solid color-mix(in oklch, var(--navy) 10%, transparent); }
-	.plan-links a { display: flex; min-height: 3rem; align-items: center; gap: 0.6rem; border-bottom: 1px solid color-mix(in oklch, var(--navy) 10%, transparent); color: var(--navy); font-size: 14px; font-weight: 500; }
+	.plan-links a { display: flex; min-height: 3rem; align-items: center; gap: 0.6rem; border-bottom: 1px solid color-mix(in oklch, var(--navy) 10%, transparent); color: var(--navy); font-size: var(--text-sm); font-weight: 500; }
 	.plan-links a :global(svg:first-child) { color: #D9A900; }
 	.plan-links a :global(svg:last-of-type) { color: var(--muted-foreground); transition: translate 160ms ease-out; }
 	.plan-links a:hover :global(svg:last-of-type) { translate: 3px 0; color: var(--navy); }

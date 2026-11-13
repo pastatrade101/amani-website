@@ -141,29 +141,29 @@
   .tour-reviews .review-track { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .review-card { display: flex; flex-direction: column; min-width: 0; padding: 28px; color: var(--navy); background: white; border: 1px solid var(--border); border-radius: var(--radius-surface); box-shadow: 0 12px 32px -26px rgb(54 49 43 / .25); }
   .stars { display: flex; gap: 6px; color: #22a352; }
-  .review-card blockquote { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 7; line-clamp: 7; overflow: hidden; overflow-wrap: anywhere; margin: 18px 0 0; font-size: 16px; line-height: 1.6; color: var(--navy); }
-  .review-card :global(.review-more) { display: inline-flex; align-items: center; gap: 4px; width: fit-content; min-height: 32px; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--navy); font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; transition: color .2s ease; }
+  .review-card blockquote { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 7; line-clamp: 7; overflow: hidden; overflow-wrap: anywhere; margin: 18px 0 0; font-size: var(--text-base); line-height: 1.6; color: var(--navy); }
+  .review-card :global(.review-more) { display: inline-flex; align-items: center; gap: 4px; width: fit-content; min-height: 32px; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--navy); font-size: var(--text-sm); font-weight: 700; text-decoration: none; cursor: pointer; transition: color .2s ease; }
   .review-card :global(.review-more:hover) { color: #7a5a26; }
   .review-author { margin-top: auto; padding-top: 22px; }
   .review-author::before { content: ''; display: block; height: 1px; margin-bottom: 22px; background: var(--border); }
-  .review-author h3 { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; font-weight: 700; color: var(--navy); }
-  .review-author p { margin: 4px 0 0; font-size: 14px; color: var(--muted-foreground); }
+  .review-author h3 { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-lg); font-weight: 700; color: var(--navy); }
+  .review-author p { margin: 4px 0 0; font-size: var(--text-sm); color: var(--muted-foreground); }
   .review-author .review-source { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
   .tick { display: grid; flex: none; place-items: center; width: 22px; height: 22px; border-radius: 999px; background: color-mix(in oklch, #22a352 16%, white); color: #22a352; }
-  .full-review { max-height: 55dvh; overflow-y: auto; padding-right: 8px; white-space: pre-line; overflow-wrap: anywhere; font-size: 15px; line-height: 1.85; color: #524b41; margin: 0; }
-  .original-review { display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: var(--navy); font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
+  .full-review { max-height: 55dvh; overflow-y: auto; padding-right: 8px; white-space: pre-line; overflow-wrap: anywhere; font-size: var(--text-base); line-height: 1.85; color: #524b41; margin: 0; }
+  .original-review { display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: var(--navy); font-size: var(--text-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
   .review-dots { display: none; justify-content: center; gap: 8px; margin-top: 18px; }
   .review-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: #dcd7cc; cursor: pointer; transition: width .45s cubic-bezier(.22,1,.36,1), background-color .3s ease; }
   .review-dots button.on { width: 22px; background: var(--navy); }
   .review-progress { display: none; align-items: center; justify-content: center; gap: 14px; margin-top: 18px; }
   .review-progress .bar { position: relative; width: 132px; height: 3px; overflow: hidden; border-radius: 3px; background: #e2ddd2; }
   .review-progress .thumb { --w: max(16px, 100% / var(--n)); position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: inherit; background: var(--navy); left: calc((100% - var(--w)) * var(--at) / max(1, var(--n) - 1)); transition: left .45s cubic-bezier(.22,1,.36,1); }
-  .review-progress .count { min-width: 44px; font-size: 12.5px; font-weight: 600; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+  .review-progress .count { min-width: 44px; font-size: var(--text-xs); font-weight: 600; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
   .review-actions { display: grid; justify-items: center; gap: 8px; margin-top: 28px; }
-  .review-load { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 22px; border: 1.5px solid var(--sun); border-radius: var(--radius-surface); background: white; color: var(--navy); font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color .2s ease; }
+  .review-load { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 22px; border: 1.5px solid var(--sun); border-radius: var(--radius-surface); background: white; color: var(--navy); font-size: var(--text-sm); font-weight: 600; cursor: pointer; transition: background-color .2s ease; }
   .review-load:hover:not(:disabled) { background: color-mix(in oklch, var(--sun) 14%, white); }
   .review-load:disabled { opacity: .7; cursor: progress; }
-  .review-error { font-size: 12px; color: var(--muted-foreground); }
+  .review-error { font-size: var(--text-xs); color: var(--muted-foreground); }
   @media (max-width: 1023px) { .review-track { gap: 16px; } .review-card { padding: 24px; } }
   /* Phones: an edge-to-edge rail. The review being read rests in the middle,
      its neighbours peek in either side and sit back a little, in step with the
@@ -172,7 +172,7 @@
     .review-track, .tour-reviews .review-track { --card: min(80vw, 380px); display: flex; gap: 10px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; margin-inline: calc(50% - 50vw); padding: 6px calc((100vw - var(--card)) / 2) 12px; scrollbar-width: none; }
     .review-track::-webkit-scrollbar { display: none; }
     .review-card { flex: 0 0 var(--card); scroll-snap-align: center; scroll-snap-stop: always; padding: 22px; scale: calc(1 - var(--rail-abs, 0) * 0.05); }
-    .review-card blockquote { font-size: 15px; -webkit-line-clamp: 8; line-clamp: 8; }
+    .review-card blockquote { font-size: var(--text-base); -webkit-line-clamp: 8; line-clamp: 8; }
     .review-dots, .review-progress { display: flex; }
     .review-actions { margin-top: 20px; }
   }
@@ -183,8 +183,8 @@
  .home-review-controls{display:flex;gap:10px;margin-top:28px}.home-review-controls button{display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--border);border-radius:var(--radius-control);background:white;color:var(--navy);cursor:pointer;transition:border-color .2s ease,background-color .2s ease}.home-review-controls button:hover:not(:disabled){border-color:var(--navy)}.home-review-controls button:disabled{opacity:.35;cursor:default}.home-review-controls button:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
  .home-reviews .review-track{position:relative;display:flex;min-width:0;margin:0;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:4px 2px 12px;gap:24px}
  .home-reviews .review-card{flex:0 0 calc((100% - 24px)/2);scroll-snap-align:start;min-height:330px}
- .home-reviews .review-card blockquote{font-size:15px;-webkit-line-clamp:6;line-clamp:6}
- .home-reviews .review-author h3{font-size:15px}.home-reviews .review-author p{font-size:13px}.home-reviews .review-dots,.home-reviews .review-progress{display:none}
+ .home-reviews .review-card blockquote{font-size:var(--text-base);-webkit-line-clamp:6;line-clamp:6}
+ .home-reviews .review-author h3{font-size:var(--text-base)}.home-reviews .review-author p{font-size:var(--text-sm)}.home-reviews .review-dots,.home-reviews .review-progress{display:none}
  @media(max-width:900px){.home-reviews{grid-template-columns:minmax(0,1fr);gap:28px}.home-review-controls{margin-top:20px}}
  /* Touch screens swipe; the arrows are for a mouse. */
  @media(hover:none){.home-review-controls{display:none}}

@@ -83,12 +83,12 @@
 	.nav-tabs { position:relative; display:flex; flex:1; min-width:0; overflow-x:auto; padding-inline:20px; gap:24px; }
 	.nav-item { display:flex; flex:none; }
 	@media(min-width:768px) { .nav-inner { width:min(84%, var(--page-max)); } .nav-tabs { padding-inline:0; gap:40px; } }
-	.section-link { display:flex; align-items:center; min-height:76px; padding:0 2px; white-space:nowrap; font-size:15px; font-weight:600; color:var(--muted-foreground); transition: color .3s ease; }
+	.section-link { display:flex; align-items:center; min-height:76px; padding:0 2px; white-space:nowrap; font-size:var(--text-base); font-weight:600; color:var(--muted-foreground); transition: color .3s ease; }
 	.section-link:hover,.section-link.is-active { color:var(--navy); }
 	/* The marker (use:glide) is a 3px bar along the foot of the current tab, sliding from one to the next. */
 	.nav-tabs :global(.glide-mark) { border-radius: 0; background: linear-gradient(to top, var(--sun) 3px, transparent 3px); }
 	.nav-cta { display:flex; align-items:center; border-left:1px solid var(--border); padding:12px 0 12px 24px; }
-	@media(max-width:767px) { .section-nav { padding:0; } .nav-shell { border-radius:0; border-left:0; border-right:0; } .section-link { min-height:58px; font-size:12px; } .nav-cta { display:none; } }
+	@media(max-width:767px) { .section-nav { padding:0; } .nav-shell { border-radius:0; border-left:0; border-right:0; } .section-link { min-height:58px; font-size:var(--text-xs); } .nav-cta { display:none; } }
 	/* Where the tabs can overflow, fade the edge so a cut-off tab reads as "scroll for more". */
 	@media (max-width: 1279px) { .nav-tabs { mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); padding-right: 40px; } }
 	.section-nav ul { scrollbar-width: none; }

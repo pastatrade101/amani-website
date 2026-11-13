@@ -75,6 +75,34 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/*
+ * Type scale. One ratio, 1.125 (a major second), from a 16px base: text uses
+ * every step, headings every second step (1.125² ≈ 1.27), so every size on the
+ * site relates to every other. The names are Tailwind's, so the `text-sm`
+ * class and `var(--text-sm)` in a component are the same size. Components use
+ * these tokens, never their own pixel sizes. The CMS keeps Tailwind's defaults
+ * (admin-theme.css).
+ */
+:root {
+  --text-xs: 0.79rem;    /* 12.6px  fine print, counts, captions */
+  --text-sm: 0.889rem;   /* 14.2px  labels, meta, buttons, fields */
+  --text-base: 1rem;     /* 16px    body copy, navigation */
+  --text-lg: 1.125rem;   /* 18px    card titles, lead text */
+  --text-xl: 1.266rem;   /* 20.3px  small headings */
+  --text-2xl: 1.602rem;  /* 25.6px */
+  --text-3xl: 2.027rem;  /* 32.4px */
+  --text-4xl: 2.566rem;  /* 41px */
+  --text-5xl: 3.247rem;  /* 52px */
+  --text-6xl: 4.11rem;   /* 65.8px */
+  /* Headings by role: each grows from one step to a larger one with the screen. */
+  --text-display: clamp(var(--text-4xl), 1.5rem + 4vw, var(--text-6xl));  /* hero titles */
+  --text-title: clamp(var(--text-3xl), 1.25rem + 3vw, var(--text-5xl));   /* page and detail titles */
+  --text-h2: clamp(var(--text-2xl), 1rem + 2.6vw, var(--text-4xl));       /* section headings */
+  --text-h3: clamp(var(--text-xl), 0.9rem + 1.5vw, var(--text-3xl));     /* sub-sections */
+  --text-h4: clamp(var(--text-xl), 1rem + 0.6vw, var(--text-2xl));        /* blocks and feature cards */
+  --text-lead: clamp(var(--text-base), 0.94rem + 0.25vw, var(--text-lg)); /* intros under titles */
+}
+
 :root {
   --site-header-height: 86px;
   /* Content width for every page: 8% side margins from tablets up, never wider
@@ -194,11 +222,11 @@
 }
 @layer components {
   .page-container { width: 100%; max-width: var(--page-max); padding-inline: 1rem; margin-inline: auto; }
-  .section-heading { font-family: var(--font-display); font-size: clamp(1.9rem, 3vw, 2.65rem); font-weight: 600; line-height: 1.12; letter-spacing: -.03em; color: var(--navy); text-wrap: balance; }
-  .section-description { font-size: 14px; line-height: 1.9; color: var(--muted-foreground); }
-  .eyebrow { font-size: .75rem; font-weight: 600; letter-spacing: .19em; text-transform: uppercase; }
+  /* Every section heading on the site, whatever its class: one size, one voice. */
+  .section-heading, .lux-heading, .home-heading { font-family: var(--font-display); font-size: var(--text-h2); font-weight: 600; line-height: 1.1; letter-spacing: -.03em; color: var(--navy); text-wrap: balance; }
+  .section-description { font-size: var(--text-base); line-height: 1.75; color: var(--muted-foreground); }
+  .eyebrow { font-size: var(--text-xs); font-weight: 600; letter-spacing: .19em; text-transform: uppercase; }
   .gold-line { height: 3px; width: 50px; background: var(--sun); border-radius: 3px; }
-  .lux-heading { font-family: var(--font-display); font-weight: 600; font-size: clamp(2rem, 3.4vw, 3rem); line-height: 1.08; letter-spacing: -.01em; color: var(--navy); text-wrap: balance; }
   /* Headings and facts use lining figures, so "01" never reads as "oI". */
   .lux-heading, .font-display { font-variant-numeric: lining-nums; }
   /* Tour and stay cards: 1 on phones, 2 from 640px, 3 from 1024px, 4 from 1440px. */
@@ -295,23 +323,22 @@ a[data-slot="button"]:hover svg:last-child { translate: 2px 0; }
 .home-container { width: 84%; max-width: var(--page-max); margin-inline: auto; }
 .home-band { padding-block: 72px; }
 .home-cream { background: #f7f5ef; border-block: 1px solid #e9e5da; }
-.home-heading { font-family: var(--font-display); font-size: clamp(30px, 3vw, 42px); font-weight: 600; line-height: 1.12; letter-spacing: -0.03em; color: var(--navy); text-wrap: balance; }
-.home-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.18em; color: var(--muted-foreground); }
-.home-copy { font-size: 15px; line-height: 1.85; color: var(--muted-foreground); }
+.home-eyebrow { font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.18em; color: var(--muted-foreground); }
+.home-copy { font-size: var(--text-base); line-height: 1.75; color: var(--muted-foreground); }
 @media (max-width: 767px) { .home-container { width: 90%; } .home-band { padding-block: 48px; } }
 /* The plain arrow link that closes a heading row ("See all"), no underline. */
-.home-see-all { display: inline-flex; flex: none; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; font-weight: 700; color: var(--navy); text-decoration: none; transition: color 0.2s ease; }
+.home-see-all { display: inline-flex; flex: none; align-items: center; gap: 8px; min-height: 44px; font-size: var(--text-sm); font-weight: 700; color: var(--navy); text-decoration: none; transition: color 0.2s ease; }
 .home-see-all:hover { color: #7a5a26; }
 .home-see-all svg { width: 16px; height: 16px; transition: transform 0.2s ease; }
 .home-see-all:hover svg { transform: translateX(3px); }
 @media (prefers-reduced-motion: reduce) { .home-see-all:hover svg { transform: none; } }
-@media (max-width: 767px) { .home-heading { font-size: 27px; line-height: 1.15; } .home-copy { font-size: 15px; line-height: 1.7; } }
+@media (max-width: 767px) { .home-copy { line-height: 1.7; } }
 
 /* Phones and tablets: the app tab bar (app-tab-bar.svelte) owns the bottom of
    the screen, so anything fixed or last on the page sits above it. */
 @media (max-width: 1023px) { :root:has(.app-tabs) { --tab-offset: calc(66px + env(safe-area-inset-bottom)); } }
-.consent-wrap { bottom: calc(var(--tab-offset, 0px) + 16px); }
-@media (min-width: 640px) { .consent-wrap { bottom: calc(var(--tab-offset, 0px) + 24px); } }
+.consent-wrap { bottom: calc(var(--tab-offset, 0px) + var(--compare-offset, 0px) + 16px); }
+@media (min-width: 640px) { .consent-wrap { bottom: calc(var(--tab-offset, 0px) + var(--compare-offset, 0px) + 24px); } }
 
 /* use:glide (src/lib/motion/glide.ts): one marker that slides to the active
    tab. Long, soft ease-out so it settles rather than stops. */

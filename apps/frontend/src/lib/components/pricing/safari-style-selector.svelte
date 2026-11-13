@@ -57,8 +57,8 @@
 				style={`--active-bg:${theme.tabBg};--active-border:${theme.primary};--hover-bg:${theme.light};--hover-border:${theme.primary}`}
 			>
 				<Icon class={`size-4 shrink-0 ${compact ? '' : 'md:size-5'} ${active ? '' : 'text-primary'}`} style={active ? `color:${theme.primary}` : undefined} aria-hidden="true" />
-				<span class={`font-semibold leading-tight ${compact ? 'truncate text-xs' : 'text-[12px] sm:text-xs md:text-sm'} ${active ? '' : 'text-primary'}`} style={active && theme.activeText ? `color:${theme.activeText}` : undefined}>{compact ? style.title.replace(/\s+Safari$/, '') : style.title}</span>
-				{#if !compact}<span class={`text-[12px] leading-tight md:text-[12px] ${active ? 'text-primary/80' : 'text-muted-foreground'}`}>{note ? note(style.id) : style.subtitle}</span>{/if}
+				<span class={`font-semibold leading-tight ${compact ? 'truncate text-xs' : 'text-xs sm:text-xs md:text-sm'} ${active ? '' : 'text-primary'}`} style={active && theme.activeText ? `color:${theme.activeText}` : undefined}>{compact ? style.title.replace(/\s+Safari$/, '') : style.title}</span>
+				{#if !compact}<span class={`text-xs leading-tight md:text-xs ${active ? 'text-primary/80' : 'text-muted-foreground'}`}>{note ? note(style.id) : style.subtitle}</span>{/if}
 			</button>
 		{/each}
 	</div>

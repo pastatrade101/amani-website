@@ -178,17 +178,17 @@
 	.journey-photo::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08); pointer-events: none; }
 	@media (hover: hover) { .journey:hover .journey-photo img { transform: scale(1.04); } }
 	.journey-copy { display: flex; flex: 1; flex-direction: column; padding: 20px 14px 12px; }
-	.journey-where { display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0 0 10px; color: color-mix(in oklch, var(--sun) 78%, white); font-size: 12.5px; font-weight: 600; letter-spacing: 0.01em; }
+	.journey-where { display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0 0 10px; color: color-mix(in oklch, var(--sun) 78%, white); font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.01em; }
 	.journey-where :global(svg) { flex: none; width: 14px; height: 14px; }
-	h3 { margin: 0; font-size: clamp(24px, 2.2vw, 30px); font-weight: 600; line-height: 1.12; letter-spacing: -0.025em; color: inherit; text-wrap: balance; }
-	.journey-text { display: -webkit-box; margin: 10px 0 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; font-size: 15px; line-height: 1.6; color: rgb(255 255 255 / 0.74); }
+	h3 { margin: 0; font-size: var(--text-h3); font-weight: 600; line-height: 1.12; letter-spacing: -0.025em; color: inherit; text-wrap: balance; }
+	.journey-text { display: -webkit-box; margin: 10px 0 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; font-size: var(--text-base); line-height: 1.6; color: rgb(255 255 255 / 0.74); }
 	/* The button sits on the card's floor, so a row of cards lines up. */
 	.journey-foot { margin-top: auto; padding-top: 22px; }
 	.journey-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; margin: 20px 0 0; padding-top: 18px; border-top: 1px solid rgb(255 255 255 / 0.16); }
 	.journey-facts div:nth-child(n + 3) { display: none; }
-	.journey-facts dt { font-size: 12px; font-weight: 500; color: rgb(255 255 255 / 0.6); }
-	.journey-facts dd { margin: 3px 0 0; font-size: 14px; font-weight: 600; line-height: 1.4; color: white; }
-	.journey-link { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 20px; border-radius: var(--radius-control); background: var(--sun); color: #221e19; font-size: 14px; font-weight: 700; text-decoration: none; transition: background-color 0.2s ease, transform 0.2s ease; }
+	.journey-facts dt { font-size: var(--text-xs); font-weight: 500; color: rgb(255 255 255 / 0.6); }
+	.journey-facts dd { margin: 3px 0 0; font-size: var(--text-sm); font-weight: 600; line-height: 1.4; color: white; }
+	.journey-link { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 20px; border-radius: var(--radius-control); background: var(--sun); color: #221e19; font-size: var(--text-sm); font-weight: 700; text-decoration: none; transition: background-color 0.2s ease, transform 0.2s ease; }
 	.journey-link:hover { background: color-mix(in oklab, var(--sun) 90%, black); }
 	.journey-link:active { transform: scale(0.98); }
 	.journey-link :global(svg) { width: 16px; height: 16px; transition: transform 0.2s ease; }
@@ -203,7 +203,7 @@
 	.offers-switch { display: flex; gap: 8px; margin: 28px calc(50% - 50vw) 0; padding: 2px calc(50vw - 50%); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
 	.offers-switch::-webkit-scrollbar { display: none; }
 	.offers-switch :global(.glide-mark) { border-radius: 9px; background: var(--navy); box-shadow: 0 10px 20px -12px rgb(31 27 22 / 0.8); }
-	.offers-switch button { position: relative; flex: none; min-height: 44px; padding: 0 20px; border: 0; border-radius: 9px; background: none; color: #5f584e; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; text-align: center; white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: color 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+	.offers-switch button { position: relative; flex: none; min-height: 44px; padding: 0 20px; border: 0; border-radius: 9px; background: none; color: #5f584e; font-size: var(--text-sm); font-weight: 600; letter-spacing: -0.01em; text-align: center; white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: color 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
 	.offers-switch button::before { content: ''; position: absolute; inset: 0; z-index: -2; border-radius: inherit; background: #ebe6da; transition: background-color 0.2s ease; }
 	.offers-switch button:hover { color: var(--navy); }
 	.offers-switch button:hover::before { background: #e3ddcf; }
@@ -212,8 +212,8 @@
 	.track { display: none; }
 
 	.offers-cta { display: flex; align-items: center; justify-content: space-between; gap: 24px 40px; margin-top: 56px; }
-	.offers-cta h3 { color: var(--navy); font-size: clamp(22px, 2vw, 26px); }
-	.offers-cta p { margin: 6px 0 0; font-size: 15px; line-height: 1.6; color: var(--muted-foreground); }
+	.offers-cta h3 { color: var(--navy); font-size: var(--text-h4); }
+	.offers-cta p { margin: 6px 0 0; font-size: var(--text-base); line-height: 1.6; color: var(--muted-foreground); }
 
 	/* ---- Large screens without the story: the cards two by two ---- */
 	@media (min-width: 1024px) {
@@ -231,28 +231,29 @@
 	/* ---- The ScrollCraft story ---- */
 	.offers:global([data-sc-live]) { padding-bottom: 72px; }
 	.offers:global([data-sc-live]) .offers-act { margin-top: 40px; }
-	.offers:global([data-sc-live]) .offers-stage { position: sticky; top: var(--site-header-height); height: calc(100svh - var(--site-header-height)); padding: 0 24px 24px; overflow: clip; }
-	.offers:global([data-sc-live]) .offers-frame { position: relative; isolation: isolate; width: 100%; max-width: none; height: 100%; overflow: hidden; border-radius: 14px; background: #221e19; }
+	.offers:global([data-sc-live]) .offers-stage { position: sticky; top: var(--site-header-height); height: calc(100svh - var(--site-header-height) - var(--compare-offset, 0px)); padding: 0 0 24px; overflow: clip; }
+	/* The same rail as every other section: 84% wide, never past the page max. */
+	.offers:global([data-sc-live]) .offers-frame { position: relative; isolation: isolate; width: 84%; max-width: var(--page-max); height: 100%; overflow: hidden; border-radius: 14px; background: #221e19; }
 	.offers:global([data-sc-live]) .offers-photos { position: absolute; inset: 0; z-index: -1; display: block; }
 	/* Taller than the frame, so the drift never shows an edge. */
 	.offers:global([data-sc-live]) .offers-drift { position: absolute; inset: -48px 0; }
 	.offers:global([data-sc-live]) .offers-drift img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 	/* Dark only where the words sit: the left side and the story bar. */
 	.offers:global([data-sc-live]) .offers-scrim { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(22 19 15 / 0.9) 0%, rgb(22 19 15 / 0.8) 22%, rgb(22 19 15 / 0.52) 40%, rgb(22 19 15 / 0.18) 56%, rgb(22 19 15 / 0) 68%), linear-gradient(0deg, rgb(22 19 15 / 0.72) 0%, rgb(22 19 15 / 0.3) 14%, rgb(22 19 15 / 0) 28%); }
-	.offers:global([data-sc-live]) .journeys { position: absolute; inset: 0 auto 120px 0; display: grid; align-items: center; width: min(50%, 640px); margin: 0; padding-left: clamp(40px, 5.5vw, 88px); }
+	.offers:global([data-sc-live]) .journeys { position: absolute; inset: 0 auto 120px 0; display: grid; align-items: center; width: min(58%, 640px); margin: 0; padding-left: clamp(36px, 4.5vw, 64px); }
 	.offers:global([data-sc-live]) .journey { grid-area: 1 / 1; display: block; min-height: 0; padding: 0; overflow: visible; border-radius: 0; background: none; box-shadow: none; }
 	.offers:global([data-sc-live]) .journey-where { display: none; }
 	.offers:global([data-sc-live]) .journey-photo { display: none; }
 	.offers:global([data-sc-live]) .journey-copy { display: block; padding: 0; }
-	.offers:global([data-sc-live]) h3 { font-size: clamp(36px, 5.2vh, 56px); line-height: 1.05; letter-spacing: -0.035em; }
-	.offers:global([data-sc-live]) .journey-text { margin-top: 20px; max-width: 32rem; font-size: 17px; line-height: 1.7; }
+	.offers:global([data-sc-live]) h3 { font-size: var(--text-title); line-height: 1.05; letter-spacing: -0.035em; }
+	.offers:global([data-sc-live]) .journey-text { margin-top: 20px; max-width: 32rem; font-size: var(--text-lg); line-height: 1.7; }
 	.offers:global([data-sc-live]) .journey-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 28px; max-width: 34rem; margin-top: 28px; padding-top: 22px; }
 	.offers:global([data-sc-live]) .journey-facts div:nth-child(n + 3) { display: block; }
 	.offers:global([data-sc-live]) .journey-foot { padding-top: 30px; }
 	/* The story bar: one track per journey, filling with the scroll. */
-	.offers:global([data-sc-live]) .offers-switch { position: absolute; inset: auto clamp(40px, 5.5vw, 88px) 34px; display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: 24px; margin: 0; padding: 0; overflow: visible; }
+	.offers:global([data-sc-live]) .offers-switch { position: absolute; inset: auto clamp(36px, 4.5vw, 64px) 34px; display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: 24px; margin: 0; padding: 0; overflow: visible; }
 	.offers:global([data-sc-live]) .offers-switch :global(.glide-mark), .offers:global([data-sc-live]) .offers-switch button::before { display: none; }
-	.offers:global([data-sc-live]) .offers-switch button { display: grid; gap: 14px; justify-items: start; min-height: 52px; padding: 0; border: 0; border-radius: 0; background: none; color: rgb(255 255 255 / 0.6); font-size: 15px; text-align: left; transition: color 0.4s ease; }
+	.offers:global([data-sc-live]) .offers-switch button { display: grid; gap: 14px; justify-items: start; min-height: 52px; padding: 0; border: 0; border-radius: 0; background: none; color: rgb(255 255 255 / 0.6); font-size: var(--text-base); text-align: left; transition: color 0.4s ease; }
 	.offers:global([data-sc-live]) .offers-switch button:hover, .offers:global([data-sc-live]) .offers-switch button[aria-current='true'] { color: white; }
 	.offers:global([data-sc-live]) .track { position: relative; display: block; width: 100%; height: 2px; overflow: hidden; border-radius: 2px; background: rgb(255 255 255 / 0.24); }
 	.offers:global([data-sc-live]) .fill { position: absolute; inset: 0; background: white; transform: scaleX(var(--fill, 0)); transform-origin: left; }
@@ -270,7 +271,7 @@
 		.journeys::-webkit-scrollbar { display: none; }
 		.journey { flex: 0 0 var(--card); scroll-snap-align: center; scroll-snap-stop: always; scale: calc(1 - var(--rail-abs, 0) * 0.05); opacity: calc(1 - var(--rail-abs, 0) * 0.35); }
 		.journey-photo img { transform: translateX(calc(var(--rail, 0) * -10%)) scale(1.22); transition: none; }
-		h3 { font-size: 24px; }
+		h3 { font-size: var(--text-2xl); }
 		/* On a phone the card says only what it needs: the rest lives on the
 		   safari's own page. */
 		.journey-facts { display: none; }

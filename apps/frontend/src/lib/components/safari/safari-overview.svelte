@@ -84,19 +84,19 @@
 	.overview-grid.single { grid-template-columns: minmax(0, 860px); }
 	.copy { min-width: 0; }
 	.overview :global(.sp-h2) { margin-bottom: 22px; }
-	.intro { margin: 0 0 20px; font-size: 16px; line-height: 1.85; color: var(--sp-ink); }
+	.intro { margin: 0 0 20px; font-size: var(--text-base); line-height: 1.85; color: var(--sp-ink); }
 	.full { position: relative; margin-bottom: 10px; }
 	.full.collapsed { max-height: 14em; overflow: hidden; mask-image: linear-gradient(#000 60%, transparent); -webkit-mask-image: linear-gradient(#000 60%, transparent); }
 	.more { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-bottom: 18px; padding: 0; border: 0; background: none; color: var(--sp-ink); font: 600 14px var(--sp-sans); cursor: pointer; }
 	.more:hover { color: #7b6500; }
 	.more :global(svg) { width: 16px; height: 16px; transition: transform 0.2s ease; }
-	.ideal-for { margin: 12px 0 26px; font-size: 15px; line-height: 1.8; color: var(--sp-muted); }
+	.ideal-for { margin: 12px 0 26px; font-size: var(--text-base); line-height: 1.8; color: var(--sp-muted); }
 	.ideal-for strong { font-weight: 600; color: var(--sp-ink); }
 	.highlights-list { display: grid; gap: 16px; margin: 22px 0 0; padding: 0; list-style: none; }
 	.highlights-list li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; align-items: center; }
 	.highlight-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #fff0ad; color: #6b5600; }
 	.highlight-icon :global(svg) { width: 18px; height: 18px; }
-	.highlight-text { font-size: 15px; font-weight: 500; line-height: 1.55; color: var(--sp-ink); }
+	.highlight-text { font-size: var(--text-base); font-weight: 500; line-height: 1.55; color: var(--sp-ink); }
 	/* The route as a list of stops beside the map: tap one and the map flies there. */
 	.route-line { margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--sp-line); }
 	.route-line ol { margin: 16px 0 0; padding: 0; list-style: none; }
@@ -104,23 +104,23 @@
 	.route-line button:hover { background: #f7f5ef; }
 	.route-line button.on { border-color: var(--sp-line); background: #f4f1e8; }
 	.route-line button:focus-visible { outline: 2px solid var(--sp-sun, #f6d21b); outline-offset: 2px; }
-	.route-line b { display: grid; place-items: center; width: 34px; height: 34px; border: 1.5px solid #2b2722; border-radius: 50%; background: #fff; font-size: 13px; font-weight: 700; transition: background 0.2s, border-color 0.2s; }
+	.route-line b { display: grid; place-items: center; width: 34px; height: 34px; border: 1.5px solid #2b2722; border-radius: 50%; background: #fff; font-size: var(--text-sm); font-weight: 700; transition: background 0.2s, border-color 0.2s; }
 	.route-line button:hover b, .route-line button.on b { border-color: var(--sp-sun, #f6d21b); background: var(--sp-sun, #f6d21b); }
 	/* Start and finish: a dark disc with a flag, so the day stops stand out as the numbered ones. */
 	.route-line button.end b { border-color: #2b2722; background: #2b2722; color: #fff; }
 	.route-line button.end:hover b, .route-line button.end.on b { color: #2b2722; }
 	.route-line b :global(svg) { width: 15px; height: 15px; }
-	.place { font-size: 16px; font-weight: 600; line-height: 1.35; }
-	.route-line small { font-size: 13px; font-weight: 600; color: var(--sp-kicker); white-space: nowrap; }
+	.place { font-size: var(--text-base); font-weight: 600; line-height: 1.35; }
+	.route-line small { font-size: var(--text-sm); font-weight: 600; color: var(--sp-kicker); white-space: nowrap; }
 	/* The thread between stops, with how you travel on when it is known. */
 	.hop { position: relative; display: flex; align-items: center; min-height: 30px; margin-left: 27px; padding-left: 31px; border-left: 1.5px dashed #c9c1ad; }
-	.hop span { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--sp-muted); }
+	.hop span { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-xs); color: var(--sp-muted); }
 	.hop :global(svg) { width: 14px; height: 14px; }
 	.map-col { min-width: 0; }
 	@media (min-width: 961px) { .map-col { position: sticky; top: 92px; } }
 	.day-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 20px; margin: 48px 0 0; padding: 28px 0 0; border-top: 1px solid var(--sp-line); list-style: none; }
-	.day-strip small { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--sp-kicker); }
-	.day-strip span { font-size: 15px; font-weight: 500; color: var(--sp-ink); }
+	.day-strip small { display: block; margin-bottom: 8px; font-size: var(--text-sm); font-weight: 600; color: var(--sp-kicker); }
+	.day-strip span { font-size: var(--text-base); font-weight: 500; color: var(--sp-ink); }
 	@media (max-width: 960px) { .overview-grid { grid-template-columns: minmax(0, 1fr); gap: 40px; } }
 	@media (max-width: 560px) { .day-strip { grid-template-columns: 1fr 1fr; gap: 16px; } }
 	@media (prefers-reduced-motion: reduce) { .more :global(svg) { transition: none; } }
